@@ -13,7 +13,7 @@ client = OpenAI(
     api_key=os.getenv("DASHSCOPE_API_KEY"),
     base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'
 )
-model_name = 'qwen-plus'
+model_name = 'qwen-max'
 
 
 def init_database(db_name: str) -> \
@@ -27,13 +27,13 @@ def init_database(db_name: str) -> \
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         original_filename TEXT NOT NULL,
         uid TEXT NOT NULL,
+        md5 TEXT NOT NULL,
         file_path TEXT NOT NULL
     )
     """)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS contents (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uid TEXT NOT NULL,
+            uid TEXT PRIMARY KEY,
             file_path TEXT NOT NULL,
             file_extraction TEXT
         )
@@ -63,6 +63,18 @@ def save_content_to_database(uid: str,
     conn.commit()
 
 
+def get_uid_by_md5(md5_value: str,
+                   db_name='./database.sqlite'):
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute("SELECT uid FROM files WHERE md5=?", (md5_value,))
+    result = cursor.fetchone()
+    if result:
+        return result[0]
+    else:
+        return None
+
+
 def get_content_by_uid(uid: str,
                        content_type: str,
                        table_name='contents',
@@ -80,23 +92,33 @@ def get_content_by_uid(uid: str,
     cursor = conn.cursor()
     cursor.execute(f"SELECT {content_type} FROM {table_name} WHERE uid = ?", (uid,))
     result = cursor.fetchone()
-
     if result:
         return result[0]
     else:
         return None
 
 
+def check_file_exists(md5: str,
+                      db_name='./database.sqlite'):
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    """根据 MD5 值检查文件是否存在"""
+    cursor.execute("SELECT 1 FROM files WHERE md5 = ?", (md5,))
+    result = cursor.fetchone()
+    return result is not None
+
+
 def save_file_to_database(conn: sqlite3.Connection,
                           cursor: sqlite3.Cursor,
                           original_file_name: str,
                           uid: str,
+                          md5_value: str,
                           full_file_path: str):
     # 插入文件信息到数据库
     cursor.execute("""
-       INSERT INTO files (original_filename, uid, file_path)
-       VALUES (?, ?, ?)
-       """, (original_file_name, uid, full_file_path))
+       INSERT INTO files (original_filename, uid,md5, file_path)
+       VALUES (?, ?, ?,?)
+       """, (original_file_name, uid, md5_value, full_file_path))
     conn.commit()
 
 
@@ -108,6 +130,7 @@ def extract_files(file_path: str):
             text = textract.process(file_path)
             return {'result': 1, 'text': text.decode('utf-8')}
         except Exception as e:
+            print(e)
             return {'result': -1, 'text': e}
     else:
         return {'result': -1, 'text': 'Unexpect file type!'}
@@ -151,7 +174,7 @@ def text_extraction(file_path: str):
     if res['result'] == 1:
         file_content = '以下为一篇论文的原文:\n' + res['text']
     else:
-        exit(-1)
+        return False,''
     messages = [
         {
             "role": "system",
@@ -159,7 +182,7 @@ def text_extraction(file_path: str):
         },
         {"role": "user",
          "content": '''
-         阅读论文,划出关键语句,并按照“研究背景，研究目的，研究方法，研究结果，未来展望”五个标签分类.
+         阅读论文,划出**关键语句**,并按照“研究背景，研究目的，研究方法，研究结果，未来展望”五个标签分类.
          label为中文,text为原文,text可能有多句,并以json格式输出.
          注意!!text内是论文原文!!.
          以下为示例:
