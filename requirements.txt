@@ -1,0 +1,2 @@
+streamlit~=1.40.1
+textract~=1.6.5

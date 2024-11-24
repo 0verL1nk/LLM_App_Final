@@ -1,0 +1,5 @@
+database.sqlite
+logs/
+uploads/
+.idea/
+__pycache__/
