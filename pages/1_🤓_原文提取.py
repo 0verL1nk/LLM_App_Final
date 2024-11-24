@@ -1,5 +1,4 @@
 import json
-
 import streamlit as st
 from utils import get_content_by_uid, text_extraction, save_content_to_database, print_contents
 
