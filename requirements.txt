@@ -1,3 +1,4 @@
 streamlit~=1.40.1
 textract~=1.6.5
 openai~=1.54.5
+redis~=5.2.0
