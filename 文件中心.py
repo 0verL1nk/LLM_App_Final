@@ -82,7 +82,7 @@ def print_file_list():
         file_table['创建时间'].append(file['created_at'])
     df = pd.DataFrame(file_table)
     rows = row(1)
-    rows.dataframe(df, use_container_width=True)
+    rows.table(df)
 
 
 def main():
@@ -109,7 +109,6 @@ def user_login():
             st.toast('✅登陆成功')
             st.session_state['token'] = token
             st.rerun()
-
     if button_rows.button('注册', use_container_width=True):
         st.session_state['LoginOrRegister'] = 'register'
         st.rerun()

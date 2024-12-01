@@ -7,7 +7,6 @@ import os
 import string
 import uuid
 import datetime
-
 import redis
 import textract
 from openai import OpenAI

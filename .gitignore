@@ -3,3 +3,4 @@ logs/
 uploads/
 .idea/
 __pycache__/
+test/
