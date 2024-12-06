@@ -18,7 +18,7 @@ def main():
                 with st.spinner('解析文档中 ...'):
                     result, content = text_extraction(item['file_path'])
                     if not result:
-                        st.write('### System Wrong!\n')
+                        st.write('### 大模型貌似开小差了～重新试试吧！\n')
                     else:
                         print_contents(content)
                         # 保存到数据库
