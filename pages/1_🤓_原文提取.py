@@ -23,7 +23,6 @@ def main():
                         print_contents(content)
                         # 保存到数据库
                         save_content_to_database(uid=st.session_state['files'][index]['uid'],
-                                                 uuid=st.session_state['uuid'],
                                                  file_path=st.session_state['files'][index]['file_path'],
                                                  content=json.dumps(content),
                                                  content_type='file_extraction')

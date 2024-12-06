@@ -14,7 +14,6 @@ import streamlit as st
 
 # init client
 client = OpenAI(
-    # 为了方便,先不设置环境变量
     api_key=os.getenv("DASHSCOPE_API_KEY"),
     base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'
 )
@@ -44,7 +43,7 @@ def init_database(db_name: str):
             uid TEXT PRIMARY KEY,
             file_path TEXT NOT NULL,
             file_extraction TEXT,
-            uuid TEXT NOT NULL
+            file_mindmap TEXT
         )
         """)
     cursor.execute("""
@@ -139,17 +138,32 @@ def print_contents(content):
 
 
 def save_content_to_database(uid: str,
-                             uuid: str,
-                             file_path: str,
-                             content: str,
-                             content_type: str,
-                             db_name='./database.sqlite', ):
+                           file_path: str,
+                           content: str,
+                           content_type: str,
+                           db_name='./database.sqlite'):
+    """保存内容到数据库，如果记录已存在则更新对应字段"""
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
-    cursor.execute(f"""
-           INSERT INTO contents (uid, file_path, {content_type},uuid)
-           VALUES (?, ?, ?,?)
-           """, (uid, file_path, content, uuid))
+    
+    # 检查是否已存在记录
+    cursor.execute("SELECT 1 FROM contents WHERE uid = ?", (uid,))
+    exists = cursor.fetchone() is not None
+    
+    if exists:
+        # 更新现有记录的特定字段
+        cursor.execute(f"""
+            UPDATE contents 
+            SET {content_type} = ?
+            WHERE uid = ?
+        """, (content, uid))
+    else:
+        # 插入新记录
+        cursor.execute(f"""
+            INSERT INTO contents (uid, file_path, {content_type})
+            VALUES (?, ?, ?)
+        """, (uid, file_path, content))
+    
     conn.commit()
     conn.close()
 
@@ -236,6 +250,84 @@ def extract_files(file_path: str):
             return {'result': -1, 'text': e}
     else:
         return {'result': -1, 'text': 'Unexpect file type!'}
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatTongyi
+def optimize_text(text: str):
+    system_prompt = """你是一个专业的论文优化助手。你的任务是:
+        1. 优化用户输入的文本，使其表达更加流畅、逻辑更加清晰
+        2. 替换同义词和调整句式，以降低查重率
+        3. 保证原文的核心意思不变
+        4. 保证论文专业性,包括用词的专业性以及句式的专业性
+        5. 使文本更加符合其语言的语法规范,更像其母语者写出来的文章
+        请按以下格式输出：
+        #### 优化后的文本
+        ...
+        """
+    llm = ChatTongyi(
+            model_name="qwen-max",
+            streaming=True
+        )
+    prompt_template = ChatPromptTemplate.from_messages([('system',system_prompt),('user','用户输入:'+text)])
+    chain = prompt_template | llm
+    return chain.stream({'text':text})
+
+def generate_mindmap_data(text: str):
+    """生成思维导图数据"""
+    system_prompt = """你是一个专业的文献分析助手。请分析给定的文献内容，生成一个详细的思维导图结构。
+
+    要求：
+    1. 提取文档的核心主题作为根节点
+    2. 分析文档的主要章节作为一级节点
+    3. 对每个章节的关键内容进行提取作为子节点
+    4. 确保层级结构清晰，逻辑合理
+    5. 使用精炼的语言概括每个节点的内容
+    6. 节点层级不超过3层
+
+    输出格式要求：
+    必须是JSON格式，不要有多余字符,不要加```json```,格式如下：
+    {{
+        "name": "根节点名称",
+        "children": [
+            {{
+                "name": "一级节点1",
+                "children": [
+                    {{
+                        "name": "二级节点1",
+                        "children": [...]
+                    }}
+                ]
+            }}
+        ]
+    }}
+    """
+    
+    llm = ChatTongyi(
+        model_name="qwen-max",
+        response_format={"type": "json_object"}  # 强制返回JSON格式
+    )
+    prompt_template = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("user", "以下是需要分析的文献内容：\n {text}")
+    ])
+    
+    chain = prompt_template | llm
+    result = chain.invoke({"text": text})
+    print(result.content)
+    try:
+        # 确保返回的是有效的JSON字符串
+        mindmap_data = json.loads(result.content)
+        return mindmap_data  # 返回格式化的JSON对象
+    except json.JSONDecodeError:
+        # 如果解析失败，返回一个基本的结构
+        return {
+            "name": "解析失败",
+            "children": [
+                {
+                    "name": "文档解析出错",
+                    "children": []
+                }
+            ]
+        }
 
 
 class LoggerManager:
@@ -302,3 +394,32 @@ def text_extraction(file_path: str):
 
     # 这边返回的就是json对象了
     return True, json.loads(completion.choices[0].message.content)
+
+def delete_content_by_uid(uid: str, content_type: str, db_name='./database.sqlite'):
+    """删除指定记录的特定内容类型
+    
+    Args:
+        uid (str): 记录的唯一标识
+        content_type (str): 要删除的内容类型 (如 'file_mindmap', 'file_extraction' 等)
+        db_name (str): 数据库文件路径
+    
+    Returns:
+        bool: 操作是否成功
+    """
+    try:
+        conn = sqlite3.connect(db_name)
+        cursor = conn.cursor()
+        
+        # 将指定字段设置为 NULL
+        cursor.execute(f"""
+            UPDATE contents 
+            SET {content_type} = NULL
+            WHERE uid = ?
+        """, (uid,))
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"删除内容时出错: {e}")
+        return False

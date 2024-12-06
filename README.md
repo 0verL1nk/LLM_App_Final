@@ -21,3 +21,6 @@
 - ~~文件中心~~
 - utils分到utils文件夹里,拆成tools和各个页面
 - 改用langchain
+
+## 注意
+- 注意pip的版本应小于`24.1`,`python -m pip install pip==24.0`

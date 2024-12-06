@@ -39,6 +39,7 @@ def upload_file():
         file_path = os.path.join(save_dir, saved_filename)
         # 将文件保存到本地
         if not check_file_exists(file_path):
+            # 返回文件头,之前计算md5已经到文件末尾
             uploaded_file.seek(0)
             with open(file_path, "wb") as f:
                 f.write(uploaded_file.read())
@@ -52,7 +53,7 @@ def upload_file():
                               file_path,
                               current_time)
         st.toast("文档上传成功", icon="👌")
-        Logger.info(f'uploaded file: {original_filename}')
+        Logger.info(f'uuid:{st.session_state["uuid"]}\tuploaded file: {original_filename}')
         # 添加path到session
         st.session_state['files'].append({'file_path': file_path,
                                           'file_name': file_name,
