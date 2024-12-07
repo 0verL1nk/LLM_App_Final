@@ -271,7 +271,7 @@ def optimize_text(text: str):
     chain = prompt_template | llm
     return chain.stream({'text':text})
 
-def generate_mindmap_data(text: str):
+def generate_mindmap_data(text: str)->dict:
     """生成思维导图数据"""
     system_prompt = """你是一个专业的文献分析助手。请分析给定的文献内容，生成一个详细的思维导图结构。
 
@@ -315,8 +315,9 @@ def generate_mindmap_data(text: str):
     print(result.content)
     try:
         # 确保返回的是有效的JSON字符串
-        mindmap_data = json.loads(result.content)
-        return mindmap_data  # 返回格式化的JSON对象
+        json_str = extract_json_string(result.content)
+        mindmap_data = json.loads(json_str)
+        return mindmap_data
     except json.JSONDecodeError:
         # 如果解析失败，返回一个基本的结构
         return {
@@ -376,7 +377,7 @@ def text_extraction(file_path: str):
         },
         {"role": "user",
          "content": '''
-         阅读论文,划出**关键语句**,并按照“研究背景，研究目的，研究方法，研究结果，未来展望”五个标签分类.
+         阅读论文,划出**关键语句**,并按照"研究背景，研究目的，研究方法，研究结果，未来展望"五个标签分类.
          label为中文,text为原文,text可能有多句,并以json格式输出.
          注意!!text内是论文原文!!.
          以下为示例:
@@ -423,3 +424,51 @@ def delete_content_by_uid(uid: str, content_type: str, db_name='./database.sqlit
     except Exception as e:
         print(f"删除内容时出错: {e}")
         return False
+
+def extract_json_string(text: str) -> str:
+    """
+    从字符串中提取有效的JSON部分
+    Args:
+        text: 包含JSON的字符串
+    Returns:
+        str: 提取出的JSON字符串
+    """
+    start = text.find('{')
+    end = text.rfind('}')
+    if start != -1 and end != -1:
+        return text[start:end + 1]
+    return text
+
+def optimize_text_with_params(text: str, opt_type: str, style_level: float, keywords: list, special_reqs: str):
+    system_prompt = f"""你是一个专业的文本优化助手。请根据以下参数优化用户输入的文本：
+
+    优化类型：{opt_type}
+    文风调整程度：{style_level}
+    必须保留的关键词：{', '.join(keywords)}
+    特殊要求：{special_reqs}
+
+    优化要求：
+    1. 根据不同的优化类型采用相应的专业术语和表达方式
+    2. 根据文风调整程度控制改写幅度
+    3. 确保保留指定的关键词
+    4. 遵循特殊要求进行优化
+    5. 优化文本的流畅度和专业性
+    6. 适当调整句式以降低查重率
+    7. 保持原文的核心意思不变
+    8. 确保符合目标文体的风格特征
+
+    请按以下格式输出：
+    ### 优化后的文本
+    ...
+    """
+    
+    llm = ChatTongyi(
+        model_name="qwen-max",
+        streaming=True
+    )
+    prompt_template = ChatPromptTemplate.from_messages([
+        ('system', system_prompt),
+        ('user', f'用户输入:\n{text}')
+    ])
+    chain = prompt_template | llm
+    return chain.stream({})

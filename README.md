@@ -9,11 +9,12 @@
 - [x] 提取标注关键原文
     - ![原文提取.png](images/%E5%8E%9F%E6%96%87%E6%8F%90%E5%8F%96.png)
 - [x] 总结论文内容
-- [ ] 优化文段内容(优化输入的文段,降重)
+- [x] 优化文段内容(优化输入的文段,降重)
 - [ ] ~~一键翻译论文~~
-- [ ] 论文内容问答
+- [x] 论文内容问答
   - ![img.png](images/论文问答.png)
-- [ ] 论文思维导图
+- [x] 论文思维导图
+  -  ![alt text](images/思维导图.png)
   - st_pyecharts+pyecharts.charts.Tree
 ## TODO
 
