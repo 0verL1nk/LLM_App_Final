@@ -10,6 +10,10 @@
     - ![原文提取.png](images/%E5%8E%9F%E6%96%87%E6%8F%90%E5%8F%96.png)
 - [x] 总结论文内容
 - [x] 优化文段内容(优化输入的文段,降重)
+  - ![alt text](images/文段优化1.png)
+  - ![alt text](images/文段优化2.png)
+  - ![alt text](images/文段优化3.png)
+  - ![alt text](images/文段优化4.png)
 - [ ] ~~一键翻译论文~~
 - [x] 论文内容问答
   - ![img.png](images/论文问答.png)

@@ -11,6 +11,11 @@ import redis
 import textract
 from openai import OpenAI
 import streamlit as st
+from langchain.agents import Tool, AgentExecutor, LLMSingleActionAgent
+from langchain.prompts import StringPromptTemplate
+from langchain.output_parsers.regex import RegexParser
+from typing import List, Tuple, ClassVar, Dict, Any
+import re
 
 # init client
 client = OpenAI(
@@ -92,7 +97,7 @@ def login(username: str, password: str, db_name='./database.sqlite') -> \
     user = cursor.fetchone()
     conn.close()
     if (not user) or hashlib.sha256(password.encode('utf-8')).hexdigest() != user[2]:
-        return False, '', '账号或密码错误'
+        return False, '', '账号密码错误'
     return True, save_token(user[0]), ''
 
     # 若成功,返回true,uuid,'',依次为result,token,error
@@ -258,7 +263,7 @@ def optimize_text(text: str):
         2. 替换同义词和调整句式，以降低查重率
         3. 保证原文的核心意思不变
         4. 保证论文专业性,包括用词的专业性以及句式的专业性
-        5. 使文本更加符合其语言的语法规范,更像其母语者写出来的文章
+        5. 使文本更加符合其语言的语法规范,更像母语者写出来的文章
         请按以下格式输出：
         #### 优化后的文本
         ...
@@ -319,7 +324,7 @@ def generate_mindmap_data(text: str)->dict:
         mindmap_data = json.loads(json_str)
         return mindmap_data
     except json.JSONDecodeError:
-        # 如果解析失败，返回一个基本的结构
+        # 如果��析失败，返回一个基本的结构
         return {
             "name": "解析失败",
             "children": [
@@ -373,7 +378,7 @@ def text_extraction(file_path: str):
     messages = [
         {
             "role": "system",
-            "content": file_content,  # <-- 这里，我们将抽取后的文件内容（注意是文件内容，而不是文件 ID）放置在请求中
+            "content": file_content,  # <-- 这里，我们将抽取后的文件内容（注意是文件内容，不是文件 ID）放在请求中
         },
         {"role": "user",
          "content": '''
@@ -439,36 +444,157 @@ def extract_json_string(text: str) -> str:
         return text[start:end + 1]
     return text
 
-def optimize_text_with_params(text: str, opt_type: str, style_level: float, keywords: list, special_reqs: str):
-    system_prompt = f"""你是一个专业的文本优化助手。请根据以下参数优化用户输入的文本：
 
-    优化类型：{opt_type}
-    文风调整程度：{style_level}
-    必须保留的关键词：{', '.join(keywords)}
-    特殊要求：{special_reqs}
-
-    优化要求：
-    1. 根据不同的优化类型采用相应的专业术语和表达方式
-    2. 根据文风调整程度控制改写幅度
-    3. 确保保留指定的关键词
-    4. 遵循特殊要求进行优化
-    5. 优化文本的流畅度和专业性
-    6. 适当调整句式以降低查重率
-    7. 保持原文的核心意思不变
-    8. 确保符合目标文体的风格特征
-
-    请按以下格式输出：
-    ### 优化后的文本
-    ...
+def detect_language(text: str) -> str:
     """
+    检测文本语言类型
+    返回 'zh' 表示中文，'en' 表示英文，'other' 表示其他语言
+    """
+    # 统计中文字符数量
+    chinese_chars = len([c for c in text if '\u4e00' <= c <= '\u9fff'])
+    # 统计英文字符数量
+    english_chars = len([c for c in text if c.isascii() and c.isalpha()])
     
+    # 计算中英文字符占比
+    total_chars = len(text.strip())
+    chinese_ratio = chinese_chars / total_chars if total_chars > 0 else 0
+    english_ratio = english_chars / total_chars if total_chars > 0 else 0
+    
+    # 判断语言类型
+    if chinese_ratio > 0.3:  # 如果中文字符占比超过30%，认为是中文文本
+        return 'zh'
+    elif english_ratio > 0.5:  # 如果英文字符占比超过50%，认为是英文文本
+        return 'en'
+    else:
+        return 'other'
+
+def process_multy_optimization(
+    text: str,
+    opt_type: str,
+    temperature: float,
+    optimization_steps: list,
+    keywords: list,
+    special_reqs: str
+) -> List[Tuple[str, str]]:
+    """
+    根据选择的优化步骤进行处理，并记录优化历史
+    """
+    current_text = text
+    model_name = "qwen-max" if detect_language(text) == 'zh' else "llama3.1-405b-instruct"
+    
+    step_functions = {
+        "表达优化": (optimize_expression, "分析：需要改善文本的基础表达方式，使其更加流畅自然。"),
+        "专业优化": (professionalize_text, "分析：需要优化专业术语，提升文本的学术性。"),
+        "降重处理": (reduce_similarity, "分析：需要通过同义词替换和句式重组降低重复率。")
+    }
+    
+    optimization_history = []
+    
+    for step in optimization_steps:
+        try:
+            func, thought = step_functions[step]
+            
+            # 添加优化参数信息到思考过程
+            thought += f"\n优化类型：{opt_type}"
+            thought += f"\n调整程度：{temperature}"
+            if keywords:
+                thought += f"\n保留关键词：{', '.join(keywords)}"
+            if special_reqs:
+                thought += f"\n特殊要求：{special_reqs}"
+            
+            # 记录当前步骤的优化历史
+            history = {
+                "step": step,
+                "before": current_text,
+                "parameters": {
+                    "optimization_type": opt_type,
+                    "temperature": temperature,
+                    "keywords": keywords,
+                    "special_requirements": special_reqs
+                }
+            }
+            
+            # 执行优化
+            current_text = func(current_text, temperature, model_name,optimization_history)
+            
+            # 更新历史记录
+            history["after"] = current_text
+            optimization_history.append(history)
+            
+            yield thought, current_text
+            
+        except Exception as e:
+            print(f"Error in step {step}: {str(e)}")
+            yield f"优化过程中出现错误: {str(e)}", current_text
+
+def optimize_expression(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
+    """改善表达的具体实现"""
     llm = ChatTongyi(
-        model_name="qwen-max",
+        model_name=model_name,
         streaming=True
     )
-    prompt_template = ChatPromptTemplate.from_messages([
-        ('system', system_prompt),
-        ('user', f'用户输入:\n{text}')
-    ])
-    chain = prompt_template | llm
-    return chain.stream({})
+    
+    prompt = f"""请改善以下文本的表达方式，使其更加流畅自然,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其他语言**
+优化历史:
+{optimization_history}
+原文：{text}
+
+要求：
+1. 必须使用与原文完全相同的语言
+2. 调整句式使表达更流畅
+3. 优化用词使其更自然
+4. 保持原有意思不变
+5. 确保逻辑连贯性
+
+注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
+"""
+    response = llm.invoke(prompt,temperature=temperature)
+    return response.content
+
+def professionalize_text(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
+    """专业化处理的具体实现"""
+    llm = ChatTongyi(
+        model_name=model_name,
+        streaming=True,
+    )
+    
+    prompt = f"""请对以下文本进行专业化处理，优化适当的专业术语和学术表达,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其它语言**
+优化历史:
+{optimization_history}
+原文：{text}
+
+要求：
+1. 必须使用与原文完全相同的语言
+2. 优化合适的专业术语
+3. 使用更学术的表达方式
+4. 保持准确性和可读性
+5. 确保专业性和权威性
+
+注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
+"""
+    response = llm.invoke(prompt,temperature=temperature)
+    return response.content
+
+def reduce_similarity(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
+    """降重处理的具体实现"""
+    llm = ChatTongyi(
+        model_name=model_name,
+        streaming=True
+    )
+    
+    prompt = f"""请对以下原文的内容进行降重处理，通过同义词替换和句式重组等方式降低重复率,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其它语言**
+优化历史:
+{optimization_history}
+**原文**：{text}
+--原文结束--
+要求：
+1. 必须使用与原文完全相同的语言
+2. 使用同义词替换
+3. 调整句式结构
+4. 保持原意不变
+5. 确保文本通顺
+
+注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
+"""
+    response = llm.invoke(prompt,temperature=temperature)
+    return response.content
