@@ -1,21 +1,18 @@
+import datetime
 import hashlib
 import json
-import random
-import sqlite3
 import logging
 import os
+import random
+import sqlite3
 import string
 import uuid
-import datetime
+from typing import List, Tuple
+
 import redis
+import streamlit as st
 import textract
 from openai import OpenAI
-import streamlit as st
-from langchain.agents import Tool, AgentExecutor, LLMSingleActionAgent
-from langchain.prompts import StringPromptTemplate
-from langchain.output_parsers.regex import RegexParser
-from typing import List, Tuple, ClassVar, Dict, Any
-import re
 
 # init client
 client = OpenAI(
@@ -201,6 +198,12 @@ def get_content_by_uid(uid: str,
 
     Returns:
         str: 文件内容，若未找到则返回 None
+        :param uid:
+        :param content_type:
+        :param table_name:
+        :param db_name:
+        :param table_name:
+        :param content_type:
     """
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
@@ -307,8 +310,7 @@ def generate_mindmap_data(text: str)->dict:
     """
     
     llm = ChatTongyi(
-        model_name="qwen-max",
-        response_format={"type": "json_object"}  # 强制返回JSON格式
+        model_name="qwen-max"
     )
     prompt_template = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -337,7 +339,7 @@ def generate_mindmap_data(text: str)->dict:
 
 
 class LoggerManager:
-    def __init__(self, log_dir="logs", log_level=logging.INFO):
+    def __init__(self, log_level=logging.INFO):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.log_dir = os.path.join(base_dir, "logs")
         self.log_level = log_level

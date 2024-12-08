@@ -1,13 +1,10 @@
-from utils import extract_files, is_token_expired
-
-
+import streamlit as st
 from langchain_community.chat_models import ChatTongyi
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
+from utils import extract_files, is_token_expired
 
-import json
-import streamlit as st
 system_prompt = """你是一个文书助手。你的客户会交给你一篇文章，你需要用尽可能简洁的语言，总结这篇文章的内容。不允许使用 markdown 记号。"""
 
 

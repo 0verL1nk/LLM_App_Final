@@ -17,6 +17,7 @@
 - [ ] ~~一键翻译论文~~
 - [x] 论文内容问答
   - ![img.png](images/论文问答.png)
+  - ![img.png](images/论文问答2.png)
 - [x] 论文思维导图
   -  ![alt text](images/思维导图.png)
   - st_pyecharts+pyecharts.charts.Tree
