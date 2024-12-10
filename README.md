@@ -29,7 +29,7 @@ git clone <仓库地址>
 cd <项目目录>   
 ```
 
-3. **创建虚拟环境**      
+2. **创建虚拟环境**      
 ```bash
 python -m venv venv
 # Linux/MacOS
@@ -38,17 +38,18 @@ source venv/bin/activate
 venv\Scripts\activate   
 ```
 
-1. **安装依赖**      
+3. **安装依赖**      
 ```bash
 pip install -r requirements.txt   
 ```
-
-2. **运行项目**      
+4. **设置环境变量**      
+记得设置环境变量 `DASHSCOPE_API_KEY`，可以参考 [首次调用通义千问API](https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen) 的文档
+5. **运行项目**      
 ```bash
 streamlit run 文件中心.py   
 ```
 
-4. **访问应用**
+6. **访问应用**
 打开浏览器访问 `http://localhost:8501`
 
 ## 📸 功能展示

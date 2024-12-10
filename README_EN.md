@@ -44,12 +44,14 @@ venv\Scripts\activate
 pip install -r requirements.txt   
 ```
 
-4. **Run Project**      
+4. **Set Environment Variables**      
+Remember to set the environment variable `DASHSCOPE_API_KEY`. Please refer to [First API Call to Qwen](https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen) documentation.
+5. **Run Project**      
 ```bash
 streamlit run file_center.py   
 ```
 
-5. **Access Application**
+6. **Access Application**
 Open browser and visit `http://localhost:8501`
 
 ## 📸 Feature Showcase
