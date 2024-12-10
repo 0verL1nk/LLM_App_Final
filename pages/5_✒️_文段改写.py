@@ -2,11 +2,11 @@ import streamlit as st
 
 from utils import is_token_expired, process_multy_optimization
 
-st.set_page_config(page_title="文段优化", page_icon="✒️", layout="wide")
+st.set_page_config(page_title="文段改写", page_icon="✒️", layout="wide")
 
 def main():
 
-    st.title("✒️ 文段优化")
+    st.title("✒️ 文段改写")
     
     # 创建两列布局
     col1, col2 = st.columns([2, 1])
