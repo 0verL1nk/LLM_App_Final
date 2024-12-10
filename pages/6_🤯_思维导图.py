@@ -30,11 +30,12 @@ def create_mindmap(data):
             series_name="",
             data=[data],
             orient="LR",
-            initial_tree_depth=-1,
+            initial_tree_depth=3,
             layout="orthogonal",
             pos_left="3%",      # 设置左边距
             # pos_right="15%",    # 设置右边距
             width="65%",        # 控制图表宽度
+            height="86%",    # 控制图表高度
             edge_fork_position="10%",  # 让分叉点靠近父节点
             symbol_size=7,      # 节点大小
             label_opts=opts.LabelOpts(
@@ -44,6 +45,7 @@ def create_mindmap(data):
                 font_size=14,
                 padding=[0, 0, 0, -20],
             ),
+            
         )
         .set_global_opts(
             title_opts=opts.TitleOpts(title="文献思维导图"),

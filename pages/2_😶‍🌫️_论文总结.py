@@ -5,7 +5,21 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from utils import extract_files, is_token_expired
 
-system_prompt = """你是一个文书助手。你的客户会交给你一篇文章，你需要用尽可能简洁的语言，总结这篇文章的内容。不允许使用 markdown 记号。"""
+system_prompt = """你是一个专业的文献分析助手。请你对给定的文章进行全面而简洁的总结，需要包含以下要点：
+
+1. 核心观点：用1-2句话概括文章的主要论点或发现
+2. 研究方法：简述作者采用的研究方法或分析框架
+3. 关键结论：列出2-3个最重要的研究结论
+4. 创新点：指出文章的创新之处或独特贡献
+
+要求：
+- 使用清晰、准确的语言
+- 保持客观中立的语气
+- 突出文章的实质性内容
+- 总结篇幅控制在300-500字之间
+- 避免使用过于专业的术语
+
+请按照上述结构输出内容，确保内容既专业又易于理解。"""
 
 
 st.title('😶‍🌫️论文总结')
@@ -34,7 +48,7 @@ def main():
             {"document_content": document_content}
         )
         st.markdown("### 总结如下：")
-        st.text(summary)
+        st.write(summary)
 
 
 if (not st.session_state['token']) or is_token_expired(st.session_state['token']):

@@ -52,7 +52,8 @@ def init_database(db_name: str):
             CREATE TABLE IF NOT EXISTS users (
                 uuid TEXT PRIMARY KEY,
                 username TEXT NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                api_key TEXT DEFAULT NULL
             )
             """)
     conn.commit()
@@ -86,7 +87,7 @@ def save_token(user_id: str) -> str:
 
 # 若成功,返回true,uuid,'',依次为result,token,error
 def login(username: str, password: str, db_name='./database.sqlite') -> \
-        (bool, str, str):
+        Tuple[bool, str, str]:
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     # 校验用户名是否存在
@@ -100,7 +101,7 @@ def login(username: str, password: str, db_name='./database.sqlite') -> \
     # 若成功,返回true,uuid,'',依次为result,token,error
 
 
-def register(username: str, password: str, db_name='./database.sqlite') -> (bool, str, str):
+def register(username: str, password: str, db_name='./database.sqlite') -> Tuple[bool, str, str]:
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     if cursor.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone():
@@ -251,8 +252,10 @@ def extract_files(file_path: str):
     file_type = file_path.split('.')[-1]
     if file_type in ['doc', 'docx', 'pdf', 'txt']:
         try:
-            text = textract.process(file_path)
-            return {'result': 1, 'text': text.decode('utf-8')}
+            text = textract.process(file_path).decode('utf-8')
+            # 替换'{'和'}'防止解析为变量
+            safe_text=text.replace("{", "{{").replace("}", "}}")
+            return {'result': 1, 'text': safe_text}
         except Exception as e:
             print(e)
             return {'result': -1, 'text': e}
@@ -275,24 +278,41 @@ def optimize_text(text: str):
             model_name="qwen-max",
             streaming=True
         )
-    prompt_template = ChatPromptTemplate.from_messages([('system',system_prompt),('user','用户输入:'+text)])
+    prompt_template = ChatPromptTemplate.from_messages([
+        ('system',system_prompt),
+        ('user','用户输入:'+text)
+    ])
     chain = prompt_template | llm
     return chain.stream({'text':text})
 
 def generate_mindmap_data(text: str)->dict:
     """生成思维导图数据"""
-    system_prompt = """你是一个专业的文献分析助手。请分析给定的文献内容，生成一个详细的思维导图结构。
+    system_prompt = """你是一个专业的文献分析专家。请分析给定的文献内容，生成一个结构清晰的思维导图。
 
-    要求：
-    1. 提取文档的核心主题作为根节点
-    2. 分析文档的主要章节作为一级节点
-    3. 对每个章节的关键内容进行提取作为子节点
-    4. 确保层级结构清晰，逻辑合理
-    5. 使用精炼的语言概括每个节点的内容
-    6. 节点层级不超过3层
+    分析要求：
+    1. 主题提取
+       - 准确识别文档的核心主题作为根节点
+       - 确保主题概括准确且简洁
+    
+    2. 结构设计
+       - 第一层：识别文档的主要章节或核心概念（3-5个）
+       - 第二层：提取每个主要章节下的关键要点（2-4个）
+       - 第三层：补充具体的细节和示例（如果必要）
+       - 最多不超过4层结构
+    
+    3. 内容处理
+       - 使用简洁的关键词或短语
+       - 每个节点内容控制在15字以内
+       - 保持逻辑连贯性和层次关系
+       - 确保专业术语的准确性
+    
+    4. 特殊注意
+       - 研究类文献：突出研究背景、方法、结果、结论等关键环节
+       - 综述类文献：强调研究现状、问题、趋势等主要方面
+       - 技术类文献：注重技术原理、应用场景、优缺点等要素
 
     输出格式要求：
-    必须是JSON格式，不要有多余字符,不要加```json```,格式如下：
+    必须是严格的JSON格式，不要有任何额外字符，结构如下：
     {{
         "name": "根节点名称",
         "children": [
@@ -600,3 +620,26 @@ def reduce_similarity(text: str,temperature: float,model_name: str,optimization_
 """
     response = llm.invoke(prompt,temperature=temperature)
     return response.content
+
+def save_api_key(uuid: str, api_key: str, db_name='./database.sqlite'):
+    """保存用户的 API key"""
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    # 更新用户的 API key
+    cursor.execute("""
+        UPDATE users SET api_key = ? WHERE uuid = ?
+    """, (api_key, uuid))
+    
+    conn.commit()
+    conn.close()
+
+def get_api_key(uuid: str, db_name='./database.sqlite') -> str:
+    """获取用户的 API key"""
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT api_key FROM users WHERE uuid = ?", (uuid,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result and result[0] else ''

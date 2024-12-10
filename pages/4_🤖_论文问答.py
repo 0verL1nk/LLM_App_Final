@@ -16,15 +16,7 @@ from utils import is_token_expired, extract_files
 st.set_page_config(page_title="论文问答", page_icon="🤖")
 st.title('🤖论文问答')
 
-# init
-if 'files' not in st.session_state:
-    st.session_state.files = []
 
-if 'current_doc' not in st.session_state:
-    st.session_state.current_doc = {}
-
-if 'vectorstore' not in st.session_state:
-    st.session_state.vectorstore = None
 
 
 
@@ -203,6 +195,18 @@ def main():
                 )
                 st.markdown(response["output"])
                 st.session_state.steps[str(len(msgs.messages) - 1)] = response["intermediate_steps"]
+
+
+# init
+if 'files' not in st.session_state:
+    st.session_state.files = []
+
+if 'current_doc' not in st.session_state:
+    st.session_state.current_doc = {}
+
+if 'vectorstore' not in st.session_state:
+    st.session_state.vectorstore = None
+
 
 if (not st.session_state['token']) or is_token_expired(st.session_state['token']):
     st.error('还没登录哦')

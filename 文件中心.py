@@ -9,7 +9,7 @@ from streamlit_extras.row import row
 from utils import LoggerManager, init_database, \
     save_file_to_database, check_file_exists, \
     get_uid_by_md5, is_token_expired, login, register, \
-    get_uuid_by_token, get_user_files
+    get_uuid_by_token, get_user_files, save_api_key, get_api_key
 
 
 # 计算文件 MD5
@@ -184,4 +184,29 @@ if (not st.session_state['token']) or is_token_expired(st.session_state['token']
 else:
     st.title('文档阅读助手')
     st.session_state['uuid'] = get_uuid_by_token(st.session_state['token'])
+    
+    # 添加侧边栏 API key 设置
+    with st.sidebar:
+        st.header("设置")
+        # 获取已保存的 API key
+        saved_api_key = get_api_key(st.session_state['uuid'])
+        st.session_state['api_key'] = st.text_input(
+            "API Key:",
+            value=saved_api_key,
+            type="password",
+            help="请输入您的 API key"
+        )
+        
+        # 如果 API key 发生变化,保存到数据库
+        if st.session_state['api_key'] != saved_api_key:
+            save_api_key(st.session_state['uuid'], st.session_state['api_key'])
+            st.toast("✅ API key 已更新!")
+        # 添加退出登录按钮
+        if st.button("退出登录", type="primary"):
+            # 清除session状态
+            st.session_state['token'] = ''
+            st.session_state['uuid'] = ''
+            st.session_state['files'] = []
+            st.toast("已退出登录")
+            st.rerun()
     main()
