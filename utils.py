@@ -43,6 +43,7 @@ def init_database(db_name: str):
             uid TEXT PRIMARY KEY,
             file_path TEXT NOT NULL,
             file_extraction TEXT,
+            file_summary TEXT,
             file_mindmap TEXT
         )
         """)
@@ -252,6 +253,8 @@ def extract_files(file_path: str):
         return {'result': -1, 'text': 'Unexpect file type!'}
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatTongyi
+from langchain_core.output_parsers import StrOutputParser
+
 def optimize_text(text: str):
     system_prompt = """你是一个专业的论文优化助手。你的任务是:
         1. 优化用户输入的文本，使其表达更加流畅、逻辑更加清晰
@@ -394,6 +397,29 @@ def text_extraction(file_path: str):
 
     # 这边返回的就是json对象了
     return True, json.loads(completion.choices[0].message.content)
+
+def file_summary(file_path: str):
+    res = extract_files(file_path)
+    if res['result'] == 1:
+        content = res['text']
+    else:
+        return False, ''
+ 
+    system_prompt = """你是一个文书助手。你的客户会交给你一篇文章，你需要用尽可能简洁的语言，总结这篇文章的内容。不得使用 markdown 记号。"""
+
+    llm = ChatTongyi(model_name="qwen-max", streaming=True)
+    
+    prompt = ChatPromptTemplate.from_messages(
+            [("system", system_prompt),
+             ("user", content)
+            ])
+    chain = prompt | llm | StrOutputParser()
+    summary = chain.invoke({})
+    st.markdown("### 总结如下：")
+    st.text(summary)
+    return True
+    
+
 
 def delete_content_by_uid(uid: str, content_type: str, db_name='./database.sqlite'):
     """删除指定记录的特定内容类型
