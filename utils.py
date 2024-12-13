@@ -45,7 +45,8 @@ def init_database(db_name: str):
             uid TEXT PRIMARY KEY,
             file_path TEXT NOT NULL,
             file_extraction TEXT,
-            file_mindmap TEXT
+            file_mindmap TEXT,
+            file_summary TEXT
         )
         """)
     cursor.execute("""
@@ -490,6 +491,34 @@ def detect_language(text: str) -> str:
     else:
         return 'other'
 
+def translate_text(text: str, temperature: float, model_name: str, optimization_history: list) -> str:
+    """智能翻译的具体实现"""
+    llm = ChatTongyi(
+        model_name=model_name,
+        streaming=True
+    )
+    
+    # 检测源语言
+    source_lang = detect_language(text)
+    target_lang = 'en' if source_lang == 'zh' else 'zh'
+    
+    prompt = f"""请将以下文本从{'中文' if source_lang == 'zh' else '英文'}翻译成{'英文' if target_lang == 'en' else '中文'}。
+优化历史:
+{optimization_history}
+原文：{text}
+
+要求：
+1. 保持专业术语的准确性
+2. 确保译文流畅自然
+3. 保持原文的语气和风格
+4. 适当本地化表达方式
+5. 注意上下文连贯性
+
+注意!!警告!!提示!!返回要求:只返回翻译后的文本,不要有多余解释,不要有多余的话.
+"""
+    response = llm.invoke(prompt, temperature=temperature)
+    return response.content
+
 def process_multy_optimization(
     text: str,
     opt_type: str,
@@ -507,7 +536,8 @@ def process_multy_optimization(
     step_functions = {
         "表达优化": (optimize_expression, "分析：需要改善文本的基础表达方式，使其更加流畅自然。"),
         "专业优化": (professionalize_text, "分析：需要优化专业术语，提升文本的学术性。"),
-        "降重处理": (reduce_similarity, "分析：需要通过同义词替换和句式重组降低重复率。")
+        "降重处理": (reduce_similarity, "分析：需要通过同义词替换和句式重组降低重复率。"),
+        "智能翻译": (translate_text, "分析：需要进行中英互译转换。")
     }
     
     optimization_history = []

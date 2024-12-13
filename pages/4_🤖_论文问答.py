@@ -1,10 +1,10 @@
 import streamlit as st
 from langchain.agents import ConversationalChatAgent, AgentExecutor
-from langchain.embeddings import DashScopeEmbeddings
-from langchain.memory import ConversationBufferMemory
+from langchain_community.embeddings import DashScopeEmbeddings
+from langchain_core.memory import ConversationBufferMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools import Tool
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_community.callbacks import StreamlitCallbackHandler
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_community.chat_models import ChatTongyi
