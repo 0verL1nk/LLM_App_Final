@@ -426,7 +426,7 @@ def text_extraction(file_path: str):
     # 这边返回的就是json对象了
     return True, json.loads(completion.choices[0].message.content)
 
-def file_summary(file_path: str):
+def file_summary(file_path: str)->Tuple[bool,str]:
     res = extract_files(file_path)
     if res['result'] == 1:
         content = res['text']
@@ -445,7 +445,7 @@ def file_summary(file_path: str):
     summary = chain.invoke({})
     st.markdown("### 总结如下：")
     st.text(summary)
-    return True
+    return True, summary
     
 
 

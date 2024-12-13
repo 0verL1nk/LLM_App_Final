@@ -29,17 +29,18 @@ def main():
                 st.write('## ' + item['file_name'] + '\n')
                 content = get_content_by_uid(item['uid'], 'file_summary')
                 if content is not None:
-                    file_summary(content) 
+                    st.markdown("### 总结如下：")
+                    st.write(content) 
                 else:
                     with st.spinner('解析文档中 ...'):
-                        result = file_summary(item['file_path'])
+                        result, summary = file_summary(item['file_path'])
                         if not result:
                             st.write('### 大模型貌似开小差了～重新试试吧！\n')
                         else:
                             # 保存到数据库
                             save_content_to_database(uid=st.session_state['files'][index]['uid'],
                                                  file_path=st.session_state['files'][index]['file_path'],
-                                                 content=result,
+                                                 content=summary,
                                                  content_type='file_summary')
 
 
