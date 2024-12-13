@@ -1,16 +1,18 @@
+import datetime
 import hashlib
 import json
-import random
-import sqlite3
 import logging
 import os
+import random
+import sqlite3
 import string
 import uuid
-import datetime
+from typing import List, Tuple
+
 import redis
+import streamlit as st
 import textract
 from openai import OpenAI
-import streamlit as st
 
 # init client
 client = OpenAI(
@@ -51,7 +53,8 @@ def init_database(db_name: str):
             CREATE TABLE IF NOT EXISTS users (
                 uuid TEXT PRIMARY KEY,
                 username TEXT NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                api_key TEXT DEFAULT NULL
             )
             """)
     conn.commit()
@@ -85,7 +88,7 @@ def save_token(user_id: str) -> str:
 
 # 若成功,返回true,uuid,'',依次为result,token,error
 def login(username: str, password: str, db_name='./database.sqlite') -> \
-        (bool, str, str):
+        Tuple[bool, str, str]:
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     # 校验用户名是否存在
@@ -93,13 +96,13 @@ def login(username: str, password: str, db_name='./database.sqlite') -> \
     user = cursor.fetchone()
     conn.close()
     if (not user) or hashlib.sha256(password.encode('utf-8')).hexdigest() != user[2]:
-        return False, '', '账号或密码错误'
+        return False, '', '账号密码错误'
     return True, save_token(user[0]), ''
 
     # 若成功,返回true,uuid,'',依次为result,token,error
 
 
-def register(username: str, password: str, db_name='./database.sqlite') -> (bool, str, str):
+def register(username: str, password: str, db_name='./database.sqlite') -> Tuple[bool, str, str]:
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     if cursor.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone():
@@ -197,6 +200,12 @@ def get_content_by_uid(uid: str,
 
     Returns:
         str: 文件内容，若未找到则返回 None
+        :param uid:
+        :param content_type:
+        :param table_name:
+        :param db_name:
+        :param table_name:
+        :param content_type:
     """
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
@@ -244,8 +253,10 @@ def extract_files(file_path: str):
     file_type = file_path.split('.')[-1]
     if file_type in ['doc', 'docx', 'pdf', 'txt']:
         try:
-            text = textract.process(file_path)
-            return {'result': 1, 'text': text.decode('utf-8')}
+            text = textract.process(file_path).decode('utf-8')
+            # 替换'{'和'}'防止解析为变量
+            safe_text=text.replace("{", "{{").replace("}", "}}")
+            return {'result': 1, 'text': safe_text}
         except Exception as e:
             print(e)
             return {'result': -1, 'text': e}
@@ -261,7 +272,7 @@ def optimize_text(text: str):
         2. 替换同义词和调整句式，以降低查重率
         3. 保证原文的核心意思不变
         4. 保证论文专业性,包括用词的专业性以及句式的专业性
-        5. 使文本更加符合其语言的语法规范,更像其母语者写出来的文章
+        5. 使文本更加符合其语言的语法规范,更像母语者写出来的文章
         请按以下格式输出：
         #### 优化后的文本
         ...
@@ -270,24 +281,41 @@ def optimize_text(text: str):
             model_name="qwen-max",
             streaming=True
         )
-    prompt_template = ChatPromptTemplate.from_messages([('system',system_prompt),('user','用户输入:'+text)])
+    prompt_template = ChatPromptTemplate.from_messages([
+        ('system',system_prompt),
+        ('user','用户输入:'+text)
+    ])
     chain = prompt_template | llm
     return chain.stream({'text':text})
 
-def generate_mindmap_data(text: str):
+def generate_mindmap_data(text: str)->dict:
     """生成思维导图数据"""
-    system_prompt = """你是一个专业的文献分析助手。请分析给定的文献内容，生成一个详细的思维导图结构。
+    system_prompt = """你是一个专业的文献分析专家。请分析给定的文献内容，生成一个结构清晰的思维导图。
 
-    要求：
-    1. 提取文档的核心主题作为根节点
-    2. 分析文档的主要章节作为一级节点
-    3. 对每个章节的关键内容进行提取作为子节点
-    4. 确保层级结构清晰，逻辑合理
-    5. 使用精炼的语言概括每个节点的内容
-    6. 节点层级不超过3层
+    分析要求：
+    1. 主题提取
+       - 准确识别文档的核心主题作为根节点
+       - 确保主题概括准确且简洁
+    
+    2. 结构设计
+       - 第一层：识别文档的主要章节或核心概念（3-5个）
+       - 第二层：提取每个主要章节下的关键要点（2-4个）
+       - 第三层：补充具体的细节和示例（如果必要）
+       - 最多不超过4层结构
+    
+    3. 内容处理
+       - 使用简洁的关键词或短语
+       - 每个节点内容控制在15字以内
+       - 保持逻辑连贯性和层次关系
+       - 确保专业术语的准确性
+    
+    4. 特殊注意
+       - 研究类文献：突出研究背景、方法、结果、结论等关键环节
+       - 综述类文献：强调研究现状、问题、趋势等主要方面
+       - 技术类文献：注重技术原理、应用场景、优缺点等要素
 
     输出格式要求：
-    必须是JSON格式，不要有多余字符,不要加```json```,格式如下：
+    必须是严格的JSON格式，不要有任何额外字符，结构如下：
     {{
         "name": "根节点名称",
         "children": [
@@ -305,8 +333,7 @@ def generate_mindmap_data(text: str):
     """
     
     llm = ChatTongyi(
-        model_name="qwen-max",
-        response_format={"type": "json_object"}  # 强制返回JSON格式
+        model_name="qwen-max"
     )
     prompt_template = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -318,10 +345,11 @@ def generate_mindmap_data(text: str):
     print(result.content)
     try:
         # 确保返回的是有效的JSON字符串
-        mindmap_data = json.loads(result.content)
-        return mindmap_data  # 返回格式化的JSON对象
+        json_str = extract_json_string(result.content)
+        mindmap_data = json.loads(json_str)
+        return mindmap_data
     except json.JSONDecodeError:
-        # 如果解析失败，返回一个基本的结构
+        # 如果��析失败，返回一个基本的结构
         return {
             "name": "解析失败",
             "children": [
@@ -334,7 +362,7 @@ def generate_mindmap_data(text: str):
 
 
 class LoggerManager:
-    def __init__(self, log_dir="logs", log_level=logging.INFO):
+    def __init__(self, log_level=logging.INFO):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.log_dir = os.path.join(base_dir, "logs")
         self.log_level = log_level
@@ -375,11 +403,11 @@ def text_extraction(file_path: str):
     messages = [
         {
             "role": "system",
-            "content": file_content,  # <-- 这里，我们将抽取后的文件内容（注意是文件内容，而不是文件 ID）放置在请求中
+            "content": file_content,  # <-- 这里，我们将抽取后的文件内容（注意是文件内容，不是文件 ID）放在请求中
         },
         {"role": "user",
          "content": '''
-         阅读论文,划出**关键语句**,并按照“研究背景，研究目的，研究方法，研究结果，未来展望”五个标签分类.
+         阅读论文,划出**关键语句**,并按照"研究背景，研究目的，研究方法，研究结果，未来展望"五个标签分类.
          label为中文,text为原文,text可能有多句,并以json格式输出.
          注意!!text内是论文原文!!.
          以下为示例:
@@ -449,3 +477,195 @@ def delete_content_by_uid(uid: str, content_type: str, db_name='./database.sqlit
     except Exception as e:
         print(f"删除内容时出错: {e}")
         return False
+
+def extract_json_string(text: str) -> str:
+    """
+    从字符串中提取有效的JSON部分
+    Args:
+        text: 包含JSON的字符串
+    Returns:
+        str: 提取出的JSON字符串
+    """
+    start = text.find('{')
+    end = text.rfind('}')
+    if start != -1 and end != -1:
+        return text[start:end + 1]
+    return text
+
+
+def detect_language(text: str) -> str:
+    """
+    检测文本语言类型
+    返回 'zh' 表示中文，'en' 表示英文，'other' 表示其他语言
+    """
+    # 统计中文字符数量
+    chinese_chars = len([c for c in text if '\u4e00' <= c <= '\u9fff'])
+    # 统计英文字符数量
+    english_chars = len([c for c in text if c.isascii() and c.isalpha()])
+    
+    # 计算中英文字符占比
+    total_chars = len(text.strip())
+    chinese_ratio = chinese_chars / total_chars if total_chars > 0 else 0
+    english_ratio = english_chars / total_chars if total_chars > 0 else 0
+    
+    # 判断语言类型
+    if chinese_ratio > 0.3:  # 如果中文字符占比超过30%，认为是中文文本
+        return 'zh'
+    elif english_ratio > 0.5:  # 如果英文字符占比超过50%，认为是英文文本
+        return 'en'
+    else:
+        return 'other'
+
+def process_multy_optimization(
+    text: str,
+    opt_type: str,
+    temperature: float,
+    optimization_steps: list,
+    keywords: list,
+    special_reqs: str
+) -> List[Tuple[str, str]]:
+    """
+    根据选择的优化步骤进行处理，并记录优化历史
+    """
+    current_text = text
+    model_name = "qwen-max" if detect_language(text) == 'zh' else "llama3.1-405b-instruct"
+    
+    step_functions = {
+        "表达优化": (optimize_expression, "分析：需要改善文本的基础表达方式，使其更加流畅自然。"),
+        "专业优化": (professionalize_text, "分析：需要优化专业术语，提升文本的学术性。"),
+        "降重处理": (reduce_similarity, "分析：需要通过同义词替换和句式重组降低重复率。")
+    }
+    
+    optimization_history = []
+    
+    for step in optimization_steps:
+        try:
+            func, thought = step_functions[step]
+            
+            # 添加优化参数信息到思考过程
+            thought += f"\n优化类型：{opt_type}"
+            thought += f"\n调整程度：{temperature}"
+            if keywords:
+                thought += f"\n保留关键词：{', '.join(keywords)}"
+            if special_reqs:
+                thought += f"\n特殊要求：{special_reqs}"
+            
+            # 记录当前步骤的优化历史
+            history = {
+                "step": step,
+                "before": current_text,
+                "parameters": {
+                    "optimization_type": opt_type,
+                    "temperature": temperature,
+                    "keywords": keywords,
+                    "special_requirements": special_reqs
+                }
+            }
+            
+            # 执行优化
+            current_text = func(current_text, temperature, model_name,optimization_history)
+            
+            # 更新历史记录
+            history["after"] = current_text
+            optimization_history.append(history)
+            
+            yield thought, current_text
+            
+        except Exception as e:
+            print(f"Error in step {step}: {str(e)}")
+            yield f"优化过程中出现错误: {str(e)}", current_text
+
+def optimize_expression(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
+    """改善表达的具体实现"""
+    llm = ChatTongyi(
+        model_name=model_name,
+        streaming=True
+    )
+    
+    prompt = f"""请改善以下文本的表达方式，使其更加流畅自然,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其他语言**
+优化历史:
+{optimization_history}
+原文：{text}
+
+要求：
+1. 必须使用与原文完全相同的语言
+2. 调整句式使表达更流畅
+3. 优化用词使其更自然
+4. 保持原有意思不变
+5. 确保逻辑连贯性
+
+注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
+"""
+    response = llm.invoke(prompt,temperature=temperature)
+    return response.content
+
+def professionalize_text(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
+    """专业化处理的具体实现"""
+    llm = ChatTongyi(
+        model_name=model_name,
+        streaming=True,
+    )
+    
+    prompt = f"""请对以下文本进行专业化处理，优化适当的专业术语和学术表达,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其它语言**
+优化历史:
+{optimization_history}
+原文：{text}
+
+要求：
+1. 必须使用与原文完全相同的语言
+2. 优化合适的专业术语
+3. 使用更学术的表达方式
+4. 保持准确性和可读性
+5. 确保专业性和权威性
+
+注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
+"""
+    response = llm.invoke(prompt,temperature=temperature)
+    return response.content
+
+def reduce_similarity(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
+    """降重处理的具体实现"""
+    llm = ChatTongyi(
+        model_name=model_name,
+        streaming=True
+    )
+    
+    prompt = f"""请对以下原文的内容进行降重处理，通过同义词替换和句式重组等方式降低重复率,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其它语言**
+优化历史:
+{optimization_history}
+**原文**：{text}
+--原文结束--
+要求：
+1. 必须使用与原文完全相同的语言
+2. 使用同义词替换
+3. 调整句式结构
+4. 保持原意不变
+5. 确保文本通顺
+
+注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
+"""
+    response = llm.invoke(prompt,temperature=temperature)
+    return response.content
+
+def save_api_key(uuid: str, api_key: str, db_name='./database.sqlite'):
+    """保存用户的 API key"""
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    # 更新用户的 API key
+    cursor.execute("""
+        UPDATE users SET api_key = ? WHERE uuid = ?
+    """, (api_key, uuid))
+    
+    conn.commit()
+    conn.close()
+
+def get_api_key(uuid: str, db_name='./database.sqlite') -> str:
+    """获取用户的 API key"""
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT api_key FROM users WHERE uuid = ?", (uuid,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result and result[0] else ''

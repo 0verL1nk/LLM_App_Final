@@ -4,3 +4,7 @@ uploads/
 .idea/
 __pycache__/
 test/
+.DS_Store
+.vscode/
+.env/
+.idea/

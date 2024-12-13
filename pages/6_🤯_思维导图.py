@@ -26,18 +26,24 @@ def create_mindmap(data):
     tree = (
         Tree()
         .add(
-            pos_left='0%',
+            
             series_name="",
-            width='100%',
             data=[data],
             orient="LR",
             initial_tree_depth=3,
             layout="orthogonal",
+            pos_left="3%",      # 设置左边距
+            # pos_right="15%",    # 设置右边距
+            width="65%",        # 控制图表宽度
+            height="86%",    # 控制图表高度
+            edge_fork_position="10%",  # 让分叉点靠近父节点
+            symbol_size=7,      # 节点大小
             label_opts=opts.LabelOpts(
                 position="right",
                 horizontal_align="left",
                 vertical_align="middle",
-                font_size=14
+                font_size=14,
+                padding=[0, 0, 0, -20],
             ),
             
         )
@@ -45,10 +51,11 @@ def create_mindmap(data):
             title_opts=opts.TitleOpts(title="文献思维导图"),
             tooltip_opts=opts.TooltipOpts(trigger="item", trigger_on="mousemove"),
             toolbox_opts=opts.ToolboxOpts(
-                is_show=False,
+                is_show=True,
+                pos_left="right",
                 feature={
                     "zoom": {"is_show": True},
-                    "restore": {"is_show": False},
+                    "restore": {"is_show": True},
                 }
             )
         )
@@ -61,13 +68,13 @@ def gen_mindmap(content, document):
         save_content_to_database(
             uid=document['uid'],
             file_path=document['file_path'],
-            content=mindmap_data,
+            content=json.dumps(mindmap_data),
             content_type='file_mindmap'
         )
-        tree = create_mindmap(json.loads(mindmap_data))
+        tree = create_mindmap(mindmap_data)
         st_pyecharts(
             tree,
-            height="800px",
+            height="900px",
             width="100%",
             key=f"mindmap_{document['uid']}"
         )
