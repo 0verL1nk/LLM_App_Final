@@ -45,13 +45,8 @@ def init_database(db_name: str):
             uid TEXT PRIMARY KEY,
             file_path TEXT NOT NULL,
             file_extraction TEXT,
-<<<<<<< HEAD
             file_mindmap TEXT,
             file_summary TEXT
-=======
-            file_summary TEXT,
-            file_mindmap TEXT
->>>>>>> d559e343940852b8c0d45f9f4d23389207afa2a2
         )
         """)
     cursor.execute("""
