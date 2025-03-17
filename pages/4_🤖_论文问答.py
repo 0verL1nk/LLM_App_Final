@@ -1,7 +1,7 @@
 import streamlit as st
 from langchain.agents import ConversationalChatAgent, AgentExecutor
 from langchain_community.embeddings import DashScopeEmbeddings
-from langchain_core.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools import Tool
 from langchain_community.vectorstores import FAISS

@@ -6,7 +6,7 @@ import uuid
 import pandas as pd
 import streamlit as st
 from streamlit_extras.row import row
-from utils import LoggerManager, init_database, \
+from utils.utils import LoggerManager, init_database, \
     save_file_to_database, check_file_exists, \
     get_uid_by_md5, is_token_expired, login, register, \
     get_uuid_by_token, get_user_files, save_api_key, get_api_key

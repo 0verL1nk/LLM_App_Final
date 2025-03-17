@@ -16,7 +16,7 @@ from openai import OpenAI
 
 # init client
 client = OpenAI(
-    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    api_key="sk-xxxx" if not os.getenv('DASHSCOPE_API_KEY') else os.getenv('DASHSCOPE_API_KEY'),
     base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'
 )
 model_name = 'qwen-max'
