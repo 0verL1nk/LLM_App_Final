@@ -19,8 +19,21 @@
 ## 🚀 快速开始
 
 ### 环境要求
-- Python 3.8+
-- pip < 24.1 (`python -m pip install pip==24.0`)
+- Python 3.9+ (langchain 0.3.7+ 需要 Python 3.9+)
+- [uv](https://github.com/astral-sh/uv) (推荐的包管理器，速度更快)
+
+### 安装 uv
+
+```bash
+# Linux/MacOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# 或使用 pip
+pip install uv
+```
 
 ### 安装步骤
 
@@ -30,28 +43,47 @@ git clone <仓库地址>
 cd <项目目录>   
 ```
 
-2. **创建虚拟环境**      
+2. **使用 uv 安装依赖**      
 ```bash
-python -m venv venv
-# Linux/MacOS
-source venv/bin/activate
-# Windows
-venv\Scripts\activate   
+# uv 会自动创建虚拟环境并安装依赖
+# 使用 --no-install-project 只安装依赖，不安装项目本身（因为这是应用而非库）
+uv sync --no-install-project
 ```
 
-3. **安装依赖**      
+3. **激活虚拟环境（可选）**      
 ```bash
-pip install -r requirements.txt   
+# Linux/MacOS
+source .venv/bin/activate
+
+# Windows
+.venv\Scripts\activate
 ```
-4. **设置环境变量**      
-记得设置环境变量 `DASHSCOPE_API_KEY`，可以参考 [首次调用通义千问API](https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen) 的文档
-5. **运行项目**      
+
+4. **运行项目**      
 ```bash
 streamlit run 文件中心.py   
 ```
 
-6. **访问应用**
+> 💡 **提示**：项目已配置禁用 Streamlit 使用统计收集，启动时不会要求输入邮箱。
+
+5. **访问应用**
 打开浏览器访问 `http://localhost:8501`
+
+### 其他 uv 命令
+
+```bash
+# 添加新依赖
+uv add <package-name>
+
+# 移除依赖
+uv remove <package-name>
+
+# 更新所有依赖
+uv sync --upgrade
+
+# 查看依赖树
+uv tree
+```
 
 ## 📸 功能展示
 
@@ -94,8 +126,9 @@ streamlit run 文件中心.py
 
 ## 📝 注意事项
 
-- pip 版本需要小于 24.1，可以使用以下命令安装指定版本：  ```bash
-  python -m pip install pip==24.0  ```
+- 项目使用 `uv` 进行依赖管理，比传统 pip 更快更可靠
+- 如果没有安装 uv，也可以使用传统的 pip + requirements.txt 方式安装依赖
+- 记得在应用中配置您的 API Key（在侧边栏设置中）
 
 ## 🤝 贡献指南
 

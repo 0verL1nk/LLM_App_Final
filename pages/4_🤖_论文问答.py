@@ -11,10 +11,13 @@ from langchain_community.chat_models import ChatTongyi
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.runnables import RunnableConfig
 
-from utils import is_token_expired, extract_files
+from utils import is_token_expired, extract_files, show_sidebar_api_key_setting
 
 st.set_page_config(page_title="论文问答", page_icon="🤖")
 st.title('🤖论文问答')
+
+# 显示侧边栏 API Key 设置
+show_sidebar_api_key_setting()
 
 
 
@@ -46,6 +49,14 @@ def reset_chat_history(msgs):
         del st.session_state.vectorstore
 
 def main():
+    # 检查 API key 是否配置
+    from utils.utils import get_user_api_key
+    api_key = get_user_api_key()
+    if not api_key:
+        st.warning("⚠️ 请先在侧边栏设置中配置您的 API Key")
+        st.info('💡 请在左侧边栏的"设置"中配置您的 API Key 后刷新页面。')
+        return
+    
     msgs = StreamlitChatMessageHistory()
     memory = ConversationBufferMemory(
         chat_memory=msgs, return_messages=True, memory_key="chat_history", output_key="output"
@@ -89,14 +100,24 @@ def main():
             )
             chunks = text_splitter.split_text(document_result['text'])
             
-            embeddings = DashScopeEmbeddings(model='text-embedding-v1')
-            st.session_state.vectorstore = FAISS.from_texts(chunks, embeddings)
+            # 使用用户配置的 API key 创建 embeddings
+            try:
+                embeddings = DashScopeEmbeddings(
+                    model='text-embedding-v1',
+                    dashscope_api_key=api_key
+                )
+                st.session_state.vectorstore = FAISS.from_texts(chunks, embeddings)
+            except Exception as e:
+                st.error(f"创建向量存储失败: {str(e)}")
+                st.session_state.vectorstore = None
+                return
         else:
             st.error("文档加载失败：" + str(document_result['text']))
+            st.session_state.vectorstore = None
             return
     
     # 使用缓存的文档内容和向量存储
-    if 'current_doc' in st.session_state and 'vectorstore' in st.session_state:
+    if 'current_doc' in st.session_state and 'vectorstore' in st.session_state and st.session_state.vectorstore is not None:
         document_content = st.session_state.current_doc['content']
         retriever = st.session_state.vectorstore.as_retriever(search_kwargs={"k": 5})
 
@@ -165,7 +186,14 @@ def main():
         show_chat(msgs)
         if prompt := st.chat_input():
             st.chat_message("user").write(prompt)
-            llm = ChatTongyi(model_name="qwen-max", streaming=True)
+            # 使用当前用户的 API key 和模型名称
+            from utils.utils import get_user_api_key, get_user_model_name
+            api_key = get_user_api_key()
+            if not api_key:
+                st.error("请先在设置中配置您的 API Key")
+                st.stop()
+            user_model = get_user_model_name()
+            llm = ChatTongyi(model_name=user_model, streaming=True, dashscope_api_key=api_key)
             chat_agent = ConversationalChatAgent.from_llm_and_tools(
                 llm=llm,
                 tools=tools,

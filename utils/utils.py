@@ -9,19 +9,41 @@ import string
 import uuid
 from typing import List, Tuple
 
-import redis
 import streamlit as st
 import textract
 from openai import OpenAI
 
-# init client
-client = OpenAI(
-    api_key="sk-xxxx" if not os.getenv('DASHSCOPE_API_KEY') else os.getenv('DASHSCOPE_API_KEY'),
-    base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'
-)
 model_name = 'qwen-max'
-pool = redis.ConnectionPool(host='localhost', port=6379, decode_responses=True)
-rdb = redis.Redis(connection_pool=pool)
+
+
+def get_user_api_key(uuid: str = None) -> str:
+    """
+    获取指定用户的 API key（从数据库获取，确保隔离）
+    如果没有提供 uuid，尝试从 session_state 获取 uuid
+    如果没有用户 API key，返回空字符串
+    """
+    # 如果没有提供 uuid，尝试从 session_state 获取
+    if not uuid:
+        if 'uuid' not in st.session_state or not st.session_state['uuid']:
+            return ''
+        uuid = st.session_state['uuid']
+    
+    # 始终从数据库获取，确保每个用户只看到自己的 API key
+    api_key = get_api_key(uuid)
+    return api_key if api_key else ''
+
+
+def get_openai_client():
+    """
+    获取当前用户的 OpenAI client（每次调用时创建，确保使用正确的 API key）
+    """
+    api_key = get_user_api_key()
+    if not api_key:
+        raise ValueError("请先在设置中配置您的 API Key")
+    return OpenAI(
+        api_key=api_key,
+        base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'
+    )
 
 
 def init_database(db_name: str):
@@ -54,11 +76,33 @@ def init_database(db_name: str):
                 uuid TEXT PRIMARY KEY,
                 username TEXT NOT NULL,
                 password TEXT NOT NULL,
-                api_key TEXT DEFAULT NULL
+                api_key TEXT DEFAULT NULL,
+                model_name TEXT DEFAULT 'qwen-max'
             )
+            """)
+    # 为已有用户添加 model_name 字段（如果不存在）
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN model_name TEXT DEFAULT 'qwen-max'")
+    except sqlite3.OperationalError:
+        pass  # 字段已存在，忽略错误
+    cursor.execute("""
+            CREATE TABLE IF NOT EXISTS tokens (
+                token TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                expires_at INTEGER NOT NULL
+            )
+            """)
+    # 创建索引提高查询性能
+    cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_tokens_expires_at ON tokens(expires_at)
             """)
     conn.commit()
     conn.close()
+    
+    # 初始化任务状态表
+    from .task_queue import init_task_table
+    init_task_table(db_name)
 
 
 def get_user_files(uuid_value: str, db_name='./database.sqlite') -> list:
@@ -79,10 +123,27 @@ def gen_uuid() -> str:
     return str(uuid.uuid4())
 
 
-def save_token(user_id: str) -> str:
-    # ttl;1天
+def save_token(user_id: str, db_name='./database.sqlite') -> str:
+    """
+    保存 token 到数据库，有效期1天
+    """
     token = gen_random_str(32)
-    rdb.setex(token, 60 * 60 * 24, user_id)
+    current_time = int(datetime.datetime.now().timestamp())
+    expires_at = current_time + 60 * 60 * 24  # 1天后过期
+    
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    # 如果 token 已存在则更新，否则插入
+    cursor.execute("""
+        INSERT OR REPLACE INTO tokens (token, user_id, created_at, expires_at)
+        VALUES (?, ?, ?, ?)
+    """, (token, user_id, current_time, expires_at))
+    conn.commit()
+    conn.close()
+    
+    # 清理过期 token（异步清理，避免影响性能）
+    _cleanup_expired_tokens(db_name)
+    
     return token
 
 
@@ -97,7 +158,7 @@ def login(username: str, password: str, db_name='./database.sqlite') -> \
     conn.close()
     if (not user) or hashlib.sha256(password.encode('utf-8')).hexdigest() != user[2]:
         return False, '', '账号密码错误'
-    return True, save_token(user[0]), ''
+    return True, save_token(user[0], db_name), ''
 
     # 若成功,返回true,uuid,'',依次为result,token,error
 
@@ -115,23 +176,33 @@ def register(username: str, password: str, db_name='./database.sqlite') -> Tuple
            """, (uid, username, hashlib.sha256(password.encode('utf-8')).hexdigest()))
     conn.commit()
     conn.close()
-    return True, save_token(uid), ''
+    return True, save_token(uid, db_name), ''
 
 
-def is_token_expired(token):
-    # 检查 Token 是否在 Redis 中存在
-    if not rdb.exists(token):
-        return True  # 如果 Token 不存在，认为它已经过期或无效
-
-    # 获取 Token 的剩余有效时间
-    ttl = rdb.ttl(token)
-
-    if ttl == -2:
-        return True  # 如果 Token 不存在，返回过期
-    elif ttl == -1:
-        return False  # 如果没有设置过期时间，表示 token 永久有效
-    else:
-        return False  # 如果 TTL 大于 0，表示 Token 尚未过期
+def is_token_expired(token, db_name='./database.sqlite'):
+    """
+    检查 Token 是否过期
+    """
+    current_time = int(datetime.datetime.now().timestamp())
+    
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT expires_at FROM tokens WHERE token = ?
+    """, (token,))
+    result = cursor.fetchone()
+    conn.close()
+    
+    if not result:
+        return True  # Token 不存在，认为已过期
+    
+    expires_at = result[0]
+    if current_time >= expires_at:
+        # Token 已过期，删除它
+        _delete_token(token, db_name)
+        return True
+    
+    return False  # Token 未过期
 
 
 def print_contents(content):
@@ -184,8 +255,49 @@ def get_uid_by_md5(md5_value: str,
         return None
 
 
-def get_uuid_by_token(token: str) -> str:
-    return rdb.get(token)
+def get_uuid_by_token(token: str, db_name='./database.sqlite') -> str:
+    """
+    通过 token 获取用户 UUID
+    """
+    # 先检查 token 是否过期
+    if is_token_expired(token, db_name):
+        return None
+    
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT user_id FROM tokens WHERE token = ?
+    """, (token,))
+    result = cursor.fetchone()
+    conn.close()
+    
+    if result:
+        return result[0]
+    return None
+
+
+def _delete_token(token: str, db_name='./database.sqlite'):
+    """
+    删除指定的 token（内部函数）
+    """
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tokens WHERE token = ?", (token,))
+    conn.commit()
+    conn.close()
+
+
+def _cleanup_expired_tokens(db_name='./database.sqlite'):
+    """
+    清理过期的 token（内部函数）
+    定期清理可以保持数据库整洁
+    """
+    current_time = int(datetime.datetime.now().timestamp())
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tokens WHERE expires_at < ?", (current_time,))
+    conn.commit()
+    conn.close()
 
 
 def get_content_by_uid(uid: str,
@@ -277,9 +389,13 @@ def optimize_text(text: str):
         #### 优化后的文本
         ...
         """
+    # 使用当前用户的 API key 和模型名称
+    api_key = get_user_api_key()
+    user_model = get_user_model_name()
     llm = ChatTongyi(
-            model_name="qwen-max",
-            streaming=True
+            model_name=user_model,
+            streaming=True,
+            dashscope_api_key=api_key
         )
     prompt_template = ChatPromptTemplate.from_messages([
         ('system',system_prompt),
@@ -332,33 +448,44 @@ def generate_mindmap_data(text: str)->dict:
     }}
     """
     
-    llm = ChatTongyi(
-        model_name="qwen-max"
-    )
-    prompt_template = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("user", "以下是需要分析的文献内容：\n {text}")
-    ])
+    # 使用当前用户的 API key 和模型名称
+    api_key = get_user_api_key()
+    if not api_key:
+        raise ValueError("请先在设置中配置您的 API Key")
     
-    chain = prompt_template | llm
-    result = chain.invoke({"text": text})
-    print(result.content)
+    user_model = get_user_model_name()
+    
     try:
-        # 确保返回的是有效的JSON字符串
-        json_str = extract_json_string(result.content)
-        mindmap_data = json.loads(json_str)
-        return mindmap_data
-    except json.JSONDecodeError:
-        # 如果��析失败，返回一个基本的结构
-        return {
-            "name": "解析失败",
-            "children": [
-                {
-                    "name": "文档解析出错",
-                    "children": []
-                }
-            ]
-        }
+        llm = ChatTongyi(
+            model_name=user_model,
+            dashscope_api_key=api_key
+        )
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("user", "以下是需要分析的文献内容：\n {text}")
+        ])
+        
+        chain = prompt_template | llm
+        result = chain.invoke({"text": text})
+        print(result.content)
+        try:
+            # 确保返回的是有效的JSON字符串
+            json_str = extract_json_string(result.content)
+            mindmap_data = json.loads(json_str)
+            return mindmap_data
+        except json.JSONDecodeError:
+            # 如果解析失败，返回一个基本的结构
+            return {
+                "name": "解析失败",
+                "children": [
+                    {
+                        "name": "文档解析出错",
+                        "children": []
+                    }
+                ]
+            }
+    except Exception as e:
+        raise ValueError(f"生成思维导图时出错: {str(e)}")
 
 
 class LoggerManager:
@@ -416,15 +543,27 @@ def text_extraction(file_path: str):
          },
     ]
 
-    completion = client.chat.completions.create(
-        model=model_name,
-        messages=messages,
-        temperature=0.1,
-        response_format={"type": "json_object"},
-    )
+    # 使用当前用户的 API key 创建 client
+    try:
+        client = get_openai_client()
+    except ValueError as e:
+        return False, str(e)
+    
+    # 获取用户选择的模型名称
+    user_model = get_user_model_name()
+    
+    try:
+        completion = client.chat.completions.create(
+            model=user_model,
+            messages=messages,
+            temperature=0.1,
+            response_format={"type": "json_object"},
+        )
 
-    # 这边返回的就是json对象了
-    return True, json.loads(completion.choices[0].message.content)
+        # 这边返回的就是json对象了
+        return True, json.loads(completion.choices[0].message.content)
+    except Exception as e:
+        return False, str(e)
 
 def file_summary(file_path: str)->Tuple[bool,str]:
     res = extract_files(file_path)
@@ -435,17 +574,27 @@ def file_summary(file_path: str)->Tuple[bool,str]:
  
     system_prompt = """你是一个文书助手。你的客户会交给你一篇文章，你需要用尽可能简洁的语言，总结这篇文章的内容。不得使用 markdown 记号。"""
 
-    llm = ChatTongyi(model_name="qwen-max", streaming=True)
+    # 使用当前用户的 API key 和模型名称
+    api_key = get_user_api_key()
+    if not api_key:
+        return False, "请先在设置中配置您的 API Key"
     
-    prompt = ChatPromptTemplate.from_messages(
-            [("system", system_prompt),
-             ("user", content)
-            ])
-    chain = prompt | llm | StrOutputParser()
-    summary = chain.invoke({})
-    st.markdown("### 总结如下：")
-    st.text(summary)
-    return True, summary
+    user_model = get_user_model_name()
+    
+    try:
+        llm = ChatTongyi(model_name=user_model, streaming=True, dashscope_api_key=api_key)
+        
+        prompt = ChatPromptTemplate.from_messages(
+                [("system", system_prompt),
+                 ("user", content)
+                ])
+        chain = prompt | llm | StrOutputParser()
+        summary = chain.invoke({})
+        st.markdown("### 总结如下：")
+        st.text(summary)
+        return True, summary
+    except Exception as e:
+        return False, str(e)
     
 
 
@@ -518,9 +667,14 @@ def detect_language(text: str) -> str:
 
 def translate_text(text: str, temperature: float, model_name: str, optimization_history: list) -> str:
     """智能翻译的具体实现"""
+    # 使用当前用户的 API key
+    api_key = get_user_api_key()
+    if not api_key:
+        raise ValueError("请先在设置中配置您的 API Key")
     llm = ChatTongyi(
         model_name=model_name,
-        streaming=True
+        streaming=True,
+        dashscope_api_key=api_key
     )
     
     # 检测源语言
@@ -556,7 +710,9 @@ def process_multy_optimization(
     根据选择的优化步骤进行处理，并记录优化历史
     """
     current_text = text
-    model_name = "qwen-max" if detect_language(text) == 'zh' else "llama3.1-405b-instruct"
+    # 获取用户选择的模型，中文用用户选择的模型，英文使用指定的英文模型
+    user_model = get_user_model_name()
+    model_name = user_model if detect_language(text) == 'zh' else "llama3.1-405b-instruct"
     
     step_functions = {
         "表达优化": (optimize_expression, "分析：需要改善文本的基础表达方式，使其更加流畅自然。"),
@@ -606,9 +762,15 @@ def process_multy_optimization(
 
 def optimize_expression(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
     """改善表达的具体实现"""
+    # 使用当前用户的 API key
+    # 注意：这里的 model_name 参数是从 process_multy_optimization 传入的，已经考虑了语言检测
+    api_key = get_user_api_key()
+    if not api_key:
+        raise ValueError("请先在设置中配置您的 API Key")
     llm = ChatTongyi(
         model_name=model_name,
-        streaming=True
+        streaming=True,
+        dashscope_api_key=api_key
     )
     
     prompt = f"""请改善以下文本的表达方式，使其更加流畅自然,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其他语言**
@@ -630,9 +792,15 @@ def optimize_expression(text: str,temperature: float,model_name: str,optimizatio
 
 def professionalize_text(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
     """专业化处理的具体实现"""
+    # 使用当前用户的 API key
+    # 注意：这里的 model_name 参数是从 process_multy_optimization 传入的，已经考虑了语言检测
+    api_key = get_user_api_key()
+    if not api_key:
+        raise ValueError("请先在设置中配置您的 API Key")
     llm = ChatTongyi(
         model_name=model_name,
         streaming=True,
+        dashscope_api_key=api_key
     )
     
     prompt = f"""请对以下文本进行专业化处理，优化适当的专业术语和学术表达,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其它语言**
@@ -654,9 +822,15 @@ def professionalize_text(text: str,temperature: float,model_name: str,optimizati
 
 def reduce_similarity(text: str,temperature: float,model_name: str,optimization_history: list) -> str:
     """降重处理的具体实现"""
+    # 使用当前用户的 API key
+    # 注意：这里的 model_name 参数是从 process_multy_optimization 传入的，已经考虑了语言检测
+    api_key = get_user_api_key()
+    if not api_key:
+        raise ValueError("请先在设置中配置您的 API Key")
     llm = ChatTongyi(
         model_name=model_name,
-        streaming=True
+        streaming=True,
+        dashscope_api_key=api_key
     )
     
     prompt = f"""请对以下原文的内容进行降重处理，通过同义词替换和句式重组等方式降低重复率,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其它语言**
@@ -698,3 +872,118 @@ def get_api_key(uuid: str, db_name='./database.sqlite') -> str:
     result = cursor.fetchone()
     conn.close()
     return result[0] if result and result[0] else ''
+
+
+def save_model_name(uuid: str, model_name: str, db_name='./database.sqlite'):
+    """保存用户选择的模型名称"""
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    # 更新用户的模型名称
+    cursor.execute("""
+        UPDATE users SET model_name = ? WHERE uuid = ?
+    """, (model_name, uuid))
+    
+    conn.commit()
+    conn.close()
+
+
+def get_model_name(uuid: str, db_name='./database.sqlite') -> str:
+    """获取用户选择的模型名称，默认返回 qwen-max"""
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT model_name FROM users WHERE uuid = ?", (uuid,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result and result[0] else 'qwen-max'
+
+
+def get_user_model_name(uuid: str = None) -> str:
+    """
+    获取指定用户的模型名称（从数据库获取，确保隔离）
+    如果没有提供 uuid，尝试从 session_state 获取 uuid
+    """
+    # 如果没有提供 uuid，尝试从 session_state 获取
+    if not uuid:
+        if 'uuid' not in st.session_state or not st.session_state['uuid']:
+            return 'qwen-max'
+        uuid = st.session_state['uuid']
+    
+    # 始终从数据库获取
+    model_name = get_model_name(uuid)
+    return model_name if model_name else 'qwen-max'
+
+
+def show_sidebar_api_key_setting():
+    """
+    显示侧边栏 API Key 和模型设置
+    应该在每个页面中调用，用于统一显示 API Key 和模型配置界面
+    """
+    # 确保有 token 和 uuid
+    if 'token' not in st.session_state or not st.session_state['token']:
+        return
+    
+    # 如果 uuid 不存在，从 token 获取
+    if 'uuid' not in st.session_state or not st.session_state['uuid']:
+        st.session_state['uuid'] = get_uuid_by_token(st.session_state['token'])
+    
+    if not st.session_state['uuid']:
+        return
+    
+    with st.sidebar:
+        st.header("设置")
+        
+        # API Key 设置
+        # 始终从数据库获取，确保每个用户只看到自己的 API key，避免 session 共享问题
+        saved_api_key = get_api_key(st.session_state['uuid'])
+        
+        # 使用 key 参数，确保每次渲染都从数据库读取最新值
+        current_api_key = st.text_input(
+            "API Key:",
+            value=saved_api_key,
+            type="password",
+            help="请输入您的 API key",
+            key=f"api_key_input_{st.session_state['uuid']}"  # 使用 uuid 作为 key 的一部分
+        )
+        
+        # 如果 API key 发生变化,保存到数据库
+        if current_api_key != saved_api_key:
+            save_api_key(st.session_state['uuid'], current_api_key)
+            st.toast("✅ API key 已更新!")
+            st.rerun()  # 重新运行以刷新界面
+        
+        st.divider()
+        
+        # 模型选择 - 允许自定义输入
+        saved_model_name = get_model_name(st.session_state['uuid'])
+        # 如果没有保存的模型名称，默认使用 qwen-max
+        if not saved_model_name:
+            saved_model_name = 'qwen-max'
+        
+        current_model_name = st.text_input(
+            "模型名称:",
+            value=saved_model_name,
+            help="输入要使用的 AI 模型名称（默认: qwen-max）",
+            key=f"model_input_{st.session_state['uuid']}",
+            placeholder="qwen-max"
+        )
+        
+        # 显示常用模型参考（可折叠）
+        with st.expander("💡 常用模型参考", expanded=False):
+            st.text("""
+qwen-max
+qwen-plus
+qwen-turbo
+qwen-long
+qwen1.5-72b-chat
+qwen1.5-32b-chat
+qwen1.5-14b-chat
+qwen1.5-7b-chat
+            """)
+        
+        # 如果模型名称发生变化,保存到数据库
+        if current_model_name and current_model_name.strip() and current_model_name.strip() != saved_model_name:
+            save_model_name(st.session_state['uuid'], current_model_name.strip())
+            st.toast("✅ 模型已更新!")
+            st.rerun()  # 重新运行以刷新界面

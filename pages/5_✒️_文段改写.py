@@ -1,8 +1,11 @@
 import streamlit as st
 
-from utils import is_token_expired, process_multy_optimization
+from utils import is_token_expired, process_multy_optimization, show_sidebar_api_key_setting
 
 st.set_page_config(page_title="文段改写", page_icon="✒️", layout="wide")
+
+# 显示侧边栏 API Key 设置
+show_sidebar_api_key_setting()
 
 def main():
 
@@ -151,6 +154,11 @@ def main():
                         </style>
                     """, unsafe_allow_html=True)
                     
+                    # 检查是否有 API Key 错误
+                    if 'API Key' in thought or 'API Key' in result:
+                        st.warning('⚠️ 请先在设置中配置您的 API Key。请前往侧边栏设置中配置。')
+                        break
+                    
                     # 显示思考过程
                     if show_thought_process:
                         st.markdown(f"""
@@ -173,7 +181,11 @@ def main():
                 st.toast("✅ 优化完成！")
                 
             except Exception as e:
-                st.error(f"优化过程中出现错误: {str(e)}")
+                error_msg = str(e)
+                if 'API Key' in error_msg:
+                    st.warning('⚠️ ' + error_msg + ' 请前往侧边栏设置中配置。')
+                else:
+                    st.error(f"优化过程中出现错误: {error_msg}")
                 progress_container.error("❌ 优化失败")
 
 if (not st.session_state.get('token')) or is_token_expired(st.session_state.get('token')):

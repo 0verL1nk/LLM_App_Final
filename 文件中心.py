@@ -188,19 +188,23 @@ else:
     # 添加侧边栏 API key 设置
     with st.sidebar:
         st.header("设置")
-        # 获取已保存的 API key
+        # 始终从数据库获取，确保每个用户只看到自己的 API key，避免 session 共享问题
         saved_api_key = get_api_key(st.session_state['uuid'])
-        st.session_state['api_key'] = st.text_input(
+        
+        # 使用 key 参数，确保每次渲染都从数据库读取最新值
+        current_api_key = st.text_input(
             "API Key:",
             value=saved_api_key,
             type="password",
-            help="请输入您的 API key"
+            help="请输入您的 API key",
+            key=f"api_key_input_{st.session_state['uuid']}"  # 使用 uuid 作为 key 的一部分
         )
         
         # 如果 API key 发生变化,保存到数据库
-        if st.session_state['api_key'] != saved_api_key:
-            save_api_key(st.session_state['uuid'], st.session_state['api_key'])
+        if current_api_key != saved_api_key:
+            save_api_key(st.session_state['uuid'], current_api_key)
             st.toast("✅ API key 已更新!")
+            st.rerun()  # 重新运行以刷新界面
         # 添加退出登录按钮
         if st.button("退出登录", type="primary"):
             # 清除session状态

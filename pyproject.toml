@@ -1,0 +1,41 @@
+[project]
+name = "llm-app"
+version = "1.0.0"
+description = "一个基于人工智能的文献阅读辅助工具"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "streamlit>=1.40.1,<1.41.0",
+    "streamlit-extras>=0.3.0",
+    "streamlit-echarts>=0.4.0",
+    "textract>=1.6.5,<1.7.0",
+    "openai>=1.54.5,<1.55.0",
+    "httpx<0.28.0",
+    "pyecharts>=2.0.7,<2.1.0",
+    "duckduckgo-search>=6.3.7,<6.4.0",
+    "langchain>=0.3.7,<0.4.0",
+    "langchain-community>=0.3.7,<0.4.0",
+    "langchain-core>=0.3.19,<0.4.0",
+    "dashscope>=1.17.0",
+    "redis>=5.0.0",
+    "rq>=1.15.0",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# 对于应用项目，使用 uv sync --no-install-project 只安装依赖
+# 或者直接使用 uv pip install 安装依赖
+
+[tool.hatch.build.targets.wheel]
+# 对于应用项目，使用 only-include 包含所有 Python 文件
+only-include = [
+    "utils/**/*.py",
+    "pages/**/*.py",
+    "文件中心.py",
+]
+

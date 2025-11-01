@@ -9,10 +9,6 @@ env/
 ENV/
 .venv
 
-# uv
-.venv/
-uv.lock
-
 # IDE
 .vscode/
 .idea/
@@ -31,10 +27,12 @@ uploads/
 .git/
 .gitignore
 
-# Streamlit 配置（保留，因为这是项目配置）
-# .streamlit/
+# 文档和图片（可选，根据是否需要）
+# images/
+# README*.md
 
 # 其他
 .DS_Store
 *.log
 *.tmp
+
