@@ -1,4 +1,6 @@
+# =============================================================================
 # Python
+# =============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -9,32 +11,241 @@ env/
 ENV/
 .venv
 
+# =============================================================================
+# Package Management
+# =============================================================================
 # uv
 .venv/
 uv.lock
 
-# IDE
+# pip
+pip-log.txt
+pip-delete-this-directory.txt
+pip-wheel-metadata/
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# setuptools
+dist/
+build/
+*.egg-info/
+
+# =============================================================================
+# Testing & Coverage
+# =============================================================================
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+
+# pytest
+.pytest_cache/
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# =============================================================================
+# IDE & Editors
+# =============================================================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.DS_Store
+Thumbs.db
 
-# 数据库文件（运行时生成）
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Vim
+*.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =============================================================================
+# Environment Variables & Secrets
+# =============================================================================
+.env
+.env.local
+.env.*.local
+secrets.json
+secrets.yml
+secrets.yaml
+.secrets/
+
+# API Keys
+api_keys.txt
+*.key
+*.pem
+!*.pem.example
+
+# =============================================================================
+# Database Files (Runtime Generated)
+# =============================================================================
 *.sqlite
+*.sqlite3
 *.db
+database.sqlite
+database.sqlite3
 
-# 上传文件目录（容器内会重新创建）
+# Redis dumps
+dump.rdb
+
+# =============================================================================
+# File Uploads & Temporary Directories
+# =============================================================================
 uploads/
+temp/
+tmp/
+*.tmp
+*.temp
 
-# Git
+# User generated files
+user_data/
+documents/
+extracted/
+
+# =============================================================================
+# Application Specific
+# =============================================================================
+# Streamlit
+.streamlit/
+.streamlit_cache/
+
+# RQ (Redis Queue)
+.rq/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# =============================================================================
+# Logs
+# =============================================================================
+*.log
+logs/
+*.log.*
+
+# Python logging
+logging.conf
+
+# =============================================================================
+# Build Artifacts
+# =============================================================================
+*.tgz
+*.tar.gz
+*.zip
+
+# Documentation builds
+_site/
+.sphinx/
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# =============================================================================
+# Operating System
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# =============================================================================
+# Version Control
+# =============================================================================
 .git/
 .gitignore
 
-# Streamlit 配置（保留，因为这是项目配置）
-# .streamlit/
+# =============================================================================
+# Local Configuration
+# =============================================================================
+config/local.py
+settings/local.py
+.local/
 
-# 其他
-.DS_Store
-*.log
-*.tmp
+# =============================================================================
+# Security & Certificates
+# =============================================================================
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+ssl/
+certs/
+
+# =============================================================================
+# Development Tools
+# =============================================================================
+.mypy_cache/
+.ruff_cache/
+.bandit
+
+# profiling data
+.prof
+
+# =============================================================================
+# Docker
+# =============================================================================
+.dockerignore
+Dockerfile.*
+docker-compose.override.yml
+.docker/
+
+# =============================================================================
+# Miscellaneous
+# =============================================================================
+*.bak
+*.swp
+*.swo
+.cache/
+
+.serena
+.claude
+
+# code cli
+
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+
+# mcps
+.playwright-mcps
