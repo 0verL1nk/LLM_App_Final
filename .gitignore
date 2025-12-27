@@ -246,6 +246,8 @@ docker-compose.override.yml
 AGENTS.md
 CLAUDE.md
 GEMINI.md
+.codex
+
 
 # mcps
-.playwright-mcps
+.playwright-mcp

@@ -1,0 +1,368 @@
+# OpenAPI 3.0 Contract: File Management Endpoints
+
+openapi: 3.0.3
+info:
+  title: Literature Assistant API - File Management
+  version: 1.0.0
+  description: File upload, download, and management endpoints
+
+servers:
+  - url: http://localhost:8501/api/v1
+    description: Development server
+  - url: https://api.literature-assistant.com/api/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    FileUpload:
+      type: object
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: File to upload (PDF, DOCX, or TXT, max 50MB)
+        tags:
+          type: array
+          items:
+            type: string
+          description: Optional file tags
+          example: ["machine-learning", "paper"]
+
+    FileMetadata:
+      type: object
+      properties:
+        file_id:
+          type: string
+          format: uuid
+        original_filename:
+          type: string
+        filename:
+          type: string
+        file_size:
+          type: integer
+          description: Size in bytes
+        mime_type:
+          type: string
+        processing_status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        tags:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    FileDetails:
+      allOf:
+        - $ref: '#/components/schemas/FileMetadata'
+        - type: object
+          properties:
+            extracted_text:
+              type: string
+              description: Extracted text content (if available)
+              nullable: true
+            word_count:
+              type: integer
+              description: Word count of extracted text
+              nullable: true
+            md5:
+              type: string
+              description: MD5 hash for deduplication
+
+    FileListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/FileMetadata'
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  example: 1
+                page_size:
+                  type: integer
+                  example: 20
+                total:
+                  type: integer
+                  example: 50
+                total_pages:
+                  type: integer
+                  example: 3
+
+    UploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            file_id:
+              type: string
+              format: uuid
+            original_filename:
+              type: string
+            filename:
+              type: string
+            file_size:
+              type: integer
+            mime_type:
+              type: string
+            md5:
+              type: string
+            upload_url:
+              type: string
+              description: Download URL for the file
+            processing_status:
+              type: string
+              enum: [pending, processing, completed, failed]
+            created_at:
+              type: string
+              format: date-time
+        message:
+          type: string
+          example: "文件上传成功"
+
+    FileDetailsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/FileDetails'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "FILE_TOO_LARGE"
+            message:
+              type: string
+              example: "文件大小超过限制"
+            details:
+              type: object
+
+  parameters:
+    PageParam:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    PageSizeParam:
+      in: query
+      name: page_size
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+    SearchParam:
+      in: query
+      name: search
+      schema:
+        type: string
+      description: Search keyword for filename
+
+    StatusParam:
+      in: query
+      name: status
+      schema:
+        type: string
+        enum: [all, pending, processing, completed, failed]
+        default: all
+      description: Filter by processing status
+
+    SortParam:
+      in: query
+      name: sort
+      schema:
+        type: string
+        enum: [created_desc, created_asc, name_asc, name_desc]
+        default: created_desc
+      description: Sort order
+
+    FileIdParam:
+      in: path
+      name: file_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique file identifier
+
+paths:
+  /files/upload:
+    post:
+      tags:
+        - Files
+      summary: Upload file
+      description: Upload a document for processing (PDF, DOCX, or TXT)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileUpload'
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          description: Invalid file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: File validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /files:
+    get:
+      tags:
+        - Files
+      summary: List files
+      description: Get paginated list of user's files
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/SortParam'
+      responses:
+        '200':
+          description: Files retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileListResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /files/{file_id}:
+    get:
+      tags:
+        - Files
+      summary: Get file details
+      description: Get detailed information about a specific file
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FileIdParam'
+      responses:
+        '200':
+          description: File details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileDetailsResponse'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Files
+      summary: Delete file
+      description: Delete a file and all associated content
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FileIdParam'
+      responses:
+        '200':
+          description: File deleted successfully
+          content:
+            application/json:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "文件删除成功"
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /files/{file_id}/download:
+    get:
+      tags:
+        - Files
+      summary: Download file
+      description: Download the original uploaded file
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FileIdParam'
+      responses:
+        '200':
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

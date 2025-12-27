@@ -1,0 +1,451 @@
+# OpenAPI 3.0 Contract: Document Processing Endpoints
+
+openapi: 3.0.3
+info:
+  title: Literature Assistant API - Document Processing
+  version: 1.0.0
+  description: Document analysis and AI-powered processing endpoints
+
+servers:
+  - url: http://localhost:8501/api/v1
+    description: Development server
+  - url: https://api.literature-assistant.com/api/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ExtractRequest:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Optional task ID to check existing task
+
+    ExtractResult:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Extracted text content
+        sections:
+          type: array
+          items:
+            type: string
+          description: Text divided into sections
+        metadata:
+          type: object
+          properties:
+            page_count:
+              type: integer
+            word_count:
+              type: integer
+            language:
+              type: string
+
+    SummarizeRequest:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          nullable: true
+        options:
+          type: object
+          properties:
+            summary_type:
+              type: string
+              enum: [brief, detailed, custom]
+              default: brief
+            length:
+              type: string
+              enum: [short, medium, long]
+              default: medium
+            focus_areas:
+              type: array
+              items:
+                type: string
+            language:
+              type: string
+              enum: [zh, en]
+              default: zh
+
+    SummarizeResult:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: Generated summary
+        key_points:
+          type: array
+          items:
+            type: string
+        sections_summary:
+          type: array
+          items:
+            type: object
+            properties:
+              section:
+                type: string
+              summary:
+                type: string
+        statistics:
+          type: object
+          properties:
+            original_length:
+              type: integer
+            summary_length:
+              type: integer
+            compression_ratio:
+              type: number
+
+    QARequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          example: "What is the main contribution of this paper?"
+        context:
+          type: string
+          nullable: true
+          description: Additional context for the question
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+              answer:
+                type: string
+
+    QAResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          description: Generated answer
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Confidence score
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              page:
+                type: integer
+              section:
+                type: string
+              excerpt:
+                type: string
+        suggested_questions:
+          type: array
+          items:
+            type: string
+
+    RewriteRequest:
+      type: object
+      required:
+        - text
+        - rewrite_type
+      properties:
+        text:
+          type: string
+          description: Text to rewrite
+        rewrite_type:
+          type: string
+          enum: [academic, casual, formal, creative, concise]
+        tone:
+          type: string
+        length:
+          type: string
+          enum: [shorter, same, longer]
+          default: same
+        language:
+          type: string
+          enum: [zh, en]
+          default: zh
+
+    RewriteResult:
+      type: object
+      properties:
+        rewritten_text:
+          type: string
+          description: Rewritten text
+        original_length:
+          type: integer
+        rewritten_length:
+          type: integer
+        improvements:
+          type: array
+          items:
+            type: string
+        alternatives:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+              description:
+                type: string
+
+    MindmapRequest:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          nullable: true
+        options:
+          type: object
+          properties:
+            max_depth:
+              type: integer
+              minimum: 1
+              maximum: 5
+              default: 3
+            include_keywords:
+              type: boolean
+              default: true
+            group_by:
+              type: string
+              enum: [topic, structure, timeline]
+              default: topic
+
+    MindmapTree:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Center topic
+        value:
+          type: integer
+          description: Weight/score
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/MindmapTree'
+
+    MindmapResult:
+      type: object
+      properties:
+        mindmap:
+          $ref: '#/components/schemas/MindmapTree'
+        keywords:
+          type: array
+          items:
+            type: string
+        structure:
+          type: object
+          properties:
+            total_branches:
+              type: integer
+            max_depth:
+              type: integer
+            main_topics:
+              type: array
+              items:
+                type: string
+
+    TaskResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            task_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [pending, processing, completed, failed]
+            progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+            result:
+              nullable: true
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+paths:
+  /documents/{file_id}/extract:
+    post:
+      tags:
+        - Documents
+      summary: Extract text from document
+      description: Asynchronously extract text from an uploaded document
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractRequest'
+      responses:
+        '202':
+          description: Extraction task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+
+  /documents/{file_id}/summarize:
+    post:
+      tags:
+        - Documents
+      summary: Summarize document
+      description: Generate summary of document text
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SummarizeRequest'
+      responses:
+        '202':
+          description: Summarization task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+
+  /documents/{file_id}/qa:
+    post:
+      tags:
+        - Documents
+      summary: Question answering
+      description: Ask questions about document content
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QARequest'
+      responses:
+        '200':
+          description: Question answered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/QAResponse'
+
+  /documents/{file_id}/rewrite:
+    post:
+      tags:
+        - Documents
+      summary: Rewrite text
+      description: Rewrite text in different styles
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RewriteRequest'
+      responses:
+        '200':
+          description: Text rewritten
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/RewriteResult'
+
+  /documents/{file_id}/mindmap:
+    post:
+      tags:
+        - Documents
+      summary: Generate mindmap
+      description: Create visual mindmap from document
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MindmapRequest'
+      responses:
+        '202':
+          description: Mindmap generation task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'

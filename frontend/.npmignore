@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+coverage/
+*.log
+*.log*
+.env*
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp

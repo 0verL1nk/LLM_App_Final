@@ -1,0 +1,273 @@
+# OpenAPI 3.0 Contract: Task Management Endpoints
+
+openapi: 3.0.3
+info:
+  title: Literature Assistant API - Task Management
+  version: 1.0.0
+  description: Async task monitoring and management endpoints
+
+servers:
+  - url: http://localhost:8501/api/v1
+    description: Development server
+  - url: https://api.literature-assistant.com/api/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TaskStatus:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        task_type:
+          type: string
+          enum: [extract, summarize, qa, rewrite, mindmap]
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        error_message:
+          type: string
+          nullable: true
+        result:
+          type: object
+          nullable: true
+          description: Task result data (only when completed)
+
+    TaskListItem:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        task_type:
+          type: string
+        status:
+          type: string
+        progress:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        file:
+          type: object
+          properties:
+            file_id:
+              type: string
+              format: uuid
+            filename:
+              type: string
+
+    TaskListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/TaskListItem'
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  example: 1
+                page_size:
+                  type: integer
+                  example: 20
+                total:
+                  type: integer
+                  example: 50
+                total_pages:
+                  type: integer
+                  example: 3
+
+    TaskResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/TaskStatus'
+
+    CancelResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "任务已取消"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "TASK_NOT_FOUND"
+            message:
+              type: string
+              example: "任务不存在"
+
+  parameters:
+    TaskIdParam:
+      in: path
+      name: task_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique task identifier
+
+    TaskStatusParam:
+      in: query
+      name: status
+      schema:
+        type: string
+        enum: [all, pending, processing, completed, failed, cancelled]
+        default: all
+      description: Filter by task status
+
+    TaskTypeParam:
+      in: query
+      name: task_type
+      schema:
+        type: string
+        enum: [extract, summarize, qa, rewrite, mindmap]
+      description: Filter by task type
+
+    PageParam:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    PageSizeParam:
+      in: query
+      name: page_size
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+paths:
+  /tasks/{task_id}:
+    get:
+      tags:
+        - Tasks
+      summary: Get task status
+      description: Get the current status and result of a specific task
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '200':
+          description: Task status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tasks/{task_id}/cancel:
+    post:
+      tags:
+        - Tasks
+      summary: Cancel task
+      description: Cancel a running task
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '200':
+          description: Task cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelResponse'
+        '400':
+          description: Task cannot be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: List tasks
+      description: Get paginated list of user's tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskStatusParam'
+        - $ref: '#/components/parameters/TaskTypeParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Tasks retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

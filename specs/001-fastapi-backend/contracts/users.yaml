@@ -1,0 +1,195 @@
+# OpenAPI 3.0 Contract: User Management Endpoints
+
+openapi: 3.0.3
+info:
+  title: Literature Assistant API - User Management
+  version: 1.0.0
+  description: User profile and preferences endpoints
+
+servers:
+  - url: http://localhost:8501/api/v1
+    description: Development server
+  - url: https://api.literature-assistant.com/api/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+        api_key_configured:
+          type: boolean
+          description: Whether user has set their own API key
+        preferred_model:
+          type: string
+          description: Default model name
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/UserProfile'
+
+    APIKeyUpdate:
+      type: object
+      required:
+        - api_key
+      properties:
+        api_key:
+          type: string
+          description: DashScope API key
+          example: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+    APIKeyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "API Key 更新成功"
+
+    PreferencesUpdate:
+      type: object
+      required:
+        - preferred_model
+      properties:
+        preferred_model:
+          type: string
+          description: Model name (e.g., "qwen-max", "qwen-turbo")
+          example: "qwen-max"
+
+    PreferencesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "偏好设置更新成功"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "API_KEY_INVALID"
+            message:
+              type: string
+              example: "API Key 无效"
+
+paths:
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Get profile information for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/api-key:
+    put:
+      tags:
+        - Users
+      summary: Update API key
+      description: Update user's DashScope API key
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeyUpdate'
+      responses:
+        '200':
+          description: API key updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyResponse'
+        '400':
+          description: Invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/preferences:
+    put:
+      tags:
+        - Users
+      summary: Update user preferences
+      description: Update user preferences (e.g., preferred model)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferencesUpdate'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferencesResponse'
+        '400':
+          description: Invalid model name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

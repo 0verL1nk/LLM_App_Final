@@ -1,0 +1,135 @@
+# OpenAPI 3.0 Contract: Statistics Endpoint
+
+openapi: 3.0.3
+info:
+  title: Literature Assistant API - Statistics
+  version: 1.0.0
+  description: Usage statistics and monitoring endpoints
+
+servers:
+  - url: http://localhost:8501/api/v1
+    description: Development server
+  - url: https://api.literature-assistant.com/api/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    FileStats:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total files uploaded
+          example: 12
+        processed:
+          type: integer
+          description: Successfully processed files
+          example: 10
+        processing:
+          type: integer
+          description: Currently processing files
+          example: 2
+        this_month:
+          type: integer
+          description: Files uploaded this month
+          example: 5
+
+    UsageStats:
+      type: object
+      properties:
+        total_api_calls:
+          type: integer
+          description: Total LLM API calls made
+          example: 156
+        total_tokens:
+          type: integer
+          description: Total tokens consumed
+          example: 125000
+        this_month_calls:
+          type: integer
+          description: API calls this month
+          example: 45
+
+    TaskStats:
+      type: object
+      properties:
+        total_completed:
+          type: integer
+          description: Total completed tasks
+          example: 89
+        pending:
+          type: integer
+          description: Currently pending tasks
+          example: 3
+        average_completion_time:
+          type: number
+          format: float
+          description: Average completion time in seconds
+          example: 45.6
+
+    StatisticsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            files:
+              $ref: '#/components/schemas/FileStats'
+            usage:
+              $ref: '#/components/schemas/UsageStats'
+            tasks:
+              $ref: '#/components/schemas/TaskStats'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "INTERNAL_ERROR"
+            message:
+              type: string
+              example: "统计信息获取失败"
+
+paths:
+  /statistics:
+    get:
+      tags:
+        - Statistics
+      summary: Get user statistics
+      description: Get usage statistics for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Statistics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

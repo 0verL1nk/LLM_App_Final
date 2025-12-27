@@ -31,23 +31,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**Must verify compliance with the following constitutional principles:**
-
-- **I. Modular Architecture**: Feature MUST fit within existing `src/llm_app/` structure or justify new module creation
-- **II. Type Safety**: All code MUST include 100% type annotations (MyPy strict mode)
-- **III. Test-First Development**: Feature MUST be testable with unit/integration/contract tests achieving 70%+ coverage
-- **IV. Code Quality**: Implementation MUST pass Ruff, MyPy, and Bandit checks without warnings
-- **V. Documentation Standards**: All modules, classes, and public functions MUST include NumPy/Sphinx docstrings
-- **VI. Async Task Processing**: Long-running operations MUST use Redis + RQ queue system (or memory mode for dev)
-- **VII. Data Persistence & Security**: Data storage MUST use parameterized queries and secure file handling
-
-**Compliance Questions:**
-1. Does this feature require a new module in `src/llm_app/`? If yes, is it justified?
-2. Are all type annotations complete and accurate?
-3. Can tests be written first to demonstrate the feature contract?
-4. Will Ruff/MyPy/Bandit pass without issues?
-5. Is async/queue pattern appropriate for any long-running operations?
-6. Are security considerations (encryption, validation, logging) addressed?
+[Gates determined based on constitution file]
 
 ## Project Structure
 

@@ -23,6 +23,17 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+    "pydantic>=2.5.0",
+    "python-multipart>=0.0.6",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "aiofiles>=23.0.0",
+    "websockets>=12.0",
+    "aiosqlite>=0.19.0",
     "streamlit>=1.40.1,<1.41.0",
     "streamlit-extras>=0.3.0",
     "streamlit-echarts>=0.4.0",
@@ -38,6 +49,8 @@ dependencies = [
     "redis>=5.0.0",
     "rq>=1.15.0",
     "six>=1.12.0,<1.13.dev0",
+    "email-validator>=2.3.0",
+    "argon2-cffi>=23.1.0",
 ]
 
 [project.optional-dependencies]
@@ -119,6 +132,7 @@ python_functions = ["test_*"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
+    "contract: marks tests as contract tests",
     "unit: marks tests as unit tests",
 ]
 filterwarnings = [
