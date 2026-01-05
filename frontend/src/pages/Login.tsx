@@ -1,114 +1,78 @@
-import React, { useState } from 'react';
-import { ArrowRight, BookOpen } from 'lucide-react';
+import { AuthForm } from '@/components/features/auth/AuthForm';
+import { motion } from 'framer-motion';
 
-const Login: React.FC = () => {
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-
+export default function Login() {
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left: Form */}
-      <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-16">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white mx-auto mb-4">
-              <BookOpen size={24} />
+    <div className="min-h-screen flex bg-background font-sans">
+      {/* Left side: Modern Branding */}
+      <div className="hidden lg:flex lg:w-3/5 bg-slate-950 items-center justify-center p-12 relative overflow-hidden">
+        {/* Animated Gradient Background */}
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] rounded-full bg-indigo-600/30 blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/20 blur-[100px]" />
+        </div>
+        
+        {/* Abstract Grid Pattern */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+        <div className="absolute inset-0 opacity-[0.15]" 
+          style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }} 
+        />
+
+        <div className="relative z-10 text-white max-w-xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-medium mb-8 backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
+              <span>Next Generation Research Tool</span>
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-              {isRegisterMode ? '创建账号' : '欢迎回来'}
-            </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              {isRegisterMode ? '请输入您的信息以注册' : '请输入您的账号信息以继续'}
+            
+            <h1 className="text-6xl font-bold mb-6 tracking-tight leading-[1.1]">
+              用 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">AI</span> 重新定义<br />您的学术阅读
+            </h1>
+            <p className="text-xl text-slate-400 mb-10 leading-relaxed font-light">
+              LLM App 是一款专为研究者打造的沉浸式工作空间，集成了最先进的语言模型，助您秒级理清复杂文献脉络。
             </p>
-          </div>
-
-          <form className="space-y-6">
-            {isRegisterMode && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700">用户名</label>
-                <input
-                  type="text"
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                  placeholder="请输入用户名"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700">邮箱</label>
-              <input
-                type="email"
-                className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                placeholder="user@example.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700">密码</label>
-              <input
-                type="password"
-                className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                placeholder="••••••••"
-              />
-            </div>
-
-            {isRegisterMode && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700">确认密码</label>
-                <input
-                  type="password"
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                  placeholder="••••••••"
-                />
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
-            >
-              {isRegisterMode ? '注册' : '登录'}
-              <ArrowRight size={16} />
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-slate-500">
-            {isRegisterMode ? (
-              <>
-                已有账号?{' '}
-                <button
-                  onClick={() => setIsRegisterMode(false)}
-                  className="font-medium text-primary-600 hover:text-primary-500"
+            
+            <div className="grid grid-cols-2 gap-6">
+              {[
+                { label: "智能全文总结", desc: "毫秒级提取核心论点" },
+                { label: "结构化脑图", desc: "自动可视化逻辑框架" },
+                { label: "深度改写润色", desc: "提升学术表达专业性" },
+                { label: "多维上下文问答", desc: "针对性解决理解难点" }
+              ].map((f, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                  className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors"
                 >
-                  立即登录
-                </button>
-              </>
-            ) : (
-              <>
-                还没有账号?{' '}
-                <button
-                  onClick={() => setIsRegisterMode(true)}
-                  className="font-medium text-primary-600 hover:text-primary-500"
-                >
-                  立即注册
-                </button>
-              </>
-            )}
-          </p>
+                  <h4 className="font-semibold text-white mb-1">{f.label}</h4>
+                  <p className="text-xs text-slate-500">{f.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Right: Feature/Image */}
-      <div className="hidden lg:block relative w-0 flex-1 bg-slate-900">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-900 to-slate-900 opacity-90" />
-        <div className="relative h-full flex flex-col justify-center px-12 text-white">
-          <h2 className="text-4xl font-bold mb-6">智能解析，深度阅读。</h2>
-          <p className="text-lg text-slate-300 max-w-md leading-relaxed">
-            利用最先进的大语言模型，为您提供精准的文献总结、改写与问答服务。让科研更高效。
-          </p>
-        </div>
+      {/* Right side: Clean Auth Form */}
+      <div className="w-full lg:w-2/5 flex items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <AuthForm />
+        </motion.div>
       </div>
     </div>
   );
-};
-
-export default Login;
+}
