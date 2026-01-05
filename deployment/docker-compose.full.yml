@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: llm_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.api
+    container_name: llm_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - DATABASE_URL=sqlite+aiosqlite:///./database.sqlite
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - DEBUG=false
+    volumes:
+      - ../database.sqlite:/app/database.sqlite
+      - ../uploads:/app/uploads
+      - ../logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.api
+    container_name: llm_worker
+    command: rq worker tasks --url redis://redis:6379/0
+    environment:
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - DATABASE_URL=sqlite+aiosqlite:///./database.sqlite
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ../database.sqlite:/app/database.sqlite
+      - ../uploads:/app/uploads
+      - ../logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  streamlit:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: llm_streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - API_BASE_URL=http://api:8000
+    volumes:
+      - ../database.sqlite:/app/database.sqlite
+      - ../uploads:/app/uploads
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
