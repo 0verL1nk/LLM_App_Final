@@ -247,7 +247,8 @@ AGENTS.md
 CLAUDE.md
 GEMINI.md
 .codex
-
+.GEMINI
+.gemini
 
 # mcps
 .playwright-mcp

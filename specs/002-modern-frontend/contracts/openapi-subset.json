@@ -1,0 +1,9 @@
+{
+  "info": { "title": "Frontend Integration Contracts", "version": "1.0.0" },
+  "paths": {
+    "/auth/login": { "post": { "summary": "User Login" } },
+    "/files/upload": { "post": { "summary": "Upload document" } },
+    "/documents/{file_id}/summarize": { "post": { "summary": "Trigger Summary Task" } },
+    "/ws/tasks": { "get": { "summary": "WebSocket for real-time progress" } }
+  }
+}

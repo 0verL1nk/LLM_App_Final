@@ -1,95 +1,166 @@
-import React, { useState } from 'react';
-import { FileText, Search, MoreVertical, Filter } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { fileService } from '@/services/api';
+import { FileUpload } from '@/components/features/files/FileUpload';
+import { 
+  FileText, 
+   
+  Trash2, 
+  Eye, 
+  Search,
+  ArrowUpDown,
+  Filter,
+  Download
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
-const Documents: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('all');
+export default function Documents() {
+  const [search, setSearch] = useState('');
+  
+  const { data: files, isLoading } = useQuery({
+    queryKey: ['files'],
+    queryFn: () => fileService.getFiles(),
+  });
 
-  const documents = [
-    { id: 1, name: 'Deep Learning Survey 2024.pdf', date: '2024-12-20', size: '2.3 MB', status: 'processed' },
-    { id: 2, name: 'Attention Is All You Need.pdf', date: '2024-12-19', size: '1.8 MB', status: 'processed' },
-    { id: 3, name: 'Transformers Research Paper.docx', date: '2024-12-18', size: '956 KB', status: 'processing' },
-  ];
+  const filteredFiles = files?.filter(file => 
+    file.filename.toLowerCase().includes(search.toLowerCase())
+  ) || [];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">我的文献</h1>
-        <button className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
-          上传新文档
-        </button>
-      </div>
-
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-          <input
-            type="text"
-            placeholder="搜索文献..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-          />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">文献列表</h1>
+          <p className="text-muted-foreground mt-1">管理您上传的所有文献和分析结果。</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
-          <Filter size={16} />
-          筛选
-        </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="text-left py-3 px-6 text-sm font-semibold text-slate-900">文件名</th>
-              <th className="text-left py-3 px-6 text-sm font-semibold text-slate-900">上传日期</th>
-              <th className="text-left py-3 px-6 text-sm font-semibold text-slate-900">大小</th>
-              <th className="text-left py-3 px-6 text-sm font-semibold text-slate-900">状态</th>
-              <th className="text-right py-3 px-6 text-sm font-semibold text-slate-900">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.map((doc) => (
-              <motion.tr
-                key={doc.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
-              >
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                      <FileText size={20} className="text-slate-500" />
-                    </div>
-                    <span className="font-medium text-slate-900">{doc.name}</span>
-                  </div>
-                </td>
-                <td className="py-4 px-6 text-sm text-slate-500">{doc.date}</td>
-                <td className="py-4 px-6 text-sm text-slate-500">{doc.size}</td>
-                <td className="py-4 px-6">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      doc.status === 'processed'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
-                    {doc.status === 'processed' ? '已处理' : '处理中'}
-                  </span>
-                </td>
-                <td className="py-4 px-6 text-right">
-                  <button className="text-slate-400 hover:text-slate-600">
-                    <MoreVertical size={18} />
-                  </button>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Upload Panel */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-card border rounded-xl p-4">
+            <h3 className="font-semibold mb-4 text-sm">上传新文献</h3>
+            <FileUpload />
+          </div>
+          
+          <div className="bg-card border rounded-xl p-4">
+            <h3 className="font-semibold mb-4 text-sm">筛选器</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium">处理状态</label>
+                <select className="w-full bg-background border rounded-md px-2 py-1.5 text-sm">
+                  <option>全部</option>
+                  <option>已完成</option>
+                  <option>处理中</option>
+                  <option>已失败</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* List Panel */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="search"
+                placeholder="搜索文献名称..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-card border rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <button className="flex items-center text-sm border bg-card px-3 py-2 rounded-md hover:bg-accent transition-colors">
+                <Filter size={14} className="mr-2" /> 筛选
+              </button>
+              <button className="flex items-center text-sm border bg-card px-3 py-2 rounded-md hover:bg-accent transition-colors">
+                <ArrowUpDown size={14} className="mr-2" /> 排序
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/50 text-muted-foreground border-b uppercase text-[10px] font-bold tracking-wider">
+                <tr>
+                  <th className="px-6 py-3">文件名</th>
+                  <th className="px-6 py-3">状态</th>
+                  <th className="px-6 py-3">上传日期</th>
+                  <th className="px-6 py-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-6 py-4"><div className="h-4 bg-muted rounded w-3/4"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-muted rounded w-1/4"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-muted rounded w-1/2"></div></td>
+                      <td className="px-6 py-4 text-right"><div className="h-4 bg-muted rounded w-8 ml-auto"></div></td>
+                    </tr>
+                  ))
+                ) : filteredFiles.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground italic">
+                      未发现匹配的文献
+                    </td>
+                  </tr>
+                ) : (
+                  filteredFiles.map((file) => (
+                    <tr key={file.id} className="hover:bg-accent/50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-primary/5 rounded group-hover:bg-primary/10 transition-colors">
+                            <FileText size={18} className="text-primary" />
+                          </div>
+                          <span className="font-medium truncate max-w-[200px]">{file.filename}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border",
+                          file.status === 'completed' ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" :
+                          file.status === 'processing' ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800 animate-pulse" :
+                          file.status === 'failed' ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800" :
+                          "bg-muted text-muted-foreground border-border"
+                        )}>
+                          {file.status === 'completed' ? '已完成' : 
+                           file.status === 'processing' ? '处理中' : 
+                           file.status === 'failed' ? '失败' : '排队中'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {new Date(file.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Link 
+                            to={`/documents/${file.id}`}
+                            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
+                            title="查看详情"
+                          >
+                            <Eye size={16} />
+                          </Link>
+                          <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-all">
+                            <Download size={16} />
+                          </button>
+                          <button className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Documents;
+}
