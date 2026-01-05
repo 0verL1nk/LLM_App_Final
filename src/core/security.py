@@ -2,6 +2,7 @@
 JWT token generation and validation utilities with Argon2 password hashing
 """
 from datetime import datetime, timedelta
+import uuid
 from typing import Optional, Dict, Any
 
 from jose import jwt, JWTError
@@ -52,6 +53,7 @@ def create_access_token(
         "exp": expire,
         "sub": str(subject),
         "iat": datetime.utcnow(),
+        "jti": str(uuid.uuid4()),
     }
 
     if additional_claims:

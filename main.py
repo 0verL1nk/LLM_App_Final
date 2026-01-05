@@ -1,6 +1,7 @@
 """
 FastAPI application entry point for Literature Reading Assistant Backend
 """
+
 import sys
 from pathlib import Path
 
@@ -18,10 +19,14 @@ from fastapi.responses import JSONResponse
 
 from core.config import settings
 from core.logger import get_logger, log_request
+from core.rate_limit import RateLimitMiddleware
 from api.routers import auth
 from api.routers import files
 from api.routers import documents
 from api.routers import tasks
+from api.routers import users
+from api.routers import statistics
+from api import websocket
 from api.errors import setup_exception_handlers
 
 logger = get_logger(__name__)
@@ -59,6 +64,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(RateLimitMiddleware)
+
 
 # Request logging middleware
 @app.middleware("http")
@@ -94,10 +101,40 @@ async def logging_middleware(request: Request, call_next):
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
+    from db.database import engine
+    from sqlalchemy import text
+
+    checks = {
+        "api": "healthy",
+        "database": "unknown",
+        "redis": "unknown",
+    }
+
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        checks["database"] = "healthy"
+    except Exception:
+        checks["database"] = "unhealthy"
+
+    try:
+        from background_tasks.task_queue import redis_conn
+
+        if redis_conn:
+            redis_conn.ping()
+            checks["redis"] = "healthy"
+        else:
+            checks["redis"] = "not_configured"
+    except Exception:
+        checks["redis"] = "unhealthy"
+
+    overall_status = "healthy" if checks["database"] == "healthy" else "degraded"
+
     return {
-        "status": "healthy",
+        "status": overall_status,
         "version": "1.0.0",
         "project": settings.project_name,
+        "checks": checks,
     }
 
 
@@ -114,10 +151,7 @@ async def root():
 
 
 # Register API routers
-app.include_router(
-    auth.router,
-    prefix=settings.api_v1_str
-)
+app.include_router(auth.router, prefix=settings.api_v1_str)
 app.include_router(
     files.router,
     prefix=settings.api_v1_str,
@@ -130,8 +164,16 @@ app.include_router(
     tasks.router,
     prefix=settings.api_v1_str,
 )
+app.include_router(
+    users.router,
+    prefix=settings.api_v1_str,
+)
+app.include_router(
+    statistics.router,
+    prefix=settings.api_v1_str,
+)
+app.include_router(websocket.router, prefix=settings.api_v1_str)
 
-# Setup global exception handlers
 setup_exception_handlers(app)
 
 

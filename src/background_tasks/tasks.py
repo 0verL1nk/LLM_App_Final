@@ -1,6 +1,7 @@
 """
 Background task functions for document processing
 """
+
 import os
 import re
 import time
@@ -26,6 +27,7 @@ def extract_text_from_file(file_path: str) -> str:
     """
     try:
         import textract
+
         text = textract.process(file_path).decode("utf-8")
         return text.strip()
     except ImportError:
@@ -188,10 +190,7 @@ def extract_document_task(
 
 
 def summarize_document_task(
-    task_id: str,
-    file_id: str,
-    user_uuid: str,
-    options: Dict[str, Any]
+    task_id: str, file_id: str, user_uuid: str, text: str, options: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Generate a summary of a document
@@ -200,39 +199,61 @@ def summarize_document_task(
         task_id: Task ID
         file_id: File ID to summarize
         user_uuid: User UUID
+        text: Document text content
         options: Summary options (type, length, focus_areas, etc.)
 
     Returns:
         Dictionary with summary results
     """
     logger.info(f"Starting summarization for file {file_id}")
-    time.sleep(2)  # Simulate processing time
 
-    # TODO: Implement actual summarization using DashScope API
+    api_key = options.get("api_key") or settings.dashscope_api_key
+    if not api_key:
+        raise ValueError("DashScope API key is required for summarization")
 
-    result = {
-        "summary": "This is a summary of the document...",
-        "key_points": [
-            "Key finding 1",
-            "Key finding 2",
-            "Key finding 3"
-        ],
-        "sections_summary": [
-            {"section": "Introduction", "summary": "Introduction summary..."},
-            {"section": "Methodology", "summary": "Methodology summary..."}
-        ],
-        "statistics": {
-            "original_length": 10000,
-            "summary_length": 1000,
-            "compression_ratio": 0.1
+    try:
+        from services.llm_service import LLMService
+
+        llm = LLMService(api_key=api_key)
+
+        summary_type = options.get("summary_type", "brief")
+        max_length = options.get("max_length")
+        focus_areas = options.get("focus_areas")
+        include_sections = options.get("include_sections", True)
+
+        summary_result = llm.generate_summary(
+            text=text,
+            summary_type=summary_type,
+            max_length=max_length,
+            focus_areas=focus_areas,
+        )
+
+        sections_summary = []
+        if include_sections:
+            sections = split_text_into_sections(text)
+            if len(sections) > 1:
+                sections_summary = llm.summarize_by_sections(sections)
+
+        stats = llm.calculate_summary_stats(text, summary_result.get("summary", ""))
+
+        result = {
+            "summary": summary_result.get("summary", ""),
+            "key_points": summary_result.get("key_points", []),
+            "sections_summary": sections_summary,
+            "statistics": stats,
         }
-    }
 
-    logger.info(f"Summarization completed for file {file_id}")
-    return result
+        logger.info(f"Summarization completed for file {file_id}")
+        return result
+
+    except Exception as e:
+        logger.error(f"Summarization failed for file {file_id}: {e}")
+        raise
 
 
-def qa_task(question: str, file_id: str, user_uuid: str, history: Optional[list] = None) -> Dict[str, Any]:
+def qa_task(
+    question: str, file_id: str, user_uuid: str, history: Optional[list] = None
+) -> Dict[str, Any]:
     """
     Answer a question about document content
 
@@ -257,13 +278,13 @@ def qa_task(question: str, file_id: str, user_uuid: str, history: Optional[list]
             {
                 "page": 5,
                 "section": "Results",
-                "excerpt": "Relevant excerpt from the document..."
+                "excerpt": "Relevant excerpt from the document...",
             }
         ],
         "suggested_questions": [
             "What is the methodology used?",
-            "What are the main conclusions?"
-        ]
+            "What are the main conclusions?",
+        ],
     }
 
     logger.info(f"Q&A completed for file {file_id}")
@@ -276,7 +297,7 @@ def rewrite_text_task(
     user_uuid: str,
     tone: Optional[str] = None,
     length: str = "same",
-    language: str = "zh"
+    language: str = "zh",
 ) -> Dict[str, Any]:
     """
     Rewrite text in a different style
@@ -301,23 +322,19 @@ def rewrite_text_task(
         "rewritten_text": "This is the rewritten text...",
         "original_length": len(text),
         "rewritten_length": len(text) - 100,
-        "improvements": [
-            "Improved clarity",
-            "Better flow"
-        ],
+        "improvements": ["Improved clarity", "Better flow"],
         "alternatives": [
-            {
-                "text": "Alternative version 1...",
-                "description": "More formal tone"
-            }
-        ]
+            {"text": "Alternative version 1...", "description": "More formal tone"}
+        ],
     }
 
     logger.info(f"Text rewriting completed")
     return result
 
 
-def mindmap_task(task_id: str, file_id: str, user_uuid: str, options: Dict[str, Any]) -> Dict[str, Any]:
+def mindmap_task(
+    task_id: str, file_id: str, user_uuid: str, options: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Generate a mind map from document content
 
@@ -345,24 +362,22 @@ def mindmap_task(task_id: str, file_id: str, user_uuid: str, options: Dict[str, 
                     "value": 50,
                     "children": [
                         {"name": "Sub-branch 1.1", "value": 20},
-                        {"name": "Sub-branch 1.2", "value": 30}
-                    ]
+                        {"name": "Sub-branch 1.2", "value": 30},
+                    ],
                 },
                 {
                     "name": "Branch 2",
                     "value": 40,
-                    "children": [
-                        {"name": "Sub-branch 2.1", "value": 25}
-                    ]
-                }
-            ]
+                    "children": [{"name": "Sub-branch 2.1", "value": 25}],
+                },
+            ],
         },
         "keywords": ["keyword1", "keyword2", "keyword3"],
         "structure": {
             "total_branches": 2,
             "max_depth": 3,
-            "main_topics": ["Topic 1", "Topic 2"]
-        }
+            "main_topics": ["Topic 1", "Topic 2"],
+        },
     }
 
     logger.info(f"Mindmap generation completed for file {file_id}")
