@@ -101,13 +101,16 @@ Documentation = "https://llm-app.readthedocs.io/"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project.scripts]
+llm-app = "llm_app.main:start"
+
 [tool.hatch.build.targets.wheel]
 only-include = [
-    "src/llm_app/**/*.py",
-    "src/pages/**/*.py",
-    "pages/**/*.py",
-    "文件中心.py",
+    "src/llm_app",
 ]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/llm_app/static" = "llm_app/static"
 
 # =============================================================================
 # Pytest Configuration

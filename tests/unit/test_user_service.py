@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, "/home/ling/LLM_App_Final/src")
 
-from services.user_service import UserService, VALID_MODELS
+from llm_app.services.user_service import UserService, VALID_MODELS
 
 
 class TestUserService:

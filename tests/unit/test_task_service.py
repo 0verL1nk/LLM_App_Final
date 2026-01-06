@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, "/home/ling/LLM_App_Final/src")
 
-from services.task_service import TaskService
+from llm_app.services.task_service import TaskService
 
 
 class TestTaskService:

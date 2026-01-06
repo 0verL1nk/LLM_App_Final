@@ -66,8 +66,8 @@ class TestExtractFlow:
         self, mock_db, mock_user, mock_file, mock_task
     ):
         """Test extraction flow creates a task and returns task_id"""
-        from services.task_service import TaskService
-        from services.file_service import FileService
+        from llm_app.services.task_service import TaskService
+        from llm_app.services.file_service import FileService
 
         with patch.object(FileService, "get_file", return_value=mock_file):
             with patch.object(
@@ -101,7 +101,7 @@ class TestExtractFlow:
         self, mock_db, mock_user, mock_file, mock_task
     ):
         """Test extraction returns existing result if already completed"""
-        from services.task_service import TaskService
+        from llm_app.services.task_service import TaskService
 
         mock_task.status = "completed"
         mock_task.result = {
@@ -126,7 +126,7 @@ class TestExtractFlow:
     @pytest.mark.asyncio
     async def test_extract_flow_handles_file_not_found(self, mock_db, mock_user):
         """Test extraction handles missing file gracefully"""
-        from services.file_service import FileService
+        from llm_app.services.file_service import FileService
 
         with patch.object(FileService, "get_file", return_value=None):
             file_service = FileService(mock_db)
@@ -166,7 +166,7 @@ class TestSummarizeFlow:
     @pytest.mark.asyncio
     async def test_summarize_requires_extraction(self, mock_db):
         """Test summarization requires text extraction first"""
-        from services.file_service import FileService
+        from llm_app.services.file_service import FileService
 
         file_without_text = MagicMock()
         file_without_text.extracted_text = None
@@ -182,8 +182,8 @@ class TestSummarizeFlow:
         self, mock_db, mock_file_with_text, mock_task
     ):
         """Test summarization creates task when file has extracted text"""
-        from services.task_service import TaskService
-        from services.file_service import FileService
+        from llm_app.services.task_service import TaskService
+        from llm_app.services.file_service import FileService
 
         with patch.object(FileService, "get_file", return_value=mock_file_with_text):
             with patch.object(TaskService, "create_task", return_value=mock_task):
@@ -233,7 +233,7 @@ class TestQAFlow:
         self, mock_db, mock_file_with_text, mock_llm_response
     ):
         """Test Q&A returns answer with confidence and sources"""
-        from services.file_service import FileService
+        from llm_app.services.file_service import FileService
 
         with patch.object(FileService, "get_file", return_value=mock_file_with_text):
             file_service = FileService(mock_db)
@@ -414,7 +414,7 @@ class TestOpenAPIValidation:
 
     def test_response_models_have_required_fields(self):
         """Test response models define required fields"""
-        from schemas.task import TaskStatusResponse
+        from llm_app.schemas.task import TaskStatusResponse
 
         schema = TaskStatusResponse.model_json_schema()
         assert "properties" in schema
@@ -422,7 +422,7 @@ class TestOpenAPIValidation:
 
     def test_request_models_validate_input(self):
         """Test request models validate input properly"""
-        from schemas.document import SummarizeRequest
+        from llm_app.schemas.document import SummarizeRequest
 
         request = SummarizeRequest(summary_type="brief")
         assert request.summary_type == "brief"

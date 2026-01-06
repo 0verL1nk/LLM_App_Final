@@ -1,5 +1,5 @@
 // API 基础配置
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8501/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 // 请求拦截器
 const request = async (url: string, options: RequestInit = {}) => {
