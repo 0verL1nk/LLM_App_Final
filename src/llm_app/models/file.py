@@ -9,6 +9,7 @@ from sqlalchemy import (
     Column,
     String,
     Integer,
+    Boolean,
     DateTime,
     Text,
     JSON,
@@ -40,6 +41,12 @@ class File(Base):
         nullable=False,
         index=True,
     )  # pending, processing, completed, failed
+    is_favorite = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True,
+    )  # User's favorite status
     tags = Column(JSON, nullable=True)  # Optional tags array
     extracted_text = Column(Text, nullable=True)  # Extracted text content
     word_count = Column(Integer, nullable=True)  # Word count of extracted text

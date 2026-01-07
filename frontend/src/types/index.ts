@@ -25,12 +25,24 @@ export interface AnalysisTask {
 export type FileStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface FileDocument {
-  id: string;
+  file_id: string;
+  original_filename: string;
   filename: string;
-  status: FileStatus;
-  createdAt: string;
-  summary?: string;
-  extractedText?: string;
+  file_size: number;
+  mime_type: string;
+  processing_status: FileStatus;
+  is_favorite: boolean;
+  tags?: string[];
+  created_at: string;
+  updated_at: string;
+  extracted_text?: string;
+  word_count?: number;
+  md5?: string;
+  // Legacy fields for backward compatibility
+  id?: string;
+  status?: FileStatus;
+  createdAt?: string;
+  isFavorite?: boolean;
 }
 
 export interface ChatMessage {

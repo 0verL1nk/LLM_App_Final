@@ -78,6 +78,8 @@ export USE_REDIS=true
 
 ### 推荐：使用 Makefile (最简单)
 
+适用于 Linux / macOS 用户：
+
 ```bash
 # 1. 检查并安装所有依赖（自动完成）
 make setup
@@ -88,6 +90,21 @@ make test
 # 3. 启动应用
 make run
 ```
+
+### Windows 用户
+
+我们提供了专门的批处理脚本 `run.bat`：
+
+```batch
+# 双击 run.bat 或在命令行运行：
+.\run.bat
+```
+
+此脚本会自动：
+1. 使用 `uv` 安装后端依赖
+2. 使用 `pnpm` 安装前端依赖
+3. 同时启动前后端服务
+
 
 ### 手动安装
 

@@ -18,14 +18,15 @@ import { cn } from '@/lib/utils';
 export default function Documents() {
   const [search, setSearch] = useState('');
   
-  const { data: files, isLoading } = useQuery({
+  const { data: filesData, isLoading } = useQuery({
     queryKey: ['files'],
     queryFn: () => fileService.getFiles(),
   });
 
-  const filteredFiles = files?.filter(file => 
-    file.filename.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  const files = filesData?.data?.items || [];
+  const filteredFiles = files.filter((file: any) =>
+    file.original_filename.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -110,36 +111,36 @@ export default function Documents() {
                     </td>
                   </tr>
                 ) : (
-                  filteredFiles.map((file) => (
-                    <tr key={file.id} className="hover:bg-accent/50 transition-colors group">
+                  filteredFiles.map((file: any) => (
+                    <tr key={file.file_id} className="hover:bg-accent/50 transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 bg-primary/5 rounded group-hover:bg-primary/10 transition-colors">
                             <FileText size={18} className="text-primary" />
                           </div>
-                          <span className="font-medium truncate max-w-[200px]">{file.filename}</span>
+                          <span className="font-medium truncate max-w-[200px]">{file.original_filename}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={cn(
                           "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border",
-                          file.status === 'completed' ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" :
-                          file.status === 'processing' ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800 animate-pulse" :
-                          file.status === 'failed' ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800" :
+                          file.processing_status === 'completed' ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" :
+                          file.processing_status === 'processing' ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800 animate-pulse" :
+                          file.processing_status === 'failed' ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800" :
                           "bg-muted text-muted-foreground border-border"
                         )}>
-                          {file.status === 'completed' ? '已完成' : 
-                           file.status === 'processing' ? '处理中' : 
-                           file.status === 'failed' ? '失败' : '排队中'}
+                          {file.processing_status === 'completed' ? '已完成' :
+                           file.processing_status === 'processing' ? '处理中' :
+                           file.processing_status === 'failed' ? '失败' : '排队中'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
-                        {new Date(file.createdAt).toLocaleDateString()}
+                        {new Date(file.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
-                          <Link 
-                            to={`/documents/${file.id}`}
+                          <Link
+                            to={`/workspace/${file.file_id}`}
                             className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
                             title="查看详情"
                           >

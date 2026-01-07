@@ -543,3 +543,151 @@ class FileService:
         await self.db.commit()
         logger.info(f"Updated file content for {file_id}")
         return True
+
+    @staticmethod
+    async def list_favorites(
+        db: AsyncSession,
+        user_uuid: str,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[File], int]:
+        """
+        List user's favorite files with pagination
+
+        Args:
+            db: Database session
+            user_uuid: UUID of the user
+            page: Page number (1-indexed)
+            page_size: Number of items per page
+
+        Returns:
+            Tuple of (file_list, total_count)
+        """
+        try:
+            # Build query for favorites only
+            query = select(File).where(
+                and_(File.user_uuid == user_uuid, File.is_favorite == True)
+            )
+
+            # Get total count
+            count_query = select(func.count()).select_from(query.subquery())
+            total_result = await db.execute(count_query)
+            total = total_result.scalar()
+
+            # Apply pagination and sorting
+            query = query.order_by(File.created_at.desc())
+            offset = (page - 1) * page_size
+            query = query.offset(offset).limit(page_size)
+
+            # Execute query
+            result = await db.execute(query)
+            files = result.scalars().all()
+
+            logger.info(f"Listed {len(files)} favorite files for user {user_uuid} (page {page})")
+            return list(files), total
+
+        except Exception as e:
+            logger.error(f"Failed to list favorites for user {user_uuid}: {str(e)}")
+            raise
+
+    @staticmethod
+    async def toggle_favorite(
+        db: AsyncSession,
+        file_id: str,
+        user_uuid: str
+    ) -> File:
+        """
+        Toggle favorite status of a file
+
+        Args:
+            db: Database session
+            file_id: File ID
+            user_uuid: UUID of the user
+
+        Returns:
+            Updated File instance
+
+        Raises:
+            HTTPException: If file not found or doesn't belong to user
+        """
+        try:
+            # Get file
+            query = select(File).where(
+                and_(File.id == file_id, File.user_uuid == user_uuid)
+            )
+            result = await db.execute(query)
+            file = result.scalar_one_or_none()
+
+            if not file:
+                raise HTTPException(
+                    status_code=404,
+                    detail={"error": "FILE_NOT_FOUND", "message": "文件不存在"}
+                )
+
+            # Toggle favorite status
+            file.is_favorite = not file.is_favorite
+            file.updated_at = datetime.utcnow()
+
+            await db.commit()
+            await db.refresh(file)
+
+            logger.info(f"Toggled favorite status for file {file_id} to {file.is_favorite}")
+            return file
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to toggle favorite for file {file_id}: {str(e)}")
+            raise
+
+    @staticmethod
+    async def set_favorite(
+        db: AsyncSession,
+        file_id: str,
+        user_uuid: str,
+        is_favorite: bool
+    ) -> File:
+        """
+        Set favorite status (explicit true/false)
+
+        Args:
+            db: Database session
+            file_id: File ID
+            user_uuid: UUID of the user
+            is_favorite: Favorite status to set
+
+        Returns:
+            Updated File instance
+
+        Raises:
+            HTTPException: If file not found or doesn't belong to user
+        """
+        try:
+            # Get file
+            query = select(File).where(
+                and_(File.id == file_id, File.user_uuid == user_uuid)
+            )
+            result = await db.execute(query)
+            file = result.scalar_one_or_none()
+
+            if not file:
+                raise HTTPException(
+                    status_code=404,
+                    detail={"error": "FILE_NOT_FOUND", "message": "文件不存在"}
+                )
+
+            # Set favorite status
+            file.is_favorite = is_favorite
+            file.updated_at = datetime.utcnow()
+
+            await db.commit()
+            await db.refresh(file)
+
+            logger.info(f"Set favorite status for file {file_id} to {is_favorite}")
+            return file
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to set favorite for file {file_id}: {str(e)}")
+            raise

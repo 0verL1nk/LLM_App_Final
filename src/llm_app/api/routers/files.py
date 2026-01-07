@@ -3,6 +3,7 @@ File management router endpoints
 """
 import os
 from typing import Optional
+from urllib.parse import quote
 from fastapi import (
     APIRouter,
     UploadFile,
@@ -12,8 +13,9 @@ from fastapi import (
     Query,
     Response,
     Form,
+    Body,
 )
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from llm_app.api.deps import get_db, get_current_user
@@ -25,6 +27,8 @@ from llm_app.schemas.file import (
     FileDetailsResponse,
     MessageResponse,
     PaginationInfo,
+    FavoriteToggleResponse,
+    FavoriteListResponse,
 )
 from llm_app.services.file_service import FileService
 from llm_app.models.user import User
@@ -234,6 +238,59 @@ async def list_files(
             }
         )
 
+@router.get(
+    "/favorites",
+    response_model=FavoriteListResponse,
+    summary="List favorite files",
+    description="Get paginated list of user's favorite files"
+)
+async def list_favorites(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    List user's favorite files with pagination
+
+    Returns files that the user has marked as favorites,
+    sorted by creation date (newest first).
+    """
+    try:
+        files, total = await FileService.list_favorites(
+            db=db,
+            user_uuid=current_user.uuid,
+            page=page,
+            page_size=page_size,
+        )
+
+        # Calculate pagination metadata
+        total_pages = (total + page_size - 1) // page_size
+
+        return FavoriteListResponse(
+            success=True,
+            data=FileListData(
+                items=[FileListData.model_validate(f) for f in files],
+                pagination=PaginationInfo(
+                    page=page,
+                    page_size=page_size,
+                    total=total,
+                    total_pages=total_pages,
+                ),
+            ),
+        )
+
+    except Exception as e:
+        logger.error(f"List favorites failed for user {current_user.uuid}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "LIST_FAVORITES_FAILED",
+                "message": "获取收藏列表失败",
+                "details": {"error": str(e)}
+            }
+        )
+
 
 @router.get(
     "/{file_id}",
@@ -386,18 +443,56 @@ async def download_file(
         # Determine content type
         content_type = file.mime_type or "application/octet-stream"
 
-        # Return file stream
-        def file_generator():
-            with open(file.file_path, "rb") as file_handle:
-                yield from file_handle
+        # Encode filename for Content-Disposition header (RFC 5987)
+        # This properly handles Chinese and other non-ASCII characters
+        encoded_filename = quote(file.original_filename, safe='')
 
-        return StreamingResponse(
-            file_generator(),
-            media_type=content_type,
-            headers={
-                "Content-Disposition": f'attachment; filename="{file.original_filename}"',
-            },
-        )
+        # Check if file is local or remote (cloud storage)
+        # For now, assume local files. For cloud files, we'd check if path is a URL
+        is_local = os.path.exists(file.file_path)
+
+        if is_local:
+            # Use FileResponse for local files (optimized with sendfile)
+            return FileResponse(
+                path=file.file_path,
+                media_type=content_type,
+                filename=file.original_filename,
+                headers={
+                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                },
+            )
+        else:
+            # For cloud files, use streaming with chunked reading
+            # This is a placeholder for future cloud storage integration
+            # Example: file.file_path could be "s3://bucket/key" or "https://..."
+
+            def iter_file():
+                """Iterate over file in chunks (efficient for large files)"""
+                CHUNK_SIZE = 64 * 1024  # 64KB chunks
+
+                # TODO: Add cloud storage client logic here
+                # For now, this is a fallback that won't execute
+                # with open(file.file_path, 'rb') as f:
+                #     while chunk := f.read(CHUNK_SIZE):
+                #         yield chunk
+
+                # Raise error for unsupported cloud storage
+                raise HTTPException(
+                    status_code=501,
+                    detail={
+                        "error": "CLOUD_STORAGE_NOT_SUPPORTED",
+                        "message": "云存储暂不支持，请使用本地文件",
+                        "details": {"file_path": file.file_path}
+                    }
+                )
+
+            return StreamingResponse(
+                iter_file(),
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                },
+            )
 
     except HTTPException:
         raise
@@ -408,6 +503,96 @@ async def download_file(
             detail={
                 "error": "DOWNLOAD_FAILED",
                 "message": "文件下载失败",
+                "details": {"error": str(e)}
+            }
+        )
+
+
+@router.patch(
+    "/{file_id}/favorite",
+    response_model=FavoriteToggleResponse,
+    summary="Toggle favorite status",
+    description="Toggle the favorite status of a file"
+)
+async def toggle_favorite(
+    file_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Toggle favorite status of a file
+
+    If the file is currently favorited, it will be un-favorited.
+    If it's not favorited, it will be favorited.
+    """
+    try:
+        file = await FileService.toggle_favorite(
+            db=db,
+            file_id=file_id,
+            user_uuid=current_user.uuid,
+        )
+
+        return FavoriteToggleResponse(
+            success=True,
+            data=FileListData.model_validate(file),
+            message=f"{'已添加到收藏' if file.is_favorite else '已取消收藏'}",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Toggle favorite failed for file {file_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "TOGGLE_FAVORITE_FAILED",
+                "message": "切换收藏状态失败",
+                "details": {"error": str(e)}
+            }
+        )
+
+
+@router.put(
+    "/{file_id}/favorite",
+    response_model=FavoriteToggleResponse,
+    summary="Set favorite status",
+    description="Set the favorite status of a file (explicit true/false)"
+)
+async def set_favorite_status(
+    file_id: str,
+    is_favorite: bool = Body(..., embed=True, description="Favorite status to set"),
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Set favorite status (explicit true/false)
+
+    Use this endpoint to explicitly set or unset favorite status,
+    rather than toggling.
+    """
+    try:
+        file = await FileService.set_favorite(
+            db=db,
+            file_id=file_id,
+            user_uuid=current_user.uuid,
+            is_favorite=is_favorite,
+        )
+
+        return FavoriteToggleResponse(
+            success=True,
+            data=FileListData.model_validate(file),
+            message=f"{'已添加到收藏' if is_favorite else '已取消收藏'}",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Set favorite failed for file {file_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "SET_FAVORITE_FAILED",
+                "message": "设置收藏状态失败",
                 "details": {"error": str(e)}
             }
         )

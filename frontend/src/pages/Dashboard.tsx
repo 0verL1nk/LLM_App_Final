@@ -1,18 +1,86 @@
+import { useQuery } from '@tanstack/react-query';
 import { StatCard } from '@/components/features/dashboard/StatCard';
 import { FileText, Clock, CheckCircle, Zap, Upload, ArrowRight, Star } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { statisticsService, fileService } from '@/services/api';
+import { FavoriteButton } from '@/components/features/files/FavoriteButton';
 
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user);
 
+  // Fetch statistics data
+  const { data: statsData } = useQuery({
+    queryKey: ['statistics'],
+    queryFn: () => statisticsService.getSummary(),
+  });
+
+  // Fetch recent files
+  const { data: filesData } = useQuery({
+    queryKey: ['files'],
+    queryFn: () => fileService.getFiles({ page_size: 10, sort: 'created_desc' }),
+  });
+
+  // Fetch favorite files
+  const { data: favoritesData, isLoading: favoritesLoading } = useQuery({
+    queryKey: ['favorites'],
+    queryFn: () => fileService.getFavorites({ page_size: 4 }),
+  });
+
+  const favorites = favoritesData?.data?.items || [];
+
   const stats = [
-    { title: '总文献数', value: '12', icon: FileText, trend: { value: 8, isUp: true }, description: '本月新增 3 篇', className: "border-l-4 border-l-indigo-500" },
-    { title: '正在处理', value: '2', icon: Clock, description: '平均处理耗时 45s', className: "border-l-4 border-l-amber-500" },
-    { title: '已完成分析', value: '10', icon: CheckCircle, trend: { value: 12, isUp: true }, description: '分析覆盖率 100%', className: "border-l-4 border-l-emerald-500" },
-    { title: 'AI 额度使用', value: '65%', icon: Zap, description: 'Premium 方案', className: "border-l-4 border-l-rose-500" },
+    {
+      title: '总文献数',
+      value: statsData?.data?.total_files?.toString() || '0',
+      icon: FileText,
+      trend: { value: 8, isUp: true },
+      description: '本月新增 ' + (statsData?.data?.new_files_this_month || 0) + ' 篇',
+      className: "border-l-4 border-l-indigo-500"
+    },
+    {
+      title: '正在处理',
+      value: statsData?.data?.processing_files?.toString() || '0',
+      icon: Clock,
+      description: '平均处理耗时 ' + (statsData?.data?.avg_processing_time || '45s'),
+      className: "border-l-4 border-l-amber-500"
+    },
+    {
+      title: '已完成分析',
+      value: statsData?.data?.completed_tasks?.toString() || '0',
+      icon: CheckCircle,
+      trend: { value: 12, isUp: true },
+      description: '分析覆盖率 100%',
+      className: "border-l-4 border-l-emerald-500"
+    },
+    {
+      title: 'AI 额度使用',
+      value: (statsData?.data?.api_usage_percentage || 0) + '%',
+      icon: Zap,
+      description: statsData?.data?.plan_type || '免费方案',
+      className: "border-l-4 border-l-rose-500"
+    },
   ];
+
+  const recentFiles = filesData?.items?.slice(0, 3) || [];
+
+  // Helper function to format time ago
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 3600) {
+      return Math.floor(seconds / 60) + '分钟前';
+    } else if (seconds < 86400) {
+      return Math.floor(seconds / 3600) + '小时前';
+    } else if (seconds < 604800) {
+      return Math.floor(seconds / 86400) + '天前';
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
 
   const container = {
     hidden: { opacity: 0 },
@@ -40,13 +108,15 @@ export default function Dashboard() {
             下午好, <span className="text-indigo-600">{user?.username}</span> 👋
           </h1>
           <p className="text-slate-500 mt-2 text-lg">
-            今天有 2 个新任务正在后台为您处理，查看最新分析。
+            {!statsData?.data || statsData?.data?.processing_files === 0
+              ? '暂无正在处理的任务。上传文献开始 AI 分析吧！'
+              : `今天有 ${statsData?.data?.processing_files} 个任务正在处理中，查看最新进度。`}
           </p>
         </motion.div>
-        <button className="hidden md:flex items-center space-x-2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition-all shadow-xl shadow-indigo-500/10">
+        <Link to="/documents" className="hidden md:flex items-center space-x-2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition-all shadow-xl shadow-indigo-500/10">
           <Upload size={18} />
           <span>上传文献</span>
-        </button>
+        </Link>
       </div>
 
       <motion.div 
@@ -93,23 +163,50 @@ export default function Dashboard() {
               <Star className="mr-2 text-amber-500 fill-amber-500" size={20} />
               收藏的文献
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1, 2].map((i) => (
-                <div key={i} className="p-4 rounded-2xl border bg-slate-50/50 dark:bg-slate-900/50 hover:border-indigo-500/50 transition-all cursor-pointer group">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                        <FileText size={20} className="text-indigo-600" />
+
+            {favoritesLoading ? (
+              <div className="text-center py-8 text-slate-500">
+                加载中...
+              </div>
+            ) : favorites.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <p className="mb-2">还没有收藏的文献</p>
+                <Link to="/documents" className="text-indigo-600 hover:text-indigo-700 text-sm">
+                  去浏览文献 →
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {favorites.map((file: any) => (
+                  <Link
+                    key={file.file_id}
+                    to={`/workspace/${file.file_id}`}
+                    className="p-4 rounded-2xl border bg-slate-50/50 dark:bg-slate-900/50 hover:border-indigo-500/50 transition-all cursor-pointer group relative"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+                          <FileText size={20} className="text-indigo-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold truncate text-sm">{file.original_filename}</p>
+                          <p className="text-xs text-slate-500">
+                            {file.processing_status === 'completed' ? '已完成' : '处理中'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-bold truncate text-sm">Large Language Models.pdf</p>
-                        <p className="text-xs text-slate-500">已总结 • 12 节点脑图</p>
+                      <div className="ml-2">
+                        <FavoriteButton
+                          fileId={file.file_id}
+                          isFavorite={file.is_favorite}
+                          size={18}
+                        />
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -126,13 +223,9 @@ export default function Dashboard() {
               <Link to="/documents" className="text-xs font-bold text-indigo-600 hover:opacity-80">查看全部</Link>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {[
-                { id: '1', name: 'Attention Is All You Need.pdf', time: '2小时前', size: '1.2MB' },
-                { id: '2', name: 'GPT-4 Technical Report.pdf', time: '昨天', size: '4.5MB' },
-                { id: '3', name: 'BERT: Pre-training.pdf', time: '3天前', size: '2.1MB' },
-              ].map((doc) => (
-                <Link 
-                  key={doc.id} 
+              {recentFiles.length > 0 ? recentFiles.map((doc: any) => (
+                <Link
+                  key={doc.id}
                   to={`/documents/${doc.id}`}
                   className="p-4 flex items-center justify-between hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors group"
                 >
@@ -141,13 +234,19 @@ export default function Dashboard() {
                       <FileText size={18} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold truncate group-hover:text-indigo-600 transition-colors">{doc.name}</p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">{doc.size} • {doc.time}</p>
+                      <p className="text-sm font-bold truncate group-hover:text-indigo-600 transition-colors">{doc.filename}</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                        {Math.round(doc.file_size / 1024 / 1024 * 10) / 10}MB • {getTimeAgo(doc.created_at)}
+                      </p>
                     </div>
                   </div>
                   <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-600 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
                 </Link>
-              ))}
+              )) : (
+                <div className="p-8 text-center text-slate-400 text-sm">
+                  暂无文献，请先上传文件
+                </div>
+              )}
             </div>
           </div>
 
@@ -155,12 +254,29 @@ export default function Dashboard() {
              <div className="relative z-10">
                <h4 className="font-bold mb-2 flex items-center text-indigo-400">
                  <Star size={16} className="mr-2 fill-indigo-400" />
-                 学术会议提醒
+                 使用提示
                </h4>
-               <p className="text-sm text-slate-300 mb-4">CVPR 2026 投稿截止还有 12 天。需要为您汇总相关领域最新的 20 篇论文吗？</p>
-               <button className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl font-bold transition-all border border-white/10">
-                 立即生成汇总报告
-               </button>
+               <p className="text-sm text-slate-300 mb-4">
+                 {!statsData || statsData.total_files === 0
+                   ? '上传您的第一篇文献开始使用 AI 智能分析功能。'
+                   : `您已处理 ${statsData.total_files || 0} 篇文献，继续探索更多 AI 功能！`}
+               </p>
+               <div className="flex items-center space-x-2">
+                 <Link
+                   to="/documents"
+                   className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl font-bold transition-all border border-white/10"
+                 >
+                   {!statsData || statsData.total_files === 0 ? '上传文献' : '查看文献'}
+                 </Link>
+                 {statsData && statsData.total_files > 0 && (
+                   <Link
+                     to="/settings"
+                     className="text-xs bg-indigo-600/50 hover:bg-indigo-600/70 px-4 py-2 rounded-xl font-bold transition-all"
+                   >
+                     配置 API
+                   </Link>
+                 )}
+               </div>
              </div>
           </div>
         </motion.div>

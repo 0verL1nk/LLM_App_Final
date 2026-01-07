@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuthStore } from '@/stores/authStore';
 import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { authService } from '@/services/api';
 import { Mail, Lock, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,9 +19,8 @@ type AuthValues = z.infer<typeof authSchema>;
 
 export function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
 
@@ -36,33 +37,40 @@ export function AuthForm() {
     }
   });
 
-  const onSubmit = async (data: AuthValues) => {
+  const authMutation = useMutation({
+    mutationFn: (data: AuthValues) => {
+      if (isLogin) {
+        return authService.login({ username: data.username, password: data.password });
+      } else {
+        return authService.register({
+          username: data.username,
+          email: data.email!,
+          password: data.password,
+        });
+      }
+    },
+    onSuccess: (response: any) => {
+      setAuth(response.access_token, {
+        id: response.user.uuid,
+        username: response.user.username,
+        email: response.user.email,
+        apiKeyConfigured: response.user.has_api_key,
+      });
+      navigate('/');
+    },
+    onError: (err: Error) => {
+      setError(err.message || '操作失败，请稍后再试');
+    },
+  });
+
+  const onSubmit = (data: AuthValues) => {
     if (!isLogin && !data.email) {
       setError('注册需要邮箱地址');
       return;
     }
 
-    setIsLoading(true);
     setError(null);
-    try {
-      // Simulation of API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock data
-      const mockUser = {
-        id: '1',
-        username: data.username,
-        email: data.email || `${data.username}@example.com`,
-        apiKeyConfigured: false
-      };
-      
-      setAuth('mock_token', mockUser);
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || '操作失败，请稍后再试');
-    } finally {
-      setIsLoading(false);
-    }
+    authMutation.mutate(data);
   };
 
   return (
@@ -136,10 +144,10 @@ export function AuthForm() {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={authMutation.isPending}
           className="w-full bg-primary text-primary-foreground py-2 rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center"
         >
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {authMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLogin ? '登录' : '注册'}
         </button>
       </form>

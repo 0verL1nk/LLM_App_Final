@@ -154,8 +154,14 @@ celerybeat.pid
 # Logs
 # =============================================================================
 *.log
-logs/
 *.log.*
+
+# Keep logs directory structure but ignore actual log files
+logs/*.log
+logs/*.log.*
+
+# Allow logs documentation
+!logs/README.md
 
 # Python logging
 logging.conf
@@ -252,3 +258,5 @@ GEMINI.md
 
 # mcps
 .playwright-mcp
+
+src/llm_app/static

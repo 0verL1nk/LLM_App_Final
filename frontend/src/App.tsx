@@ -19,6 +19,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/documents/:id" element={<Workspace />} />
+        <Route path="/workspace/:id" element={<Workspace />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>

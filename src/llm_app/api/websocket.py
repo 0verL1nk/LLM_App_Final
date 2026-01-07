@@ -75,10 +75,10 @@ async def websocket_tasks(
     token: str = Query(..., description="JWT authentication token"),
 ):
     """WebSocket endpoint for task status updates"""
-    from llm_app.core.security import decode_token
+    from llm_app.core.security import verify_token
 
     try:
-        payload = decode_token(token)
+        payload = verify_token(token)
         user_uuid = payload.get("sub")
         if not user_uuid:
             await websocket.close(code=4001, reason="Invalid token")

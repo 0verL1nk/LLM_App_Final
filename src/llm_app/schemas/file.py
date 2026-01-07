@@ -21,6 +21,7 @@ class FileMetadata(BaseModel):
         description="Current processing status",
         examples=["pending", "processing", "completed", "failed"],
     )
+    is_favorite: bool = Field(default=False, description="User's favorite status")
     tags: Optional[List[str]] = Field(None, description="Optional file tags")
     created_at: datetime = Field(..., description="File upload timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
@@ -98,3 +99,16 @@ class MessageResponse(BaseModel):
     """Generic message response"""
     success: bool = Field(default=True, description="Operation success status")
     message: str = Field(..., description="Response message")
+
+
+class FavoriteToggleResponse(BaseModel):
+    """Response for favorite toggle operation"""
+    success: bool = Field(default=True, description="Operation success status")
+    data: FileMetadata = Field(..., description="Updated file metadata")
+    message: str = Field(default="收藏状态已更新", description="Response message")
+
+
+class FavoriteListResponse(BaseModel):
+    """Paginated favorites list response"""
+    success: bool = Field(default=True, description="Operation success status")
+    data: FileListData = Field(..., description="Response data containing items and pagination info")

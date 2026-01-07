@@ -1,13 +1,15 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
+import { statisticsService } from '@/services/api';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Settings, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  FileText,
+  Settings,
+  LogOut,
+  Menu,
   ChevronLeft,
   Search,
   Command,
@@ -21,6 +23,12 @@ export function DashboardLayout() {
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fetch user statistics for quota display
+  const { data: stats } = useQuery({
+    queryKey: ['statistics'],
+    queryFn: () => statisticsService.getSummary(),
+  });
 
   const handleLogout = () => {
     clearAuth();
@@ -94,15 +102,20 @@ export function DashboardLayout() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold truncate">{user?.username}</p>
-                  <p className="text-[10px] text-slate-500 truncate">Premium Plan</p>
+                  <p className="text-[10px] text-slate-500 truncate">
+                    {stats?.plan_type || '免费计划'}
+                  </p>
                 </div>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mb-1">
-                 <div className="bg-indigo-600 h-full w-[65%]" />
+                 <div
+                   className="bg-indigo-600 h-full transition-all duration-500"
+                   style={{ width: `${stats?.api_usage_percentage || 0}%` }}
+                 />
               </div>
               <p className="text-[10px] text-slate-500 flex justify-between">
-                <span>额度使用: 65%</span>
-                <span>3500 tokens</span>
+                <span>额度使用: {stats?.api_usage_percentage || 0}%</span>
+                <span>{stats?.tokens_used || 0} tokens</span>
               </p>
             </div>
           )}
@@ -136,6 +149,7 @@ export function DashboardLayout() {
               <input
                 type="search"
                 placeholder="搜索文献、报告或笔记... (⌘ + K)"
+                autoComplete="off"
                 className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl pl-12 pr-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white"
               />
             </div>

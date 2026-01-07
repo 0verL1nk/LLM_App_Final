@@ -3,13 +3,19 @@ Structured logging configuration for FastAPI backend
 """
 import logging
 import sys
+from pathlib import Path
 from typing import Any, Dict
+from logging.handlers import RotatingFileHandler
 
 from llm_app.core.config import settings
 
 
 def setup_logging() -> None:
     """Configure structured logging for the application"""
+
+    # Create logs directory
+    logs_dir = Path(__file__).parent.parent.parent.parent / "logs"
+    logs_dir.mkdir(exist_ok=True)
 
     # Create formatter
     formatter = logging.Formatter(
@@ -26,9 +32,21 @@ def setup_logging() -> None:
     console_handler.setFormatter(formatter)
     console_handler.setLevel(getattr(logging, settings.log_level.upper()))
 
-    # Clear existing handlers
+    # File handler with rotation (max 10MB, keep 5 backups)
+    log_file = logs_dir / "backend.log"
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=10 * 1024 * 1024,  # 10MB
+        backupCount=5,
+        encoding='utf-8'
+    )
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(getattr(logging, settings.log_level.upper()))
+
+    # Clear existing handlers and add new ones
     root_logger.handlers.clear()
     root_logger.addHandler(console_handler)
+    root_logger.addHandler(file_handler)
 
     # Configure third-party loggers to reduce noise
     logging.getLogger("uvicorn").setLevel(logging.INFO)

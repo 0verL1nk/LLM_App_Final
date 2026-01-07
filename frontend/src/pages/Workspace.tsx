@@ -2,12 +2,13 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fileService } from '@/services/api';
-import { 
-  ChevronLeft, 
-  MessageSquare, 
-   
-  Layout, 
-  Share2, 
+import { useTaskWebSocket } from '@/hooks/useTaskWebSocket';
+import {
+  ChevronLeft,
+  MessageSquare,
+
+  Layout,
+  Share2,
   Download,
   Maximize2,
   Sparkles
@@ -24,7 +25,10 @@ export default function Workspace() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { activeToolTab, setActiveToolTab, setSidebarCollapsed } = useUIStore();
-  
+
+  // Enable WebSocket for real-time task updates
+  useTaskWebSocket();
+
   // Collapse sidebar by default in workspace for more space
   useEffect(() => {
     setSidebarCollapsed(true);
@@ -62,7 +66,7 @@ export default function Workspace() {
               <ChevronLeft size={18} />
             </button>
             <div className="flex items-center space-x-2">
-              <span className="font-semibold truncate max-w-[300px]">{file?.filename}</span>
+              <span className="font-semibold truncate max-w-[300px]">{file?.original_filename || file?.filename}</span>
               <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">PDF</span>
             </div>
           </div>
@@ -76,7 +80,7 @@ export default function Workspace() {
         <div className="flex-1 flex overflow-hidden">
           {/* Left: PDF Viewer */}
           <div className="flex-1 overflow-hidden flex flex-col">
-            <PdfViewer />
+            <PdfViewer fileId={id} />
           </div>
 
           {/* Right: AI Tools Sidebar */}
@@ -103,10 +107,10 @@ export default function Workspace() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {activeToolTab === 'summary' && <SummaryPanel />}
-              {activeToolTab === 'qa' && <QAPanel />}
-              {activeToolTab === 'rewrite' && <RewritePanel />}
-              {activeToolTab === 'mindmap' && <MindmapPanel />}
+              {activeToolTab === 'summary' && <SummaryPanel fileId={id!} />}
+              {activeToolTab === 'qa' && <QAPanel fileId={id!} />}
+              {activeToolTab === 'rewrite' && <RewritePanel fileId={id!} />}
+              {activeToolTab === 'mindmap' && <MindmapPanel fileId={id!} />}
             </div>
           </div>
         </div>

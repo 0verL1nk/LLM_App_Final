@@ -6,11 +6,18 @@ from sqlalchemy import text
 
 from .database import engine, Base
 from llm_app.models import user, file as file_model, task, content, statistics  # Import all models
+from .migrations.add_is_favorite import migrate_add_is_favorite
 
 
 async def init_db() -> None:
     """Initialize database - create all tables"""
     print("Initializing database...")
+
+    # Run migrations before creating tables
+    try:
+        await migrate_add_is_favorite()
+    except Exception as e:
+        print(f"Warning: Migration failed (may be okay if column exists): {e}")
 
     async with engine.begin() as conn:
         # Create all tables

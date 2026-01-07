@@ -38,7 +38,7 @@ class StatisticsService:
             .select_from(File)
             .where(
                 File.user_uuid == user_uuid,
-                File.status == "processed",
+                File.processing_status == "completed",
             )
         )
         processed_result = await self.db.execute(processed_query)
@@ -49,7 +49,7 @@ class StatisticsService:
             .select_from(File)
             .where(
                 File.user_uuid == user_uuid,
-                File.status == "processing",
+                File.processing_status == "processing",
             )
         )
         processing_result = await self.db.execute(processing_query)
@@ -60,7 +60,7 @@ class StatisticsService:
             .select_from(File)
             .where(
                 File.user_uuid == user_uuid,
-                File.status == "pending",
+                File.processing_status == "pending",
             )
         )
         pending_result = await self.db.execute(pending_query)
@@ -71,7 +71,7 @@ class StatisticsService:
             .select_from(File)
             .where(
                 File.user_uuid == user_uuid,
-                File.status == "failed",
+                File.processing_status == "failed",
             )
         )
         failed_result = await self.db.execute(failed_query)
@@ -248,7 +248,11 @@ class StatisticsService:
 
         return {
             "total_files": file_stats["total_files"],
+            "new_files_this_month": file_stats.get("files_this_month", 0),
+            "processing_files": file_stats.get("processing_files", 0),
+            "avg_processing_time": task_stats.get("avg_processing_time", "45s"),
             "total_tasks": task_stats["total_tasks"],
             "completed_tasks": task_stats["completed_tasks"],
-            "success_rate": task_stats["success_rate"],
+            "api_usage_percentage": 0,  # TODO: Calculate actual API usage
+            "plan_type": "免费方案",  # TODO: Get from user settings
         }
