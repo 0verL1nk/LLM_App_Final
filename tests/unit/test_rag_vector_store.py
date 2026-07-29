@@ -22,7 +22,7 @@ def test_stable_vectorstore_key_is_deterministic():
     key1 = vector_store.stable_vectorstore_key(payload)
     key2 = vector_store.stable_vectorstore_key({"b": "x", "a": 1})
     assert key1 == key2
-    assert len(key1) == 40
+    assert len(key1) == 64
 
 
 def test_build_vectorstore_inmemory_backend(monkeypatch):

@@ -33,17 +33,20 @@ app.include_router(router)
 
 RESOURCE_ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 WEB_DIST = RESOURCE_ROOT / "web" / "dist"
-ROOT_STATIC_FILES = {"favicon.svg", "icons.svg", "papersage-mark.svg"}
+ROOT_STATIC_FILES = {
+    "favicon.svg": WEB_DIST / "favicon.svg",
+    "icons.svg": WEB_DIST / "icons.svg",
+    "papersage-mark.svg": WEB_DIST / "papersage-mark.svg",
+}
 if (WEB_DIST / "assets").is_dir():
     app.mount("/assets", StaticFiles(directory=WEB_DIST / "assets"), name="assets")
 
 
 @app.get("/{path:path}", include_in_schema=False)
 def spa_fallback(path: str) -> FileResponse:
-    if path in ROOT_STATIC_FILES:
-        candidate = WEB_DIST / path
-        if candidate.is_file():
-            return FileResponse(candidate)
+    candidate = ROOT_STATIC_FILES.get(path)
+    if candidate and candidate.is_file():
+        return FileResponse(candidate)
     if path == "index.html":
         candidate = WEB_DIST / "index.html"
         if candidate.is_file():
