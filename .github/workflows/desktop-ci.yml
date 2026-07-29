@@ -8,6 +8,9 @@ on:
       - "agent/**"
       - "scripts/desktop_api.py"
       - ".github/workflows/desktop-*.yml"
+
+permissions:
+  contents: read
   push:
     branches: [main]
     paths:

@@ -199,7 +199,7 @@ def build_local_evidence_retriever(
         "model_name": model_name,
         "chunk_size": int(settings.rag_chunk_size),
         "chunk_overlap": int(settings.rag_chunk_overlap),
-        "text_sha1": hashlib.sha1(document_text.encode("utf-8")).hexdigest(),
+        "text_sha256": hashlib.sha256(document_text.encode("utf-8")).hexdigest(),
     }
     collection_key = stable_vectorstore_key(key_payload)
     vectorstore, vector_backend = build_vectorstore(

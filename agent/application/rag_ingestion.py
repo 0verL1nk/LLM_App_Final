@@ -95,7 +95,7 @@ def process_document_ingestion(
             normalized_text = text.strip()
         if not normalized_text:
             raise ValueError("Document extraction returned empty text")
-        text_hash = hashlib.sha1(normalized_text.encode("utf-8")).hexdigest()
+        text_hash = hashlib.sha256(normalized_text.encode("utf-8")).hexdigest()
         if not stored_text or str(stored_text.get("text_hash") or "") != text_hash:
             save_document_text(
                 doc_uid=doc_uid,

@@ -127,7 +127,7 @@ def publish_document_index(
         identity = f"{project_uid}\0{doc_uid}\0{index_version}\0{chunk_index}"
         rows.append(
             {
-                "chunk_id": hashlib.sha1(identity.encode("utf-8")).hexdigest(),
+                "chunk_id": hashlib.sha256(identity.encode("utf-8")).hexdigest(),
                 "project_uid": project_uid,
                 "doc_uid": doc_uid,
                 "doc_name": doc_name,

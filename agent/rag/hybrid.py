@@ -94,8 +94,8 @@ def _project_index_cache_root() -> Path:
     return Path(raw)
 
 
-def _sha1_text(value: str) -> str:
-    return hashlib.sha1(value.encode("utf-8")).hexdigest()
+def _hash_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def _settings_signature_for_project_index(settings: Any) -> str:
@@ -106,7 +106,7 @@ def _settings_signature_for_project_index(settings: Any) -> str:
         "chunk_overlap": int(getattr(settings, "rag_chunk_overlap", 80) or 80),
     }
     digest_input = json.dumps(payload, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
-    return _sha1_text(digest_input)[:16]
+    return _hash_text(digest_input)[:16]
 
 
 def _project_doc_index_path(
@@ -117,8 +117,8 @@ def _project_doc_index_path(
     text_hash: str,
 ) -> Path:
     root = _project_index_cache_root()
-    project_key = _sha1_text(str(project_uid or "__default__"))[:16]
-    doc_key = _sha1_text(str(doc_uid or "__doc__"))[:16]
+    project_key = _hash_text(str(project_uid or "__default__"))[:16]
+    doc_key = _hash_text(str(doc_uid or "__doc__"))[:16]
     return root / project_key / f"{doc_key}.{settings_signature}.{text_hash}.pkl"
 
 
@@ -281,7 +281,7 @@ def _load_or_build_project_doc_index_artifact(
     require_persistence: bool = False,
     progress_callback: IngestionProgressCallback | None = None,
 ) -> tuple[dict[str, Any], bool]:
-    text_hash = _sha1_text(normalized_text)
+    text_hash = _hash_text(normalized_text)
     path = _project_doc_index_path(
         project_uid=project_uid,
         doc_uid=doc_uid,
@@ -348,7 +348,7 @@ def build_project_document_index_with_settings(
         cache_dir=settings.local_embedding_cache_dir,
     )
     settings_signature = _settings_signature_for_project_index(settings)
-    text_hash = _sha1_text(normalized_text)
+    text_hash = _hash_text(normalized_text)
     artifact = _build_project_doc_index_artifact(
         project_uid=project_uid,
         doc_uid=doc_uid,
@@ -1028,7 +1028,7 @@ def build_hybrid_retriever(
     vectorstore_key = stable_vectorstore_key(
         {
             "mode": "hybrid_doc_dense",
-            "text_sha1": _sha1_text(document_text),
+            "text_sha256": _hash_text(document_text),
             "chunk_size": chunk_size,
             "chunk_overlap": chunk_overlap,
             "embedding_model": embedding_model,
@@ -1095,7 +1095,7 @@ def build_hybrid_evidence_retriever(
             "project_uid": str(project_uid or ""),
             "doc_uid": str(doc_uid or ""),
             "doc_name": str(doc_name or ""),
-            "text_sha1": _sha1_text(document_text),
+            "text_sha256": _hash_text(document_text),
             "chunk_size": chunk_size,
             "chunk_overlap": chunk_overlap,
             "embedding_model": embedding_model,
