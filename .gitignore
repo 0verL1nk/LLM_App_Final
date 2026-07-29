@@ -34,6 +34,7 @@ uploads/
 # Frontend build artifacts
 web/node_modules/
 web/dist/
+web/*.tsbuildinfo
 web/release/
 web/.desktop-backend/
 web/.pyinstaller-work/

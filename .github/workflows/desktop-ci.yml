@@ -26,11 +26,14 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -38,13 +41,13 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --extra dev --no-install-project
-          npm ci --prefix web
+          pnpm --dir web install --frozen-lockfile
 
       - name: Check frontend and Electron entry points
         run: |
-          npm --prefix web run typecheck
-          npm --prefix web run test
-          npm --prefix web run build
+          pnpm --dir web run typecheck
+          pnpm --dir web run test
+          pnpm --dir web run build
           node --check web/electron/main.cjs
           node --check web/electron/preload.cjs
           node --check web/electron/dev.cjs

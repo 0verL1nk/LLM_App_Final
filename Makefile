@@ -57,37 +57,37 @@ api-dev: ## Start the FastAPI server with reload.
 	$(UV) run uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
 web-dev: ## Start the Vite frontend development server.
-	npm --prefix web run dev
+	pnpm --dir web run dev
 
 web-install: ## Install locked frontend dependencies.
-	npm --prefix web ci
+	pnpm --dir web install --frozen-lockfile
 
 web-build: ## Type-check and build the production frontend.
-	npm --prefix web run build
+	pnpm --dir web run build
 
 web-test: ## Run frontend unit tests.
-	npm --prefix web run test
+	pnpm --dir web run test
 
 web-lint: ## Lint frontend TypeScript and React code.
-	npm --prefix web run lint
+	pnpm --dir web run lint
 
 web-typecheck: ## Type-check frontend code without emitting files.
-	npm --prefix web run typecheck
+	pnpm --dir web run typecheck
 
 desktop-dev: ## Launch the Electron desktop shell with the local API.
-	npm --prefix web run desktop:dev
+	pnpm --dir web run desktop:dev
 
 desktop-package: ## Build a Windows installer containing the frontend and Python API.
-	npm --prefix web run desktop:package
+	pnpm --dir web run desktop:package
 
 desktop-package-win: ## Build the Windows NSIS installer.
-	npm --prefix web run desktop:package:win
+	pnpm --dir web run desktop:package:win
 
 desktop-package-mac: ## Build the macOS DMG on macOS.
-	npm --prefix web run desktop:package:mac
+	pnpm --dir web run desktop:package:mac
 
 desktop-package-linux: ## Build AppImage and deb packages on Linux.
-	npm --prefix web run desktop:package:linux
+	pnpm --dir web run desktop:package:linux
 
 browser-cdp: ## Start isolated Chrome with a stable CDP port for local browser tests (Windows).
 	powershell -ExecutionPolicy Bypass -File scripts/start_browser_cdp.ps1

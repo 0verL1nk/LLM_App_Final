@@ -19,11 +19,11 @@ PaperSage 是一个面向论文阅读、证据检索与多 Agent 研究协作的
 
 ## 本地开发
 
-要求 Python 3.11+、uv、Node.js 22+ 与 npm。
+要求 Python 3.11+、uv、Node.js 22+ 与 pnpm（通过 Corepack 管理）。
 
 ```bash
 make install-dev      # 安装 Python 依赖
-make web-install      # 按 package-lock 安装前端依赖
+make web-install      # 按 pnpm-lock 安装前端依赖
 make run              # 一键启动 API :8000 与 Vite :5173
 ```
 

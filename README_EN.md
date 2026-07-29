@@ -19,7 +19,7 @@ The `api/` and `agent/` backend uses FastAPI, LangChain/LangGraph, Deep Agents, 
 
 ## Development
 
-Requires Python 3.11+, uv, Node.js 22+, and npm.
+Requires Python 3.11+, uv, Node.js 22+, and pnpm (managed through Corepack).
 
 ```bash
 make install-dev

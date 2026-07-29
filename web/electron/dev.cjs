@@ -2,10 +2,9 @@ const { spawn } = require("node:child_process")
 const path = require("node:path")
 
 const webRoot = path.resolve(__dirname, "..")
-const npm = process.platform === "win32" ? "npm.cmd" : "npm"
-const npx = process.platform === "win32" ? "npx.cmd" : "npx"
-const vite = spawn(npm, ["run", "dev"], { cwd: webRoot, stdio: "inherit" })
-const electron = spawn(npx, ["electron", "electron/main.cjs"], { cwd: webRoot, stdio: "inherit", env: { ...process.env, PAPERSAGE_ELECTRON_DEV: "1" } })
+const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
+const vite = spawn(pnpm, ["run", "dev"], { cwd: webRoot, stdio: "inherit" })
+const electron = spawn(pnpm, ["exec", "electron", "electron/main.cjs"], { cwd: webRoot, stdio: "inherit", env: { ...process.env, PAPERSAGE_ELECTRON_DEV: "1" } })
 
 function stop(process) {
   if (!process.killed) process.kill()

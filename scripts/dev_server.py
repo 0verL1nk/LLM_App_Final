@@ -8,13 +8,13 @@ from pathlib import Path
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
-    npm = "npm.cmd" if sys.platform == "win32" else "npm"
+    pnpm = "pnpm.cmd" if sys.platform == "win32" else "pnpm"
     processes = [
         subprocess.Popen(
             [sys.executable, "-m", "uvicorn", "api.main:app", "--reload", "--port", "8000"],
             cwd=root,
         ),
-        subprocess.Popen([npm, "run", "dev"], cwd=root / "web"),
+        subprocess.Popen([pnpm, "run", "dev"], cwd=root / "web"),
     ]
     print("PaperSage development servers are running:")
     print("  API:  http://127.0.0.1:8000")

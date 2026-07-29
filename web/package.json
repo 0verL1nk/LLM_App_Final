@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.1.0",
   "type": "module",
+  "packageManager": "pnpm@11.18.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -12,10 +13,10 @@
     "preview": "vite preview",
     "desktop:dev": "node electron/dev.cjs",
     "desktop:backend": "node scripts/package-backend.cjs",
-    "desktop:package": "npm run desktop:package:win",
-    "desktop:package:win": "npm run build && npm run desktop:backend && electron-builder --win nsis",
-    "desktop:package:mac": "npm run build && npm run desktop:backend && electron-builder --mac dmg",
-    "desktop:package:linux": "npm run build && npm run desktop:backend && electron-builder --linux AppImage deb",
+    "desktop:package": "pnpm run desktop:package:win",
+    "desktop:package:win": "pnpm run build && pnpm run desktop:backend && electron-builder --win nsis",
+    "desktop:package:mac": "pnpm run build && pnpm run desktop:backend && electron-builder --mac dmg",
+    "desktop:package:linux": "pnpm run build && pnpm run desktop:backend && electron-builder --linux AppImage deb",
     "desktop:checksums": "node scripts/write-checksums.cjs"
   },
   "dependencies": {
