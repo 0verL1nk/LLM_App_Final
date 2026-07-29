@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 _MAX_TEXT_LENGTH = 600
 _SENSITIVE_KEYS = {"api_key", "authorization", "password", "secret", "token"}
 

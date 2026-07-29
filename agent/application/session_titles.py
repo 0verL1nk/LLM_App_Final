@@ -7,7 +7,11 @@ import logging
 from pydantic import BaseModel, Field
 
 from ..adapters.sqlite.project_repository import list_project_sessions, update_project_session
-from ..adapters.user_settings import read_api_key_for_user, read_base_url_for_user, read_model_name_for_user
+from ..adapters.user_settings import (
+    read_api_key_for_user,
+    read_base_url_for_user,
+    read_model_name_for_user,
+)
 from ..llm_provider import build_openai_compatible_chat_model
 
 logger = logging.getLogger(__name__)

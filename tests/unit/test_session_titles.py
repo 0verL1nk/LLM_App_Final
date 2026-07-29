@@ -1,6 +1,10 @@
 from pathlib import Path
 
-from agent.adapters.sqlite.project_repository import create_project, create_project_session, list_project_sessions
+from agent.adapters.sqlite.project_repository import (
+    create_project,
+    create_project_session,
+    list_project_sessions,
+)
 from agent.application import session_titles
 
 

@@ -11,8 +11,12 @@ from agent.adapters.sqlite.rag_ingestion_repository import (
     get_ingestion,
     list_project_ingestions,
 )
-from agent.adapters.sqlite.run_repository import expire_stalled_runs, get_run, list_run_events, list_session_runs
-from agent.settings import load_agent_settings
+from agent.adapters.sqlite.run_repository import (
+    expire_stalled_runs,
+    get_run,
+    list_run_events,
+    list_session_runs,
+)
 from agent.application.document_library import upload_project_document
 from agent.application.rag_ingestion import (
     enqueue_document_ingestion,
@@ -35,6 +39,7 @@ from agent.application.workspace import (
     update_user_project,
     update_workspace_session,
 )
+from agent.settings import load_agent_settings
 from utils.task_queue import enqueue_background_task, get_job_status
 
 from .dependencies import current_user_id

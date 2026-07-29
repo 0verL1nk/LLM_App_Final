@@ -4,7 +4,6 @@ def build_paper_domain_prompt(
     project_name: str | None = None,
     scope_summary: str | None = None,
 ) -> str:
-    doc_name = document_name if document_name else "未知文档"
     proj_name = project_name if project_name else "默认项目"
     scope_text = scope_summary if scope_summary else "默认范围"
     return f"""[论文问答目标]

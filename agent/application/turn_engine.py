@@ -8,9 +8,9 @@ from ..domain.human_request import extract_human_requests
 from ..domain.trace import TraceEvent, phase_label_from_performative, phase_summary
 from ..method_compare_parser import parse_method_compare_payload
 from ..stream import extract_stream_text
+from .a2ui_mindmap import parse_a2ui_mindmap_jsonl
 from .contracts import EventCallback, SearchDocumentFn, TurnCoreResult
 from .delegation import build_delegation_execution
-from .a2ui_mindmap import parse_a2ui_mindmap_jsonl
 from .ports import AgentInvoker, EvidenceRetriever
 
 logger = logging.getLogger(__name__)
