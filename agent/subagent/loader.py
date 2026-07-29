@@ -1,30 +1,31 @@
-"""SubAgent 配置加载器"""
+"""Validated file-backed definitions for official Deep Agents subagents."""
 
-import logging
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
-from deepagents import SubAgent
+_DEFAULT_SUBAGENT_DIR = Path(__file__).resolve().parent
+_VALID_NAME = re.compile(r"^[a-z][a-z0-9_-]*$")
 
-logger = logging.getLogger(__name__)
+
+@dataclass(frozen=True)
+class SubAgentDefinition:
+    name: str
+    description: str
+    system_prompt: str
+    capability_ids: tuple[str, ...]
+    model: str | None = None
 
 
-def load_subagent_configs(base_dir: str = "agent/subagent") -> list[SubAgent]:
-    """加载所有 subagent 配置
-
-    Args:
-        base_dir: subagent 配置目录路径
-
-    Returns:
-        SubAgent 配置列表
-    """
-    configs: list[SubAgent] = []
-    base_path = Path(base_dir)
+def load_subagent_definitions(base_dir: str | Path | None = None) -> list[SubAgentDefinition]:
+    """Load deterministic, validated subagent definitions from ``agent.md`` files."""
+    definitions: list[SubAgentDefinition] = []
+    base_path = Path(base_dir) if base_dir is not None else _DEFAULT_SUBAGENT_DIR
 
     if not base_path.exists():
-        return configs
+        return definitions
 
-    for subdir in base_path.iterdir():
+    for subdir in sorted(base_path.iterdir(), key=lambda item: item.name):
         if not subdir.is_dir() or subdir.name.startswith("__"):
             continue
 
@@ -33,47 +34,52 @@ def load_subagent_configs(base_dir: str = "agent/subagent") -> list[SubAgent]:
             continue
 
         try:
-            config = _parse_agent_md(config_file)
-            configs.append(config)
+            definitions.append(_parse_agent_md(config_file))
         except (OSError, ValueError) as exc:
-            logger.warning("Skip invalid subagent config %s: %s", config_file, exc)
-            continue
+            raise ValueError(f"Invalid subagent config {config_file}: {exc}") from exc
 
-    return configs
+    names = [definition.name for definition in definitions]
+    if len(names) != len(set(names)):
+        raise ValueError("Subagent names must be unique")
+    return definitions
 
 
-def _parse_agent_md(file_path: Path) -> SubAgent:
-    """解析 agent.md 文件
-
-    Returns:
-        SubAgent 配置，包含 name, description, system_prompt, model (可选)
-    """
+def _parse_agent_md(file_path: Path) -> SubAgentDefinition:
     content = file_path.read_text(encoding="utf-8")
 
-    # 解析 YAML front matter
-    match = re.match(r"^---\n(.*?)\n---\n(.*)$", content, re.DOTALL)
+    match = re.match(r"^---\r?\n(.*?)\r?\n---\r?\n(.*)$", content, re.DOTALL)
     if not match:
         raise ValueError("Invalid agent.md format")
 
     front_matter = match.group(1)
     system_prompt = match.group(2).strip()
 
-    # 简单解析 YAML（只支持 key: value 格式）
     metadata: dict[str, str] = {}
-    for line in front_matter.split("\n"):
+    for line in front_matter.splitlines():
         if ":" in line:
             key, value = line.split(":", 1)
             metadata[key.strip()] = value.strip()
 
-    # 构建 SubAgent 配置字典
-    config: SubAgent = {
-        "name": metadata.get("name", ""),
-        "description": metadata.get("description", ""),
-        "system_prompt": system_prompt,
-    }
+    name = metadata.get("name", "").strip()
+    description = metadata.get("description", "").strip()
+    if not _VALID_NAME.fullmatch(name):
+        raise ValueError(f"Invalid subagent name: {name!r}")
+    if not description:
+        raise ValueError("Subagent description is required")
+    if not system_prompt:
+        raise ValueError("Subagent system prompt is required")
+    capability_ids = tuple(
+        item.strip()
+        for item in metadata.get("capabilities", "").split(",")
+        if item.strip()
+    )
+    return SubAgentDefinition(
+        name=name,
+        description=description,
+        system_prompt=system_prompt,
+        capability_ids=capability_ids,
+        model=metadata.get("model", "").strip() or None,
+    )
 
-    # 如果指定了 model，添加到配置中（否则使用默认模型）
-    if metadata.get("model"):
-        config["model"] = metadata["model"]
 
-    return config
+__all__ = ["SubAgentDefinition", "load_subagent_definitions"]

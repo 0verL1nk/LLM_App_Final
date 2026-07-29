@@ -40,6 +40,9 @@ class ProcessContract:
     min_execution_completion_ratio: float | None = None
     required_tool_names: list[str] = field(default_factory=list)
     required_phase_labels: list[str] = field(default_factory=list)
+    required_subagent_types: list[str] = field(default_factory=list)
+    min_delegation_count: int = 0
+    require_parallel_delegation: bool = False
 
 
 @dataclass(frozen=True)
@@ -90,6 +93,9 @@ class AgentEvalCase:
             min_execution_completion_ratio=min_ratio,
             required_tool_names=_string_list(payload.get("required_tool_names")),
             required_phase_labels=_string_list(payload.get("required_phase_labels")),
+            required_subagent_types=_string_list(payload.get("required_subagent_types")),
+            min_delegation_count=max(0, int(payload.get("min_delegation_count", 0))),
+            require_parallel_delegation=bool(payload.get("require_parallel_delegation", False)),
         )
         metadata = {
             str(key): value
@@ -108,6 +114,9 @@ class AgentEvalCase:
                 "min_execution_completion_ratio",
                 "required_tool_names",
                 "required_phase_labels",
+                "required_subagent_types",
+                "min_delegation_count",
+                "require_parallel_delegation",
             }
         }
         return cls(

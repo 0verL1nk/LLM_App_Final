@@ -9,10 +9,8 @@ from pathlib import Path
 from typing import Sequence
 
 DEFAULT_PATHS = (
-    "main.py",
+    "api",
     "agent",
-    "ui",
-    "pages",
     "utils",
     "scripts",
     "tests",

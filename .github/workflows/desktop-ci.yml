@@ -1,0 +1,50 @@
+name: Desktop CI
+
+on:
+  pull_request:
+    paths:
+      - "web/**"
+      - "api/**"
+      - "agent/**"
+      - "scripts/desktop_api.py"
+      - ".github/workflows/desktop-*.yml"
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "api/**"
+      - "agent/**"
+      - "scripts/desktop_api.py"
+      - ".github/workflows/desktop-*.yml"
+
+jobs:
+  verify-desktop-shell:
+    name: Verify Electron shell
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --extra dev --no-install-project
+          npm ci --prefix web
+
+      - name: Check frontend and Electron entry points
+        run: |
+          npm --prefix web run typecheck
+          npm --prefix web run test
+          npm --prefix web run build
+          node --check web/electron/main.cjs
+          node --check web/electron/preload.cjs
+          node --check web/electron/dev.cjs
+
+      - name: Check packaged-server import boundary
+        run: uv run --extra dev python -c "from api.main import WEB_DIST; assert WEB_DIST.name == 'dist'"

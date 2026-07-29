@@ -1,77 +1,64 @@
+from deepagents.middleware.subagents import SubAgentMiddleware
+from langchain_core.language_models import FakeListChatModel
+
 from agent.middlewares.builder import build_middleware_list
-from agent.middlewares.orchestration import OrchestrationMiddleware
+from agent.middlewares.llm_logger import llm_logger_middleware
 from agent.middlewares.plan import plan_middleware
-from agent.middlewares.team import TeamMiddleware
 from agent.middlewares.todolist import todolist_middleware
-from agent.profiles import paper_leader_profile, paper_worker_profile
+from agent.profiles import AgentProfile, paper_leader_profile
+from agent.session_factory import AgentDependencies
 
 
-def test_build_middleware_list_builds_typed_subagents_for_subagent_middleware(monkeypatch):
-    captured: dict[str, object] = {}
+def _deps() -> AgentDependencies:
+    return AgentDependencies(search_document_fn=lambda query: query)
 
-    monkeypatch.setattr(
-        "agent.middlewares.builder.load_subagent_configs",
-        lambda: [{"name": "researcher", "description": "d", "system_prompt": "p"}],
-    )
 
-    def _fake_subagent_middleware(**kwargs):
-        captured.update(kwargs)
-        return object()
+def _model() -> FakeListChatModel:
+    return FakeListChatModel(responses=["ok"])
 
-    monkeypatch.setattr(
-        "agent.middlewares.builder.SubAgentMiddleware",
-        _fake_subagent_middleware,
-    )
 
-    build_middleware_list(model="llm", enable_auto_summarization=False, enable_tool_selector=False)
-
-    assert "backend" in captured
-    assert captured["subagents"] == [
-        {
-            "name": "researcher",
-            "description": "d",
-            "system_prompt": "p",
-            "model": "llm",
-            "tools": [],
-        }
-    ]
-def test_build_middleware_list_includes_mindmap_format_middleware() -> None:
-    from unittest.mock import patch
-
-    with patch("agent.middlewares.builder.load_subagent_configs", return_value=[]):
-        middlewares = build_middleware_list(
-            model="llm",
-            enable_auto_summarization=False,
-            enable_tool_selector=False,
-        )
-
-    assert any(
-        middleware.__class__.__name__ == "MindmapFormatMiddleware" for middleware in middlewares
-    )
-def test_build_middleware_list_filters_team_middlewares_by_profile(monkeypatch):
-    monkeypatch.setattr("agent.middlewares.builder.load_subagent_configs", lambda: [])
-
-    leader_middlewares = build_middleware_list(
-        model=object(),
+def test_leader_runtime_exposes_official_task_subagents_with_bounded_tools() -> None:
+    middleware = build_middleware_list(
+        model=_model(),
         profile=paper_leader_profile,
-        deps=object(),
-        enable_auto_summarization=False,
-        enable_tool_selector=False,
-    )
-    worker_middlewares = build_middleware_list(
-        model=object(),
-        profile=paper_worker_profile,
-        deps=object(),
+        deps=_deps(),
         enable_auto_summarization=False,
         enable_tool_selector=False,
     )
 
-    assert any(isinstance(item, TeamMiddleware) for item in leader_middlewares)
-    assert todolist_middleware in leader_middlewares
-    assert plan_middleware in leader_middlewares
-    assert any(isinstance(item, OrchestrationMiddleware) for item in leader_middlewares)
+    subagents = next(item for item in middleware if isinstance(item, SubAgentMiddleware))
+    tool_names_by_role = {
+        spec["name"]: {getattr(tool, "name", "") for tool in spec["tools"]}
+        for spec in subagents._subagents
+    }
 
-    assert not any(isinstance(item, TeamMiddleware) for item in worker_middlewares)
-    assert todolist_middleware not in worker_middlewares
-    assert plan_middleware not in worker_middlewares
-    assert any(isinstance(item, OrchestrationMiddleware) for item in worker_middlewares)
+    assert [tool.name for tool in subagents.tools] == ["task"]
+    assert tool_names_by_role == {
+        "researcher": {"search_document", "search_web", "search_papers", "use_skill"},
+        "reviewer": {"search_document", "use_skill"},
+        "writer": {"use_skill"},
+    }
+    assert todolist_middleware in middleware
+    assert plan_middleware in middleware
+
+
+def test_worker_runtime_cannot_recursively_delegate_or_plan() -> None:
+    bounded_profile = AgentProfile(
+        name="bounded_test_worker",
+        description="Test-only bounded profile.",
+        prompt_builder=lambda **_kwargs: "bounded",
+        capability_ids=("document_pack",),
+        middleware_ids=("trace", "llm_logger"),
+    )
+    middleware = build_middleware_list(
+        model=_model(),
+        profile=bounded_profile,
+        deps=_deps(),
+        enable_auto_summarization=False,
+        enable_tool_selector=False,
+    )
+
+    assert not any(isinstance(item, SubAgentMiddleware) for item in middleware)
+    assert todolist_middleware not in middleware
+    assert plan_middleware not in middleware
+    assert middleware[-1] is llm_logger_middleware

@@ -148,8 +148,9 @@ def _build_evidence_payload(
                     and matched_idx is not None
                     and matched_idx < len(source_scores)
                 )
-                else float(1.0 / (rank + 1))
+                else None
             ),
+            rank=rank + 1,
             page_no=metadata.get("page_no") if isinstance(metadata.get("page_no"), int) else None,
             offset_start=offset_start,
             offset_end=(offset_start + len(text)) if isinstance(offset_start, int) else None,
@@ -242,7 +243,7 @@ def build_local_evidence_retriever(
 
         if scored_search_failed:
             docs = retriever.invoke(query)
-            scores = [0.0] * len(docs)
+            scores = []
             raw_candidate_count = len(docs)
 
         ranked_chunks = _rerank_docs(
@@ -265,7 +266,7 @@ def build_local_evidence_retriever(
             doc_uid=doc_uid,
             ranked_chunks=ranked_chunks,
             source_docs=docs,
-            source_scores=scores,
+            source_scores=scores if scores else None,
             doc_name=doc_name,
             project_uid=project_uid,
             trace=trace,

@@ -96,31 +96,6 @@ def _extract_skill_name_from_args(args: Any) -> str:
     return ""
 
 
-def _extract_tool_name_from_args(args: Any) -> str:
-    if isinstance(args, str):
-        try:
-            parsed = json.loads(args)
-            args = parsed
-        except Exception:
-            return ""
-    if not isinstance(args, dict):
-        return ""
-    value = str(args.get("tool_name") or args.get("name") or "").strip()
-    return value
-
-
-def _extract_mode_name_from_args(args: Any) -> str:
-    if isinstance(args, str):
-        try:
-            parsed = json.loads(args)
-            args = parsed
-        except Exception:
-            return ""
-    if not isinstance(args, dict):
-        return ""
-    return str(args.get("mode") or "").strip().lower()
-
-
 def extract_tool_trace_events_from_result(result: Any) -> list[dict[str, str]]:
     messages = _iter_result_messages(result)
     events: list[dict[str, str]] = []
@@ -216,135 +191,12 @@ def extract_skill_activation_events_from_result(result: Any) -> list[dict[str, s
     return events
 
 
-def extract_tool_activation_events_from_result(result: Any) -> list[dict[str, str]]:
-    messages = _iter_result_messages(result)
-    events: list[dict[str, str]] = []
-    seen: set[tuple[str, str]] = set()
-
-    def _append(tool_name: str, content: str) -> None:
-        normalized_name = str(tool_name or "").strip()
-        if not normalized_name:
-            return
-        normalized_content = str(content or "").strip()
-        dedupe_key = (normalized_name, normalized_content)
-        if dedupe_key in seen:
-            return
-        seen.add(dedupe_key)
-        events.append(
-            {
-                "sender": "leader",
-                "receiver": f"tool:{normalized_name}",
-                "performative": "tool_activate",
-                "content": normalized_content or f"activate {normalized_name}",
-            }
-        )
-
-    for message in messages:
-        tool_calls = _message_attr(message, "tool_calls", None)
-        if isinstance(tool_calls, list):
-            for call in tool_calls:
-                if isinstance(call, dict):
-                    call_name = str(call.get("name") or "").strip()
-                    args = call.get("args", {})
-                else:
-                    call_name = str(getattr(call, "name", "") or "").strip()
-                    args = getattr(call, "args", {})
-                if call_name != "activate_tool":
-                    continue
-                tool_name = _extract_tool_name_from_args(args)
-                _append(tool_name, str(args) if args else "")
-
-        msg_type = str(_message_attr(message, "type", "") or "").lower()
-        role = str(_message_attr(message, "role", "") or "").lower()
-        if msg_type != "tool" and role != "tool":
-            continue
-        tool_name = str(_message_attr(message, "name", "") or "").strip()
-        if tool_name != "activate_tool":
-            continue
-        content = _message_text(message).strip()
-        if not content:
-            continue
-        try:
-            payload = json.loads(content)
-        except Exception:
-            payload = None
-        if isinstance(payload, dict):
-            target_name = str(payload.get("tool_name") or "").strip()
-            _append(target_name, content)
-            continue
-
-    return events
-
-
-def extract_mode_activation_events_from_result(result: Any) -> list[dict[str, str]]:
-    """提取模式激活事件（已废弃：start_plan 和 start_team 工具已被移除）"""
-    return []
-
-
 def extract_ask_human_requests_from_result(result: Any) -> list[dict[str, str]]:
+    """Compatibility entry point backed by the canonical domain extractor."""
+    from .domain.human_request import extract_human_requests
+
     raw_messages = result.get("messages", []) if isinstance(result, dict) else []
-    if not isinstance(raw_messages, list):
-        return []
-
-    requests: list[dict[str, str]] = []
-    seen: set[tuple[str, str, str]] = set()
-
-    def _append_request(question: str, context: str, urgency: str) -> None:
-        q = str(question or "").strip()
-        if not q:
-            return
-        c = str(context or "").strip()
-        u = str(urgency or "normal").strip().lower()
-        if u not in {"low", "normal", "high"}:
-            u = "normal"
-        key = (q, c, u)
-        if key in seen:
-            return
-        seen.add(key)
-        requests.append({"question": q, "context": c, "urgency": u})
-
-    for message in raw_messages:
-        tool_calls = _message_attr(message, "tool_calls", None)
-        if isinstance(tool_calls, list):
-            for call in tool_calls:
-                if not isinstance(call, dict):
-                    continue
-                name = str(call.get("name") or "").strip()
-                if name != "ask_human":
-                    continue
-                args = call.get("args")
-                if isinstance(args, dict):
-                    _append_request(
-                        str(args.get("question") or ""),
-                        str(args.get("context") or ""),
-                        str(args.get("urgency") or "normal"),
-                    )
-
-        msg_type = str(_message_attr(message, "type", "") or "").lower()
-        role = str(_message_attr(message, "role", "") or "").lower()
-        if msg_type != "tool" and role != "tool":
-            continue
-        name = str(_message_attr(message, "name", "") or "").strip()
-        if name != "ask_human":
-            continue
-        content = _message_text(message).strip()
-        if not content:
-            continue
-        try:
-            payload = json.loads(content)
-        except Exception:
-            continue
-        if not isinstance(payload, dict):
-            continue
-        if str(payload.get("type") or "").strip() not in {"ask_human", ""}:
-            continue
-        _append_request(
-            str(payload.get("question") or ""),
-            str(payload.get("context") or ""),
-            str(payload.get("urgency") or "normal"),
-        )
-
-    return requests
+    return extract_human_requests(raw_messages if isinstance(raw_messages, list) else [])
 
 
 def extract_stream_text(chunk: Any) -> str:

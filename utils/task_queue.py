@@ -91,15 +91,14 @@ if (QUEUE_BACKEND_MODE == "rq" and _rq_available) or (
 
 QUEUE_BACKEND = "rq" if task_queue else "local"
 LOCAL_TASK_MAX_WORKERS = max(1, int(os.getenv("LOCAL_TASK_MAX_WORKERS", "2")))
-_local_executor: ThreadPoolExecutor | None = None
+_local_executor: ThreadPoolExecutor | None = ThreadPoolExecutor(
+    max_workers=LOCAL_TASK_MAX_WORKERS,
+    thread_name_prefix="taskq",
+)
 _local_jobs: Dict[str, Dict[str, Any]] = {}
 _local_jobs_lock = Lock()
 
 if QUEUE_BACKEND == "local":
-    _local_executor = ThreadPoolExecutor(
-        max_workers=LOCAL_TASK_MAX_WORKERS,
-        thread_name_prefix="taskq",
-    )
     logger.info("Task queue backend: local_thread (workers=%s)", LOCAL_TASK_MAX_WORKERS)
 else:
     logger.info("Task queue backend: rq")
@@ -407,3 +406,15 @@ def enqueue_task(task_func, *args, **kwargs) -> Dict[str, Any]:
         except Exception as e:
             logger.exception("Fallback synchronous task execution failed")
             raise e
+
+
+def enqueue_background_task(task_func, *args, **kwargs) -> Dict[str, Any]:
+    """Enqueue latency-insensitive work without ever running it on the caller thread."""
+    if QUEUE_BACKEND == "rq" and task_queue and _has_active_rq_workers():
+        try:
+            job = task_queue.enqueue(task_func, *args, **kwargs, job_timeout="10m")
+            logger.info("Background task enqueued: job_id=%s", job.id)
+            return EnqueueResult(mode="queued", job_id=job.id).model_dump()
+        except Exception:
+            logger.exception("RQ background enqueue failed, using local thread queue")
+    return _enqueue_local_task(task_func, *args, **kwargs)

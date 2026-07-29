@@ -30,10 +30,13 @@ def test_agent_task_eval_fixture_uses_judge_rubrics_and_stable_process_contracts
 
     assert hybrid_case.final_answer_contract.success_rubric
     assert hybrid_case.process_contract.requires_evidence is True
-    assert hybrid_case.process_contract.required_tool_names == ["search_document", "search_web"]
+    assert hybrid_case.process_contract.required_tool_names == ["task"]
     assert boundary_case.process_contract.required_tool_names == ["search_document"]
     assert rollout_case.process_contract.require_plan is True
     assert rollout_case.process_contract.min_execution_completion_ratio == 1.0
+    assert hybrid_case.process_contract.required_subagent_types == ["researcher", "reviewer"]
+    assert hybrid_case.process_contract.min_delegation_count == 2
+    assert hybrid_case.process_contract.require_parallel_delegation is True
 
 
 

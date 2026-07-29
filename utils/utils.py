@@ -7,9 +7,8 @@ import sqlite3
 import string
 import uuid
 from pathlib import Path
-from typing import Any, Iterator, Tuple
+from typing import Any, Tuple
 
-import streamlit as st
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from langchain_core.output_parsers import StrOutputParser
@@ -17,18 +16,10 @@ from langchain_core.prompts import ChatPromptTemplate
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
-from agent.application.language import detect_language as _detect_language
-from agent.application.runtime_tuning import apply_runtime_tuning_env
 from agent.llm_provider import build_openai_compatible_chat_model
 from agent.logging_utils import configure_application_logging
 from agent.memory.store import (
-    get_project_session_compact_memory as _memory_store_get_project_session_compact_memory,
-)
-from agent.memory.store import (
     list_project_memory_items as _memory_store_list_project_memory_items,
-)
-from agent.memory.store import (
-    save_project_session_compact_memory as _memory_store_save_project_session_compact_memory,
 )
 from agent.memory.store import (
     search_project_memory_items as _memory_store_search_project_memory_items,
@@ -49,17 +40,10 @@ password_hasher = PasswordHasher()
 def get_user_api_key(uuid: str | None = None) -> str:
     """
     获取指定用户的 API key（从数据库获取，确保隔离）
-    如果没有提供 uuid，尝试从 session_state 获取 uuid
+    本地 API 未提供 uuid 时使用 local-user
     如果没有用户 API key，返回空字符串
     """
-    # 如果没有提供 uuid，尝试从 session_state 获取
-    if not uuid:
-        if "uuid" not in st.session_state or not st.session_state["uuid"]:
-            return ""
-        candidate_uuid = st.session_state["uuid"]
-        if not isinstance(candidate_uuid, str):
-            return ""
-        uuid = candidate_uuid
+    uuid = str(uuid or "local-user")
 
     # 始终从数据库获取，确保每个用户只看到自己的 API key
     api_key = get_api_key(uuid)
@@ -135,9 +119,6 @@ def init_database(db_name: str):
     ensure_files_table_columns(db_name)
     ensure_users_model_name_column(db_name)
     ensure_users_base_url_column(db_name)
-    ensure_users_policy_router_model_name_column(db_name)
-    ensure_users_policy_router_base_url_column(db_name)
-    ensure_users_policy_router_api_key_column(db_name)
     ensure_users_runtime_tuning_columns(db_name)
     ensure_projects_tables(db_name)
 
@@ -392,38 +373,6 @@ def save_project_session_messages(
         project_uid=project_uid,
         uuid=uuid,
         messages=messages,
-        db_name=db_name,
-    )
-
-
-def get_project_session_compact_memory(
-    session_uid: str,
-    project_uid: str,
-    uuid: str,
-    db_name: str = "./database.sqlite",
-) -> dict[str, Any]:
-    return _memory_store_get_project_session_compact_memory(
-        session_uid=session_uid,
-        project_uid=project_uid,
-        uuid=uuid,
-        db_name=db_name,
-    )
-
-
-def save_project_session_compact_memory(
-    session_uid: str,
-    project_uid: str,
-    uuid: str,
-    compact_summary: str,
-    anchors: list[dict[str, Any]] | None = None,
-    db_name: str = "./database.sqlite",
-) -> None:
-    _memory_store_save_project_session_compact_memory(
-        session_uid=session_uid,
-        project_uid=project_uid,
-        uuid=uuid,
-        compact_summary=compact_summary,
-        anchors=anchors,
         db_name=db_name,
     )
 
@@ -809,13 +758,6 @@ def is_token_expired(token, db_name="./database.sqlite"):
     return False  # Token 未过期
 
 
-def print_contents(content):
-    for key, value in content.items():
-        st.write("### " + key + "\n")
-        for i in value:
-            st.write("- " + i + "\n")
-
-
 def save_content_to_database(
     uid: str,
     file_path: str,
@@ -982,51 +924,6 @@ def ensure_users_base_url_column(db_name="./database.sqlite"):
     conn.close()
 
 
-def ensure_users_policy_router_model_name_column(db_name="./database.sqlite"):
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA table_info(users)")
-    columns = cursor.fetchall()
-    has_column = any(row[1] == "policy_router_model_name" for row in columns)
-    if not has_column:
-        if _try_add_users_column(
-            cursor,
-            "ALTER TABLE users ADD COLUMN policy_router_model_name TEXT DEFAULT NULL",
-        ):
-            conn.commit()
-    conn.close()
-
-
-def ensure_users_policy_router_base_url_column(db_name="./database.sqlite"):
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA table_info(users)")
-    columns = cursor.fetchall()
-    has_column = any(row[1] == "policy_router_base_url" for row in columns)
-    if not has_column:
-        if _try_add_users_column(
-            cursor,
-            "ALTER TABLE users ADD COLUMN policy_router_base_url TEXT DEFAULT NULL",
-        ):
-            conn.commit()
-    conn.close()
-
-
-def ensure_users_policy_router_api_key_column(db_name="./database.sqlite"):
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA table_info(users)")
-    columns = cursor.fetchall()
-    has_column = any(row[1] == "policy_router_api_key" for row in columns)
-    if not has_column:
-        if _try_add_users_column(
-            cursor,
-            "ALTER TABLE users ADD COLUMN policy_router_api_key TEXT DEFAULT NULL",
-        ):
-            conn.commit()
-    conn.close()
-
-
 def _try_add_users_column(cursor, sql: str) -> bool:
     try:
         cursor.execute(sql)
@@ -1044,38 +941,6 @@ def ensure_users_runtime_tuning_columns(db_name="./database.sqlite"):
     columns = {row[1] for row in cursor.fetchall()}
 
     altered = False
-    if "agent_policy_async_enabled" not in columns:
-        altered = (
-            _try_add_users_column(
-                cursor,
-                "ALTER TABLE users ADD COLUMN agent_policy_async_enabled INTEGER DEFAULT NULL",
-            )
-            or altered
-        )
-    if "agent_policy_async_refresh_seconds" not in columns:
-        altered = (
-            _try_add_users_column(
-                cursor,
-                "ALTER TABLE users ADD COLUMN agent_policy_async_refresh_seconds REAL DEFAULT NULL",
-            )
-            or altered
-        )
-    if "agent_policy_async_min_confidence" not in columns:
-        altered = (
-            _try_add_users_column(
-                cursor,
-                "ALTER TABLE users ADD COLUMN agent_policy_async_min_confidence REAL DEFAULT NULL",
-            )
-            or altered
-        )
-    if "agent_policy_async_max_staleness_seconds" not in columns:
-        altered = (
-            _try_add_users_column(
-                cursor,
-                "ALTER TABLE users ADD COLUMN agent_policy_async_max_staleness_seconds REAL DEFAULT NULL",
-            )
-            or altered
-        )
     if "rag_index_batch_size" not in columns:
         altered = (
             _try_add_users_column(
@@ -1628,8 +1493,6 @@ def file_summary(file_path: str) -> Tuple[bool, str]:
         )
         chain = prompt | llm | StrOutputParser()
         summary = chain.invoke({})
-        st.markdown("### 总结如下：")
-        st.text(summary)
         return True, summary
     except Exception as e:
         return False, str(e)
@@ -1730,237 +1593,6 @@ def llm_content_to_text(content: Any) -> str:
     return json.dumps(content, ensure_ascii=False)
 
 
-def detect_language(text: str) -> str:
-    """兼容入口，实际实现已迁移到 `agent.application.language`。"""
-    return _detect_language(text)
-
-
-def translate_text(
-    text: str,
-    temperature: float,
-    model_name: str,
-    optimization_history: list[dict[str, Any]],
-) -> str:
-    """智能翻译的具体实现"""
-    # 使用当前用户的 API key
-    api_key = get_user_api_key()
-    if not api_key:
-        raise ValueError("请先在设置中配置您的 API Key")
-    llm = build_openai_compatible_chat_model(
-        api_key=api_key,
-        model_name=model_name,
-        temperature=temperature,
-        base_url=get_user_base_url(),
-    )
-
-    # 检测源语言
-    source_lang = detect_language(text)
-    target_lang = "en" if source_lang == "zh" else "zh"
-
-    prompt = f"""请将以下文本从{"中文" if source_lang == "zh" else "英文"}翻译成{"英文" if target_lang == "en" else "中文"}。
-优化历史:
-{optimization_history}
-原文：{text}
-
-要求：
-1. 保持专业术语的准确性
-2. 确保译文流畅自然
-3. 保持原文的语气和风格
-4. 适当本地化表达方式
-5. 注意上下文连贯性
-
-注意!!警告!!提示!!返回要求:只返回翻译后的文本,不要有多余解释,不要有多余的话.
-"""
-    response = llm.invoke(prompt)
-    return llm_content_to_text(response.content)
-
-
-def process_multy_optimization(
-    text: str,
-    opt_type: str,
-    temperature: float,
-    optimization_steps: list[str],
-    keywords: list[str],
-    special_reqs: str,
-) -> Iterator[tuple[str, str]]:
-    """
-    根据选择的优化步骤进行处理，并记录优化历史
-    """
-    current_text = text
-    user_model = get_user_model_name()
-    if not user_model:
-        raise ValueError("请先在侧边栏设置中配置模型名称")
-    model_name = user_model
-
-    step_functions = {
-        "表达优化": (
-            optimize_expression,
-            "分析：需要改善文本的基础表达方式，使其更加流畅自然。",
-        ),
-        "专业优化": (
-            professionalize_text,
-            "分析：需要优化专业术语，提升文本的学术性。",
-        ),
-        "降重处理": (
-            reduce_similarity,
-            "分析：需要通过同义词替换和句式重组降低重复率。",
-        ),
-        "智能翻译": (translate_text, "分析：需要进行中英互译转换。"),
-    }
-
-    optimization_history: list[dict[str, Any]] = []
-
-    for step in optimization_steps:
-        try:
-            func, thought = step_functions[step]
-
-            # 添加优化参数信息到思考过程
-            thought += f"\n优化类型：{opt_type}"
-            thought += f"\n调整程度：{temperature}"
-            if keywords:
-                thought += f"\n保留关键词：{', '.join(keywords)}"
-            if special_reqs:
-                thought += f"\n特殊要求：{special_reqs}"
-
-            # 记录当前步骤的优化历史
-            history = {
-                "step": step,
-                "before": current_text,
-                "parameters": {
-                    "optimization_type": opt_type,
-                    "temperature": temperature,
-                    "keywords": keywords,
-                    "special_requirements": special_reqs,
-                },
-            }
-
-            # 执行优化
-            current_text = func(
-                current_text, temperature, model_name, optimization_history
-            )
-
-            # 更新历史记录
-            history["after"] = current_text
-            optimization_history.append(history)
-
-            yield thought, current_text
-
-        except Exception as e:
-            print(f"Error in step {step}: {str(e)}")
-            yield f"优化过程中出现错误: {str(e)}", current_text
-
-
-def optimize_expression(
-    text: str,
-    temperature: float,
-    model_name: str,
-    optimization_history: list[dict[str, Any]],
-) -> str:
-    """改善表达的具体实现"""
-    # 使用当前用户的 API key
-    # 注意：这里的 model_name 参数是从 process_multy_optimization 传入的，已经考虑了语言检测
-    api_key = get_user_api_key()
-    if not api_key:
-        raise ValueError("请先在设置中配置您的 API Key")
-    llm = build_openai_compatible_chat_model(
-        api_key=api_key,
-        model_name=model_name,
-        temperature=temperature,
-        base_url=get_user_base_url(),
-    )
-
-    prompt = f"""请改善以下文本的表达方式，使其更加流畅自然,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其他语言**
-优化历史:
-{optimization_history}
-原文：{text}
-
-要求：
-1. 必须使用与原文完全相同的语言
-2. 调整句式使表达更流畅
-3. 优化用词使其更自然
-4. 保持原有意思不变
-5. 确保逻辑连贯性
-
-注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
-"""
-    response = llm.invoke(prompt)
-    return llm_content_to_text(response.content)
-
-
-def professionalize_text(
-    text: str,
-    temperature: float,
-    model_name: str,
-    optimization_history: list[dict[str, Any]],
-) -> str:
-    """专业化处理的具体实现"""
-    # 使用当前用户的 API key
-    # 注意：这里的 model_name 参数是从 process_multy_optimization 传入的，已经考虑了语言检测
-    api_key = get_user_api_key()
-    if not api_key:
-        raise ValueError("请先在设置中配置您的 API Key")
-    llm = build_openai_compatible_chat_model(
-        api_key=api_key,
-        model_name=model_name,
-        temperature=temperature,
-        base_url=get_user_base_url(),
-    )
-
-    prompt = f"""请对以下文本进行专业化处理，优化适当的专业术语和学术表达,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其它语言**
-优化历史:
-{optimization_history}
-原文：{text}
-
-要求：
-1. 必须使用与原文完全相同的语言
-2. 优化合适的专业术语
-3. 使用更学术的表达方式
-4. 保持准确性和可读性
-5. 确保专业性和权威性
-
-注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
-"""
-    response = llm.invoke(prompt)
-    return llm_content_to_text(response.content)
-
-
-def reduce_similarity(
-    text: str,
-    temperature: float,
-    model_name: str,
-    optimization_history: list[dict[str, Any]],
-) -> str:
-    """降重处理的具体实现"""
-    # 使用当前用户的 API key
-    # 注意：这里的 model_name 参数是从 process_multy_optimization 传入的，已经考虑了语言检测
-    api_key = get_user_api_key()
-    if not api_key:
-        raise ValueError("请先在设置中配置您的 API Key")
-    llm = build_openai_compatible_chat_model(
-        api_key=api_key,
-        model_name=model_name,
-        temperature=temperature,
-        base_url=get_user_base_url(),
-    )
-
-    prompt = f"""请对以下原文的内容进行降重处理，通过同义词替换和句式重组等方式降低重复率,重要提示：**必须使用与原文相同的语言进行回复！中文或英文或其它语言**
-优化历史:
-{optimization_history}
-**原文**：{text}
---原文结束--
-要求：
-1. 必须使用与原文完全相同的语言
-2. 使用同义词替换
-3. 调整句式结构
-4. 保持原意不变
-5. 确保文本通顺
-
-注意!!警告!!提示!!返回要求:只返回降重后的文本,不要有多余解释,不要有多余的话.
-"""
-    response = llm.invoke(prompt)
-    return llm_content_to_text(response.content)
-
-
 def save_api_key(uuid: str, api_key: str, db_name="./database.sqlite"):
     """保存用户的 API key"""
     conn = sqlite3.connect(db_name)
@@ -2042,111 +1674,10 @@ def get_base_url(uuid: str, db_name="./database.sqlite") -> str | None:
     return result[0] if result and result[0] else None
 
 
-def save_policy_router_model_name(
-    uuid: str,
-    model_name: str | None,
-    db_name="./database.sqlite",
-):
-    ensure_users_policy_router_model_name_column(db_name)
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    normalized = str(model_name or "").strip() or None
-    cursor.execute(
-        """
-        UPDATE users SET policy_router_model_name = ? WHERE uuid = ?
-    """,
-        (normalized, uuid),
-    )
-    conn.commit()
-    conn.close()
-
-
-def get_policy_router_model_name(uuid: str, db_name="./database.sqlite") -> str | None:
-    ensure_users_policy_router_model_name_column(db_name)
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT policy_router_model_name FROM users WHERE uuid = ?",
-        (uuid,),
-    )
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result and result[0] else None
-
-
-def save_policy_router_base_url(
-    uuid: str,
-    base_url: str | None,
-    db_name="./database.sqlite",
-):
-    ensure_users_policy_router_base_url_column(db_name)
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    normalized = str(base_url or "").strip() or None
-    cursor.execute(
-        """
-        UPDATE users SET policy_router_base_url = ? WHERE uuid = ?
-    """,
-        (normalized, uuid),
-    )
-    conn.commit()
-    conn.close()
-
-
-def get_policy_router_base_url(uuid: str, db_name="./database.sqlite") -> str | None:
-    ensure_users_policy_router_base_url_column(db_name)
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT policy_router_base_url FROM users WHERE uuid = ?",
-        (uuid,),
-    )
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result and result[0] else None
-
-
-def save_policy_router_api_key(
-    uuid: str,
-    api_key: str | None,
-    db_name="./database.sqlite",
-):
-    ensure_users_policy_router_api_key_column(db_name)
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    normalized = str(api_key or "").strip() or None
-    cursor.execute(
-        """
-        UPDATE users SET policy_router_api_key = ? WHERE uuid = ?
-    """,
-        (normalized, uuid),
-    )
-    conn.commit()
-    conn.close()
-
-
-def get_policy_router_api_key(uuid: str, db_name="./database.sqlite") -> str | None:
-    ensure_users_policy_router_api_key_column(db_name)
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT policy_router_api_key FROM users WHERE uuid = ?",
-        (uuid,),
-    )
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result and result[0] else None
-
-
 def save_runtime_tuning_settings(
     uuid: str,
     *,
-    agent_policy_async_enabled: bool | None,
-    agent_policy_async_refresh_seconds: float | None,
-    agent_policy_async_min_confidence: float | None,
-    agent_policy_async_max_staleness_seconds: float | None,
     rag_index_batch_size: int | None,
-    agent_document_text_cache_max_chars: int | None,
     local_rag_project_max_chars: int | None,
     local_rag_project_max_chunks: int | None,
     db_name="./database.sqlite",
@@ -2154,34 +1685,9 @@ def save_runtime_tuning_settings(
     ensure_users_runtime_tuning_columns(db_name)
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
-    normalized_async_enabled = (
-        int(bool(agent_policy_async_enabled))
-        if agent_policy_async_enabled is not None
-        else None
-    )
-    normalized_refresh_seconds = (
-        max(0.5, float(agent_policy_async_refresh_seconds))
-        if agent_policy_async_refresh_seconds is not None
-        else None
-    )
-    normalized_min_confidence = (
-        min(1.0, max(0.0, float(agent_policy_async_min_confidence)))
-        if agent_policy_async_min_confidence is not None
-        else None
-    )
-    normalized_max_staleness = (
-        max(1.0, float(agent_policy_async_max_staleness_seconds))
-        if agent_policy_async_max_staleness_seconds is not None
-        else None
-    )
     normalized_batch_size = (
         max(1, int(rag_index_batch_size))
         if rag_index_batch_size is not None
-        else None
-    )
-    normalized_document_cache_max_chars = (
-        max(0, int(agent_document_text_cache_max_chars))
-        if agent_document_text_cache_max_chars is not None
         else None
     )
     normalized_project_max_chars = (
@@ -2199,23 +1705,13 @@ def save_runtime_tuning_settings(
         """
         UPDATE users
         SET
-            agent_policy_async_enabled = ?,
-            agent_policy_async_refresh_seconds = ?,
-            agent_policy_async_min_confidence = ?,
-            agent_policy_async_max_staleness_seconds = ?,
             rag_index_batch_size = ?,
-            agent_document_text_cache_max_chars = ?,
             local_rag_project_max_chars = ?,
             local_rag_project_max_chunks = ?
         WHERE uuid = ?
     """,
         (
-            normalized_async_enabled,
-            normalized_refresh_seconds,
-            normalized_min_confidence,
-            normalized_max_staleness,
             normalized_batch_size,
-            normalized_document_cache_max_chars,
             normalized_project_max_chars,
             normalized_project_max_chunks,
             uuid,
@@ -2235,12 +1731,7 @@ def get_runtime_tuning_settings(
     cursor.execute(
         """
         SELECT
-            agent_policy_async_enabled,
-            agent_policy_async_refresh_seconds,
-            agent_policy_async_min_confidence,
-            agent_policy_async_max_staleness_seconds,
             rag_index_batch_size,
-            agent_document_text_cache_max_chars,
             local_rag_project_max_chars,
             local_rag_project_max_chunks
         FROM users
@@ -2252,219 +1743,30 @@ def get_runtime_tuning_settings(
     conn.close()
     if not result:
         return {
-            "agent_policy_async_enabled": None,
-            "agent_policy_async_refresh_seconds": None,
-            "agent_policy_async_min_confidence": None,
-            "agent_policy_async_max_staleness_seconds": None,
             "rag_index_batch_size": None,
-            "agent_document_text_cache_max_chars": None,
             "local_rag_project_max_chars": None,
             "local_rag_project_max_chunks": None,
         }
     return {
-        "agent_policy_async_enabled": (
-            None if result[0] is None else bool(int(result[0]))
-        ),
-        "agent_policy_async_refresh_seconds": (
-            None if result[1] is None else float(result[1])
-        ),
-        "agent_policy_async_min_confidence": (
-            None if result[2] is None else float(result[2])
-        ),
-        "agent_policy_async_max_staleness_seconds": (
-            None if result[3] is None else float(result[3])
-        ),
-        "rag_index_batch_size": None if result[4] is None else int(result[4]),
-        "agent_document_text_cache_max_chars": (
-            None if result[5] is None else int(result[5])
-        ),
-        "local_rag_project_max_chars": None if result[6] is None else int(result[6]),
-        "local_rag_project_max_chunks": None if result[7] is None else int(result[7]),
+        "rag_index_batch_size": None if result[0] is None else int(result[0]),
+        "local_rag_project_max_chars": None if result[1] is None else int(result[1]),
+        "local_rag_project_max_chunks": None if result[2] is None else int(result[2]),
     }
 
 
 def get_user_runtime_tuning_settings(
     uuid: str | None = None,
 ) -> dict[str, bool | int | float | None]:
-    if not uuid:
-        if "uuid" not in st.session_state or not st.session_state["uuid"]:
-            return {
-                "agent_policy_async_enabled": None,
-                "agent_policy_async_refresh_seconds": None,
-                "agent_policy_async_min_confidence": None,
-                "agent_policy_async_max_staleness_seconds": None,
-                "rag_index_batch_size": None,
-                "agent_document_text_cache_max_chars": None,
-                "local_rag_project_max_chars": None,
-                "local_rag_project_max_chunks": None,
-            }
-        candidate_uuid = st.session_state["uuid"]
-        if not isinstance(candidate_uuid, str):
-            return {
-                "agent_policy_async_enabled": None,
-                "agent_policy_async_refresh_seconds": None,
-                "agent_policy_async_min_confidence": None,
-                "agent_policy_async_max_staleness_seconds": None,
-                "rag_index_batch_size": None,
-                "agent_document_text_cache_max_chars": None,
-                "local_rag_project_max_chars": None,
-                "local_rag_project_max_chunks": None,
-            }
-        uuid = candidate_uuid
-    return get_runtime_tuning_settings(uuid)
-
-
-def apply_user_runtime_tuning_env(uuid: str | None = None) -> dict[str, str]:
-    settings = get_user_runtime_tuning_settings(uuid)
-    return apply_runtime_tuning_env(settings=settings, environ=os.environ)
+    return get_runtime_tuning_settings(str(uuid or "local-user"))
 
 
 def get_user_model_name(uuid: str | None = None) -> str | None:
     """
     获取指定用户的模型名称（从数据库获取，确保隔离）
-    如果没有提供 uuid，尝试从 session_state 获取 uuid
+    本地 API 未提供 uuid 时使用 local-user
     """
-    # 如果没有提供 uuid，尝试从 session_state 获取
-    if not uuid:
-        if "uuid" not in st.session_state or not st.session_state["uuid"]:
-            return None
-        candidate_uuid = st.session_state["uuid"]
-        if not isinstance(candidate_uuid, str):
-            return None
-        uuid = candidate_uuid
-
-    # 始终从数据库获取
-    return get_model_name(uuid)
+    return get_model_name(str(uuid or "local-user"))
 
 
 def get_user_base_url(uuid: str | None = None) -> str | None:
-    if not uuid:
-        if "uuid" not in st.session_state or not st.session_state["uuid"]:
-            return None
-        candidate_uuid = st.session_state["uuid"]
-        if not isinstance(candidate_uuid, str):
-            return None
-        uuid = candidate_uuid
-
-    return get_base_url(uuid)
-
-
-def get_user_policy_router_model_name(uuid: str | None = None) -> str | None:
-    if not uuid:
-        if "uuid" not in st.session_state or not st.session_state["uuid"]:
-            return None
-        candidate_uuid = st.session_state["uuid"]
-        if not isinstance(candidate_uuid, str):
-            return None
-        uuid = candidate_uuid
-    return get_policy_router_model_name(uuid)
-
-
-def get_user_policy_router_base_url(uuid: str | None = None) -> str | None:
-    if not uuid:
-        if "uuid" not in st.session_state or not st.session_state["uuid"]:
-            return None
-        candidate_uuid = st.session_state["uuid"]
-        if not isinstance(candidate_uuid, str):
-            return None
-        uuid = candidate_uuid
-    return get_policy_router_base_url(uuid)
-
-
-def get_user_policy_router_api_key(uuid: str | None = None) -> str | None:
-    if not uuid:
-        if "uuid" not in st.session_state or not st.session_state["uuid"]:
-            return None
-        candidate_uuid = st.session_state["uuid"]
-        if not isinstance(candidate_uuid, str):
-            return None
-        uuid = candidate_uuid
-    return get_policy_router_api_key(uuid)
-
-
-def show_sidebar_api_key_setting():
-    """
-    显示侧边栏 API Key 和模型设置
-    应该在每个页面中调用，用于统一显示 API Key 和模型配置界面
-    """
-    if "uuid" not in st.session_state or not st.session_state["uuid"]:
-        st.session_state["uuid"] = "local-user"
-
-    ensure_local_user(st.session_state["uuid"])
-
-    with st.sidebar:
-        st.header("设置")
-
-        # API Key 设置
-        # 始终从数据库获取，确保每个用户只看到自己的 API key，避免 session 共享问题
-        saved_api_key = get_api_key(st.session_state["uuid"])
-
-        # 使用 key 参数，确保每次渲染都从数据库读取最新值
-        current_api_key = st.text_input(
-            "API Key:",
-            value=saved_api_key,
-            type="password",
-            help="请输入您的 API key",
-            key=f"api_key_input_{st.session_state['uuid']}",  # 使用 uuid 作为 key 的一部分
-        )
-
-        st.divider()
-
-        # 模型选择 - 允许自定义输入
-        saved_model_name = get_model_name(st.session_state["uuid"])
-        if not saved_model_name:
-            saved_model_name = ""
-
-        current_model_name = st.text_input(
-            "模型名称:",
-            value=saved_model_name,
-            help="请输入要使用的 AI 模型名称",
-            key=f"model_input_{st.session_state['uuid']}",
-            placeholder="例如: qwen-plus / gpt-4o-mini / any-openai-compatible-model",
-        )
-
-        if not saved_model_name:
-            st.warning("⚠️ 尚未配置模型名称，部分功能将不可用")
-
-        st.divider()
-
-        settings = load_agent_settings()
-        saved_base_url = get_base_url(st.session_state["uuid"])
-        current_base_url = st.text_input(
-            "OpenAI Compatible Base URL:",
-            value=saved_base_url
-            if saved_base_url
-            else settings.openai_compatible_base_url,
-            help="用于 OpenAI Compatible 接口的 Base URL",
-            key=f"base_url_input_{st.session_state['uuid']}",
-            placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1",
-        )
-
-        if st.button("保存设置", use_container_width=True, key="save_settings_btn"):
-            normalized_model_name = (
-                current_model_name.strip() if current_model_name else ""
-            )
-            normalized_base_url = current_base_url.strip() if current_base_url else ""
-
-            save_api_key(st.session_state["uuid"], current_api_key)
-            save_model_name(
-                st.session_state["uuid"],
-                normalized_model_name,
-            )
-            save_base_url(
-                st.session_state["uuid"],
-                normalized_base_url if normalized_base_url else None,
-            )
-            persisted_api_key = get_api_key(st.session_state["uuid"])
-            persisted_model_name = get_model_name(st.session_state["uuid"])
-            persisted_base_url = get_base_url(st.session_state["uuid"])
-
-            model_saved = (persisted_model_name or "") == normalized_model_name
-            base_url_saved = (persisted_base_url or "") == normalized_base_url
-            api_key_saved = persisted_api_key == current_api_key
-
-            if api_key_saved and model_saved and base_url_saved:
-                st.toast("✅ 设置已保存")
-                st.rerun()
-            else:
-                st.error("设置保存失败，请重试")
+    return get_base_url(str(uuid or "local-user"))

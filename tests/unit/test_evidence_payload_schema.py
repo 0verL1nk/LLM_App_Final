@@ -28,3 +28,10 @@ def test_evidence_payload_defaults():
     payload = EvidencePayload()
     assert payload.evidences == []
     assert payload.trace == {}
+
+
+def test_evidence_item_does_not_invent_retrieval_score():
+    item = EvidenceItem(chunk_id="chunk_1", text="evidence without backend score")
+
+    assert item.score is None
+    assert item.rank is None

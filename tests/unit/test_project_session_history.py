@@ -12,9 +12,7 @@ from agent.adapters.sqlite.project_repository import (
     update_project_session,
 )
 from agent.memory.store import (
-    get_project_session_compact_memory,
     list_project_memory_items,
-    save_project_session_compact_memory,
     search_project_memory_items,
     upsert_project_memory_item,
 )
@@ -109,23 +107,17 @@ def test_project_session_update_and_delete(tmp_path: Path) -> None:
         uuid="local-user",
         db_name=str(db_path),
     )
-    assert sessions[0]["session_uid"] == str(session_b["session_uid"])
-    assert sessions[0]["session_name"] == "重点会话"
-    assert sessions[0]["is_pinned"] == 1
+    assert sessions[0]["session_uid"] == str(session_a["session_uid"])
+    assert sessions[0]["is_main"] is True
+    assert sessions[1]["session_uid"] == str(session_b["session_uid"])
+    assert sessions[1]["session_name"] == "重点会话"
+    assert sessions[1]["is_pinned"] == 1
 
     save_project_session_messages(
         session_uid=str(session_b["session_uid"]),
         project_uid=project_uid,
         uuid="local-user",
         messages=[{"role": "assistant", "content": "to be deleted"}],
-        db_name=str(db_path),
-    )
-    save_project_session_compact_memory(
-        session_uid=str(session_b["session_uid"]),
-        project_uid=project_uid,
-        uuid="local-user",
-        compact_summary="待删除摘要",
-        anchors=[{"id": "F1", "claim": "x", "refs": ["m1"]}],
         db_name=str(db_path),
     )
     deleted = delete_project_session(
@@ -151,60 +143,20 @@ def test_project_session_update_and_delete(tmp_path: Path) -> None:
         db_name=str(db_path),
     )
     assert removed_messages == []
-    removed_summary = get_project_session_compact_memory(
-        session_uid=str(session_b["session_uid"]),
-        project_uid=project_uid,
-        uuid="local-user",
-        db_name=str(db_path),
-    )
-    assert removed_summary["compact_summary"] == ""
-    assert removed_summary["anchors"] == []
+def test_project_memory_item_upsert_and_search(monkeypatch, tmp_path: Path) -> None:
+    class _Embeddings:
+        def embed_query(self, _text: str) -> list[float]:
+            return [1.0, 0.0]
 
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            return [
+                [1.0, 0.0] if "方法A优于方法B" in text else [0.0, 1.0]
+                for text in texts
+            ]
 
-def test_project_session_compact_memory_roundtrip(tmp_path: Path) -> None:
-    db_path, project_uid = _prepare_project(tmp_path)
-    session_uid = ensure_default_project_session(
-        project_uid=project_uid,
-        uuid="local-user",
-        db_name=str(db_path),
+    monkeypatch.setattr(
+        "agent.memory.service.get_embedding_model", lambda: _Embeddings()
     )
-
-    save_project_session_compact_memory(
-        session_uid=session_uid,
-        project_uid=project_uid,
-        uuid="local-user",
-        compact_summary="用户关注实验结论和局限性",
-        anchors=[{"id": "F1", "claim": "关键结论", "refs": ["m2"]}],
-        db_name=str(db_path),
-    )
-    loaded = get_project_session_compact_memory(
-        session_uid=session_uid,
-        project_uid=project_uid,
-        uuid="local-user",
-        db_name=str(db_path),
-    )
-    assert loaded["compact_summary"] == "用户关注实验结论和局限性"
-    assert loaded["anchors"] == [{"id": "F1", "claim": "关键结论", "refs": ["m2"]}]
-
-    save_project_session_compact_memory(
-        session_uid=session_uid,
-        project_uid=project_uid,
-        uuid="local-user",
-        compact_summary="更新后的摘要",
-        anchors=[],
-        db_name=str(db_path),
-    )
-    loaded_updated = get_project_session_compact_memory(
-        session_uid=session_uid,
-        project_uid=project_uid,
-        uuid="local-user",
-        db_name=str(db_path),
-    )
-    assert loaded_updated["compact_summary"] == "更新后的摘要"
-    assert loaded_updated["anchors"] == []
-
-
-def test_project_memory_item_upsert_and_search(tmp_path: Path) -> None:
     db_path, project_uid = _prepare_project(tmp_path)
     session_uid = ensure_default_project_session(
         project_uid=project_uid,

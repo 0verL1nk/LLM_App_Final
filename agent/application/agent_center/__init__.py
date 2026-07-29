@@ -1,118 +1,13 @@
-from .agent_runtime import ensure_agent_runtime, prepare_agent_session
-from .controller import (
-    build_scope_cache_caption,
-    build_turn_context,
-    load_scope_docs_with_text,
-    resolve_archive_target,
-    resolve_runtime_session_id,
-    resolve_selected_doc_uid_for_logging,
-    serialize_output_content,
-    validate_runtime_prerequisites,
-)
-from .conversation_state import (
-    ensure_compact_summary,
-    ensure_conversation_messages,
-    get_history_paging_state,
-    load_more_conversation_messages,
-    persist_active_conversation,
-    update_context_usage,
-)
-from .keys import conversation_key, scope_signature, session_key
-from .memory import persist_turn_memory
-from .page_orchestrator import (
-    ArchivePayload,
-    PromptGateResult,
-    ScopeRuntimeResult,
-    TurnExecutionContext,
-    apply_turn_result,
-    build_tool_load_signature,
-    build_turn_execution_context,
-    gate_prompt_and_enqueue,
-    prepare_scope_runtime,
-    should_emit_tool_load_event,
-)
-from .project_sessions import (
-    build_session_maps,
-    build_session_preview,
-    create_and_select_session,
-    delete_and_select_next_session,
-    drop_agent_session_cache,
-    drop_conversation_cache,
-    ensure_project_sessions,
-    format_session_option,
-    normalize_selector_value,
-    resolve_current_session_uid,
-    should_allow_delete_session,
-    update_selected_session_map,
-)
-from .prompting import with_language_hint
-from .runtime_state import (
-    build_runtime_deps_from_session_state,
-    clear_project_runtime,
-    has_cached_agent_session,
-    load_document_text,
-)
-from .turn_state import (
-    append_assistant_turn_message,
-    append_skill_context_texts,
-    clear_turn_lock,
-    enqueue_user_turn,
-    resolve_active_prompt,
-    store_turn_metrics,
-)
+"""Reusable Agent-turn application contracts."""
+
+from .controller import build_turn_context
+from .facade import AgentCenterRuntimeDeps, AgentCenterTurnRequest, execute_agent_center_turn
+from .memory import enqueue_turn_memory_consolidation
 
 __all__ = [
-    "session_key",
-    "conversation_key",
-    "scope_signature",
-    "with_language_hint",
+    "AgentCenterRuntimeDeps",
+    "AgentCenterTurnRequest",
     "build_turn_context",
-    "persist_turn_memory",
-    "ScopeRuntimeResult",
-    "PromptGateResult",
-    "TurnExecutionContext",
-    "ArchivePayload",
-    "prepare_scope_runtime",
-    "gate_prompt_and_enqueue",
-    "build_turn_execution_context",
-    "build_tool_load_signature",
-    "apply_turn_result",
-    "should_emit_tool_load_event",
-    "persist_active_conversation",
-    "ensure_conversation_messages",
-    "ensure_compact_summary",
-    "update_context_usage",
-    "get_history_paging_state",
-    "load_more_conversation_messages",
-    "has_cached_agent_session",
-    "build_runtime_deps_from_session_state",
-    "clear_project_runtime",
-    "load_document_text",
-    "ensure_agent_runtime",
-    "prepare_agent_session",
-    "ensure_project_sessions",
-    "build_session_maps",
-    "resolve_current_session_uid",
-    "normalize_selector_value",
-    "format_session_option",
-    "build_session_preview",
-    "should_allow_delete_session",
-    "update_selected_session_map",
-    "create_and_select_session",
-    "delete_and_select_next_session",
-    "drop_agent_session_cache",
-    "drop_conversation_cache",
-    "validate_runtime_prerequisites",
-    "load_scope_docs_with_text",
-    "build_scope_cache_caption",
-    "resolve_runtime_session_id",
-    "resolve_selected_doc_uid_for_logging",
-    "resolve_archive_target",
-    "serialize_output_content",
-    "resolve_active_prompt",
-    "enqueue_user_turn",
-    "clear_turn_lock",
-    "append_skill_context_texts",
-    "store_turn_metrics",
-    "append_assistant_turn_message",
+    "enqueue_turn_memory_consolidation",
+    "execute_agent_center_turn",
 ]

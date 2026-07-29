@@ -36,10 +36,11 @@ Do not use this skill for:
 3. Execute iterative retrieval
 - Run local/document search first.
 - If local evidence is insufficient, expand to scholarly search and then web search.
-- Track each round with: query, source type, key hit, confidence.
+- Track each round with: query, source type, key hit, and unresolved evidence gap.
 
 4. Evaluate source quality
-- Score sources by credibility, relevance, recency, and cross-source consistency.
+- Judge credibility, direct relevance, temporal suitability, and independent corroboration in context.
+- Explain why a source supports a claim; do not collapse these dimensions into a fixed weighted score.
 - Downgrade claims that rely on a single weak source.
 
 5. Synthesize answer with traceability
@@ -59,10 +60,9 @@ Do not use this skill for:
 
 Read additional references only when needed:
 - `references/workflow_blueprint.md`: full multi-round execution blueprint
-- `references/source_quality_rubric.md`: scoring and conflict-resolution rubric
+- `references/source_quality_rubric.md`: contextual assessment and conflict-resolution rubric
 - `references/output_schema.md`: final structured output schema
 
 ## Scripted Helpers
 
 - `scripts/evidence_aggregator.py`: normalize and merge heterogeneous evidence records
-- `scripts/source_score.py`: deterministic source scoring utility

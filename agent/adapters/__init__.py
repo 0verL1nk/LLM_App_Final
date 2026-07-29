@@ -1,6 +1,5 @@
-from .agent_session import create_leader_session
 from .archive import save_output
-from .document import extract_document_payload, load_cached_extraction, save_cached_extraction
+from .document import extract_document_payload
 from .llm import create_chat_model
 from .project_store import (
     count_session_messages_for_project,
@@ -16,59 +15,44 @@ from .project_store import (
     save_session_messages_for_project,
     update_session_for_project,
 )
-from .rag import create_project_evidence_retriever
+from .rag import (
+    DynamicProjectEvidenceService,
+    create_dynamic_project_evidence_service,
+    create_project_evidence_retriever,
+)
 from .user_settings import (
     apply_runtime_tuning_env_for_user,
     list_user_files,
     read_api_key_for_user,
     read_base_url_for_user,
     read_model_name_for_user,
-    read_policy_router_api_key_for_user,
-    read_policy_router_base_url_for_user,
-    read_policy_router_model_name_for_user,
     read_runtime_tuning_settings_for_user,
     read_user_api_key,
     read_user_base_url,
     read_user_model_name,
-    read_user_policy_router_api_key,
-    read_user_policy_router_base_url,
-    read_user_policy_router_model_name,
     save_api_key_for_user,
     save_base_url_for_user,
     save_model_name_for_user,
-    save_policy_router_api_key_for_user,
-    save_policy_router_base_url_for_user,
-    save_policy_router_model_name_for_user,
     save_runtime_tuning_settings_for_user,
 )
 
 __all__ = [
-    "create_leader_session",
     "save_output",
     "create_chat_model",
     "create_project_evidence_retriever",
+    "create_dynamic_project_evidence_service",
+    "DynamicProjectEvidenceService",
     "extract_document_payload",
-    "load_cached_extraction",
-    "save_cached_extraction",
     "read_user_api_key",
     "read_user_model_name",
     "read_user_base_url",
-    "read_user_policy_router_model_name",
-    "read_user_policy_router_base_url",
-    "read_user_policy_router_api_key",
     "list_user_files",
     "read_api_key_for_user",
     "read_model_name_for_user",
     "read_base_url_for_user",
-    "read_policy_router_model_name_for_user",
-    "read_policy_router_base_url_for_user",
-    "read_policy_router_api_key_for_user",
     "save_api_key_for_user",
     "save_model_name_for_user",
     "save_base_url_for_user",
-    "save_policy_router_model_name_for_user",
-    "save_policy_router_base_url_for_user",
-    "save_policy_router_api_key_for_user",
     "read_runtime_tuning_settings_for_user",
     "save_runtime_tuning_settings_for_user",
     "apply_runtime_tuning_env_for_user",

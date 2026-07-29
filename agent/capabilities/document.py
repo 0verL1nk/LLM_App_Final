@@ -21,10 +21,15 @@ def build_document_tools(deps: Any) -> list[Any]:
     read_document_fn = getattr(deps, "read_document_fn", None)
     doc_id_to_text = getattr(deps, "doc_id_to_text", None)
     default_id = getattr(deps, "doc_id_default", "")
-    if callable(read_document_fn) or doc_id_to_text:
+    read_document_by_id_fn = getattr(deps, "read_document_by_id_fn", None)
+    if callable(read_document_fn) or doc_id_to_text or callable(read_document_by_id_fn):
         tools.append(
             build_read_document_tool(
-                read_document_fn, deps.search_document_fn, doc_id_to_text, default_id
+                read_document_fn,
+                deps.search_document_fn,
+                doc_id_to_text,
+                default_id,
+                read_document_by_id_fn,
             )
         )
     return tools

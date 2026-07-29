@@ -35,4 +35,6 @@ uploads/
 .DS_Store
 *.log
 *.tmp
+web/node_modules/
+web/dist/
 

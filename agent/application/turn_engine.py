@@ -4,10 +4,13 @@ import re
 import time
 from typing import Any
 
-from ..domain.orchestration import TraceEvent
-from ..domain.trace import phase_label_from_performative, phase_summary
-from ..method_compare_parser import extract_json_string, parse_method_compare_payload
+from ..domain.human_request import extract_human_requests
+from ..domain.trace import TraceEvent, phase_label_from_performative, phase_summary
+from ..method_compare_parser import parse_method_compare_payload
+from ..stream import extract_stream_text
 from .contracts import EventCallback, SearchDocumentFn, TurnCoreResult
+from .delegation import build_delegation_execution
+from .a2ui_mindmap import parse_a2ui_mindmap_jsonl
 from .ports import AgentInvoker, EvidenceRetriever
 
 logger = logging.getLogger(__name__)
@@ -30,69 +33,46 @@ _INLINE_EVIDENCE_DOC_PATTERN = re.compile(
 )
 
 
-def _normalize_team_todo_status(raw_status: Any) -> str:
-    status = str(raw_status or "").strip().lower()
-    if status == "completed":
-        return "done"
-    if status in {"in_progress", "blocked", "canceled"}:
-        return status
-    if status == "failed":
-        return "blocked"
-    return "todo"
-
-
-def _build_team_execution_summary(
+def _execute_agent_with_streaming(
     *,
-    needs_team: bool,
-    team_handoff: dict[str, Any] | None,
-    todos: list[dict[str, Any]],
-    todo_scheduler_hint: dict[str, Any] | None,
+    leader_agent: AgentInvoker,
+    prompt: str,
+    config: dict[str, Any],
+    on_delta: EventCallback | None,
 ) -> dict[str, Any]:
-    enabled = bool(needs_team or team_handoff or todos)
-    todo_records: list[dict[str, Any]] = []
-    todo_stats = {"done": 0, "in_progress": 0, "todo": 0, "blocked": 0, "canceled": 0}
-    for item in todos:
-        if not isinstance(item, dict):
-            continue
-        normalized_status = _normalize_team_todo_status(item.get("status"))
-        todo_stats[normalized_status] = int(todo_stats.get(normalized_status, 0)) + 1
-        result_payload = item.get("result")
-        output = ""
-        if isinstance(result_payload, dict):
-            output = str(
-                result_payload.get("output")
-                or result_payload.get("summary")
-                or result_payload.get("result")
-                or ""
-            ).strip()
-        todo_records.append(
-            {
-                "id": str(item.get("id") or "").strip(),
-                "title": str(item.get("content") or item.get("id") or "task").strip(),
-                "details": str(item.get("content") or "").strip(),
-                "status": normalized_status,
-                "assignee": str(item.get("assignee") or "").strip() or "leader",
-                "dependencies": list(item.get("depends_on") or []),
-                "output": output,
-                "backend": str(item.get("execution_backend") or "local").strip() or "local",
-                "leader_planned": True,
-                "round": 1,
-                "original_status": str(item.get("status") or "").strip(),
-            }
-        )
-    return {
-        "enabled": enabled,
-        "rounds": 0,
-        "roles": [],
-        "summary": (
-            str(team_handoff.get("reason") or "").strip()
-            if isinstance(team_handoff, dict)
-            else ""
-        ),
-        "todo_records": todo_records,
-        "todo_stats": todo_stats,
-        "scheduler_hint": dict(todo_scheduler_hint) if isinstance(todo_scheduler_hint, dict) else {},
-    }
+    """Run once while forwarding final-answer chunks and retaining final state."""
+    stream = getattr(leader_agent, "stream", None)
+    if not callable(stream):
+        return leader_agent.invoke({"messages": [{"role": "user", "content": prompt}]}, config=config)
+
+    final_state: dict[str, Any] | None = None
+    received_stream_part = False
+    try:
+        for part in stream(
+            {"messages": [{"role": "user", "content": prompt}]},
+            config=config,
+            stream_mode=["messages", "values"],
+            version="v2",
+        ):
+            received_stream_part = True
+            if not isinstance(part, dict):
+                continue
+            if part.get("type") == "messages":
+                delta = extract_stream_text(part.get("data"))
+                if delta and on_delta is not None:
+                    on_delta({"performative": "answer_delta", "content": delta})
+            elif part.get("type") == "values" and isinstance(part.get("data"), dict):
+                final_state = part["data"]
+    except (TypeError, NotImplementedError):
+        # Lightweight test doubles and legacy invokers can expose an unusable
+        # ``stream`` attribute. They still retain the canonical invoke contract.
+        final_state = None
+
+    if final_state is not None:
+        return final_state
+    if received_stream_part:
+        raise RuntimeError("Agent stream ended without a final state")
+    return leader_agent.invoke({"messages": [{"role": "user", "content": prompt}]}, config=config)
 
 
 def normalize_evidence_items(raw_payload: Any) -> list[dict[str, Any]]:
@@ -160,8 +140,32 @@ def _parse_tool_json_payload(content: str) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def _extract_search_document_evidence_items(
-    messages: list[Any],
+def _collect_document_evidence_items(messages: list[Any]) -> list[dict[str, Any]]:
+    collected: list[dict[str, Any]] = []
+    for message in messages:
+        if _message_role(message) != "tool" or _message_name(message) not in {
+            "search_document",
+            "read_document",
+        }:
+            continue
+        payload = _parse_tool_json_payload(_message_content(message))
+        if payload is None:
+            continue
+        collected.extend(normalize_evidence_items(payload))
+    seen_chunk_ids: set[str] = set()
+    unique: list[dict[str, Any]] = []
+    for item in collected:
+        chunk_id = str(item.get("chunk_id", "")).strip()
+        if chunk_id and chunk_id in seen_chunk_ids:
+            continue
+        if chunk_id:
+            seen_chunk_ids.add(chunk_id)
+        unique.append(item)
+    return unique
+
+
+def _select_referenced_evidence_items(
+    evidence_items: list[dict[str, Any]],
     *,
     referenced_chunk_ids: list[str],
     referenced_doc_uids: list[str],
@@ -170,40 +174,21 @@ def _extract_search_document_evidence_items(
     referenced_docs = {item.strip() for item in referenced_doc_uids if item.strip()}
     if not referenced_chunks and not referenced_docs:
         return []
-
-    def _matches_reference(item: dict[str, Any]) -> bool:
-        chunk_id = str(item.get("chunk_id", "")).strip()
-        if chunk_id and chunk_id in referenced_chunks:
-            return True
-        doc_uid = str(item.get("doc_uid", "")).strip()
-        if doc_uid and doc_uid in referenced_docs:
-            return True
-        if chunk_id and ":chunk_" in chunk_id:
-            chunk_doc_uid = chunk_id.split(":chunk_", 1)[0].strip()
-            if chunk_doc_uid and chunk_doc_uid in referenced_docs:
-                return True
-        return False
-
-    collected: list[dict[str, Any]] = []
-    for message in messages:
-        if _message_role(message) != "tool" or _message_name(message) != "search_document":
-            continue
-        payload = _parse_tool_json_payload(_message_content(message))
-        if payload is None:
-            continue
-        collected.extend(normalize_evidence_items(payload))
-
     matched: list[dict[str, Any]] = []
-    seen_chunk_ids: set[str] = set()
-    for item in collected:
-        if not _matches_reference(item):
-            continue
+    for item in evidence_items:
         chunk_id = str(item.get("chunk_id", "")).strip()
-        if chunk_id and chunk_id in seen_chunk_ids:
-            continue
-        if chunk_id:
-            seen_chunk_ids.add(chunk_id)
-        matched.append(item)
+        doc_uid = str(item.get("doc_uid", "")).strip()
+        chunk_doc_uid = (
+            chunk_id.split(":chunk_", 1)[0].strip()
+            if chunk_id and ":chunk_" in chunk_id
+            else ""
+        )
+        if (
+            chunk_id in referenced_chunks
+            or (doc_uid and doc_uid in referenced_docs)
+            or (chunk_doc_uid and chunk_doc_uid in referenced_docs)
+        ):
+            matched.append(item)
     return matched
 
 
@@ -219,43 +204,6 @@ def build_search_document_fn(
         return "\n".join(str(item.get("text", "")) for item in evidence_items)
 
     return _search
-
-
-def try_parse_mindmap(answer: str) -> dict[str, Any] | None:
-    if not isinstance(answer, str) or not answer.strip():
-        return None
-
-    # Check if mindmap tag exists
-    if "<mindmap>" not in answer.lower():
-        return None
-
-    try:
-        json_block = extract_json_string(answer)
-    except Exception as e:
-        logger.warning("Mindmap extraction failed: extract_json_string error: %s", e)
-        return None
-
-    try:
-        payload = json.loads(json_block)
-    except Exception as e:
-        logger.warning("Mindmap parse failed: JSON decode error: %s, json_block=%s", e, json_block[:200])
-        return None
-
-    if not isinstance(payload, dict):
-        logger.warning("Mindmap parse failed: payload is not dict, type=%s", type(payload))
-        return None
-
-    if "name" not in payload:
-        logger.warning("Mindmap parse failed: missing 'name' field, keys=%s", list(payload.keys()))
-        return None
-
-    children = payload.get("children")
-    if children is not None and not isinstance(children, list):
-        logger.warning("Mindmap parse failed: 'children' is not list, type=%s", type(children))
-        return None
-
-    logger.info("Mindmap parsed successfully: name=%s, children_count=%s", payload.get("name"), len(children) if children else 0)
-    return payload
 
 
 def _maybe_to_dict(payload: Any) -> dict[str, Any] | None:
@@ -340,8 +288,6 @@ def execute_turn_core(
     turn_context: dict[str, Any] | None = None,
     leader_agent: AgentInvoker,
     leader_runtime_config: dict[str, Any] | None,
-    leader_llm: Any | None = None,
-    policy_llm: Any | None = None,
     search_document_evidence_fn: EvidenceRetriever | None = None,
     leader_tool_specs: list[dict[str, Any]] | None = None,
     on_event: EventCallback | None = None,
@@ -353,6 +299,10 @@ def execute_turn_core(
     phase_labels: list[str] = []
 
     def _collect_event(item: TraceEvent) -> None:
+        if str(item.get("performative") or "") == "answer_delta":
+            if on_event is not None:
+                on_event(item)
+            return
         logger.info(f"_collect_event called: performative={item.get('performative')}, content={item.get('content')}")
         phase = phase_label_from_performative(str(item.get("performative", "")))
         phase_labels.append(phase)
@@ -385,19 +335,17 @@ def execute_turn_core(
 
     # 传递 on_event 回调给 middleware
     configurable["on_event"] = _collect_event
-    # 传递 llm 给 OrchestrationMiddleware
-    if leader_llm is not None:
-        configurable["llm"] = leader_llm
     if isinstance(turn_context, dict) and turn_context:
         configurable["turn_context"] = dict(turn_context)
     # 确保有 thread_id 用于 session 隔离
     if "thread_id" not in configurable:
         configurable["thread_id"] = "default"
 
-    # 直接调用 leader_agent
-    result = leader_agent.invoke(
-        {"messages": [{"role": "user", "content": prompt}]},
+    result = _execute_agent_with_streaming(
+        leader_agent=leader_agent,
+        prompt=prompt,
         config=config,
+        on_delta=_collect_event,
     )
 
     # 提取 answer
@@ -414,8 +362,7 @@ def execute_turn_core(
                 answer = str(last_msg.get("content", ""))
 
     if not answer:
-        logger.warning("Empty answer from agent execution")
-        answer = "抱歉，我暂时没有生成有效回复。"
+        raise RuntimeError("Agent execution completed without a final answer")
     answer = normalize_evidence_tag_variants(answer)
     logger.info("TURN_FINAL_ANSWER: %s", answer)
 
@@ -423,8 +370,6 @@ def execute_turn_core(
     trace_payload = event_logs
     plan_payload = result.get("plan") if isinstance(result, dict) else None
     runtime_state_payload = result.get("runtime_state") if isinstance(result, dict) else None
-    needs_team = bool(result.get("needs_team")) if isinstance(result, dict) else False
-    team_handoff = result.get("team_handoff") if isinstance(result, dict) else None
     todo_scheduler_hint = result.get("todo_scheduler_hint") if isinstance(result, dict) else None
 
     # 检测是否使用了document RAG
@@ -441,21 +386,35 @@ def execute_turn_core(
     referenced_chunk_ids = extract_evidence_chunk_ids(answer)
     referenced_doc_uids = extract_evidence_doc_uids(answer)
 
-    evidence_items = _extract_search_document_evidence_items(
-        messages,
+    retrieved_evidence_items = _collect_document_evidence_items(messages)
+    evidence_items = _select_referenced_evidence_items(
+        retrieved_evidence_items,
         referenced_chunk_ids=referenced_chunk_ids,
         referenced_doc_uids=referenced_doc_uids,
+    )
+    delegation_execution = build_delegation_execution(messages, event_logs)
+    delegated_research = any(
+        task["subagent_type"] == "researcher"
+        for task in delegation_execution["tasks"]
     )
     if (
         not evidence_items
         and (referenced_chunk_ids or referenced_doc_uids)
-        and used_document_rag
+        and (used_document_rag or delegated_research)
         and callable(search_document_evidence_fn)
     ):
         try:
             # 获取所有相关证据
             evidence_payload = search_document_evidence_fn(prompt)
             all_evidence = normalize_evidence_items(evidence_payload)
+            known_chunk_ids = {
+                str(item.get("chunk_id") or "") for item in retrieved_evidence_items
+            }
+            retrieved_evidence_items.extend(
+                item
+                for item in all_evidence
+                if str(item.get("chunk_id") or "") not in known_chunk_ids
+            )
 
             # 筛选出 agent 实际引用的证据
             referenced_chunk_set = {item.strip() for item in referenced_chunk_ids if item.strip()}
@@ -470,53 +429,63 @@ def execute_turn_core(
                     or (chunk_doc_uid and chunk_doc_uid in referenced_doc_set)
                 ):
                     evidence_items.append(item)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Evidence fallback retrieval failed: %s", exc)
             evidence_items = []
     method_compare_data = parse_method_compare_payload(answer)
-    mindmap_data = try_parse_mindmap(answer)
-    run_latency_ms = (time.perf_counter() - run_started) * 1000.0
-    phase_path = _stable_phase_path(phase_labels=phase_labels, answer=answer, messages=messages)
-
+    a2ui_surface = parse_a2ui_mindmap_jsonl(answer)
+    mindmap_data = a2ui_surface["mindmap"] if a2ui_surface is not None else None
     # 从 result 中提取 middleware 添加的 state
     todos = result.get("todos", []) if isinstance(result, dict) else []
     agent_plan = result.get("agent_plan") if isinstance(result, dict) else None
-    team_execution = _build_team_execution_summary(
-        needs_team=needs_team,
-        team_handoff=team_handoff if isinstance(team_handoff, dict) else None,
-        todos=todos if isinstance(todos, list) else [],
-        todo_scheduler_hint=(
-            todo_scheduler_hint if isinstance(todo_scheduler_hint, dict) else None
-        ),
-    )
-    policy_reason = "middleware-based"
-    if isinstance(team_handoff, dict):
-        policy_reason = str(team_handoff.get("reason") or "").strip() or policy_reason
+    for task in delegation_execution["tasks"]:
+        _collect_event(
+            {
+                "sender": "leader",
+                "receiver": task["subagent_type"],
+                "performative": "delegate_task",
+                "content": task["description"],
+            }
+        )
+        if task["status"] in {"completed", "failed"}:
+            _collect_event(
+                {
+                    "sender": task["subagent_type"],
+                    "receiver": "leader",
+                    "performative": "delegate_result",
+                    "content": task["status"],
+                }
+            )
+
+    run_latency_ms = (time.perf_counter() - run_started) * 1000.0
+    phase_path = _stable_phase_path(phase_labels=phase_labels, answer=answer, messages=messages)
 
     return {
-        "answer": answer,
+        "answer": "已生成知识结构。" if a2ui_surface is not None else answer,
         "policy_decision": {
             "plan_enabled": bool(agent_plan or plan_payload),
-            "team_enabled": bool(needs_team or team_handoff),
-            "reason": policy_reason,
-            "source": "middleware",
+            "delegation_enabled": delegation_execution["enabled"],
+            "reason": "runtime-observed",
+            "source": "runtime",
         },
-        "team_execution": team_execution,
+        "delegation_execution": delegation_execution,
         "trace_payload": trace_payload,
         "plan": _maybe_to_dict(plan_payload),
         "runtime_state": _maybe_to_dict(runtime_state_payload),
         "evidence_items": evidence_items,
+        "retrieved_evidence_items": retrieved_evidence_items,
         "mindmap_data": mindmap_data,
+        "a2ui_surface": a2ui_surface,
         "method_compare_data": method_compare_data,
         "run_latency_ms": run_latency_ms,
-        "team_rounds": 0,
+        "delegation_rounds": delegation_execution["rounds"],
         "phase_path": phase_path,
         "used_document_rag": used_document_rag,
-        "ask_human_requests": [],
+        "ask_human_requests": extract_human_requests(messages),
         "todos": todos,
         "agent_plan": agent_plan,
         "leader_tool_names": registered_tool_names,
         "output_messages": messages if isinstance(messages, list) else [],
-        "team_handoff": team_handoff if isinstance(team_handoff, dict) else None,
         "todo_scheduler_hint": (
             todo_scheduler_hint if isinstance(todo_scheduler_hint, dict) else None
         ),

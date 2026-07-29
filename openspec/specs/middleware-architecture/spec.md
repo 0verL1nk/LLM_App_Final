@@ -5,7 +5,7 @@
 
 #### Scenario: 目录结构符合规范
 - **WHEN** 开发者查看项目结构
-- **THEN** 存在 `agent/middlewares/__init__.py`、`agent/middlewares/trace.py`、`agent/middlewares/progressive_tool_disclosure.py` 等模块
+- **THEN** 存在 `agent/middlewares/__init__.py`、`agent/middlewares/trace.py`、`agent/middlewares/builder.py` 等模块
 
 ### Requirement: 直接继承 LangChain AgentMiddleware
 系统 SHALL 让所有自定义 middleware 直接继承 `langchain.agents.middleware.AgentMiddleware` 基类，无需额外的项目级基类。
@@ -25,5 +25,5 @@
 系统 SHALL 支持将多个 middleware 实例组织为列表，按顺序传递给 agent 构造函数。
 
 #### Scenario: 注册多个 middleware
-- **WHEN** 创建 agent 时传入 middleware 列表 `[TraceMiddleware(), ProgressiveToolDisclosureMiddleware(...)]`
+- **WHEN** 创建 agent 时传入 middleware 列表 `[TraceMiddleware(), SubAgentMiddleware(...)]`
 - **THEN** 所有 middleware 按列表顺序执行，before hooks 从前到后，wrap hooks 嵌套（第一个包裹所有后续的），after hooks 从后到前

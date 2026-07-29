@@ -10,7 +10,8 @@ from agent.adapters.document import extract_document_payload
 from agent.adapters.rag import create_project_evidence_retriever
 from agent.application.turn_engine import execute_turn_core
 from agent.llm_provider import build_openai_compatible_chat_model
-from agent.paper_agent import create_paper_agent_session
+from agent.profiles import paper_leader_profile
+from agent.session_factory import AgentDependencies, AgentRuntimeOptions, create_agent_session
 
 REAL_PAPER_SOURCES: tuple[dict[str, str], ...] = (
     {
@@ -239,12 +240,17 @@ def test_real_papers_project_retrieval_hits_multiple_documents(
 def test_real_papers_turn_engine_live_end_to_end(
     live_real_scenario: LiveRealScenarioContext,
 ) -> None:
-    leader_session = create_paper_agent_session(
-        llm=live_real_scenario.llm,
-        search_document_fn=live_real_scenario.search_document_fn,
-        search_document_evidence_fn=live_real_scenario.search_document_evidence_fn,
-        project_name="真实论文落地测试项目",
-        scope_summary=f"{len(live_real_scenario.documents)} 篇论文",
+    leader_session = create_agent_session(
+        profile=paper_leader_profile,
+        deps=AgentDependencies(
+            search_document_fn=live_real_scenario.search_document_fn,
+            search_document_evidence_fn=live_real_scenario.search_document_evidence_fn,
+        ),
+        options=AgentRuntimeOptions(
+            llm=live_real_scenario.llm,
+            project_name="真实论文落地测试项目",
+            scope_summary=f"{len(live_real_scenario.documents)} 篇论文",
+        ),
     )
 
     prompt = (
@@ -258,7 +264,6 @@ def test_real_papers_turn_engine_live_end_to_end(
         prompt=prompt,
         leader_agent=leader_session.agent,
         leader_runtime_config=leader_session.runtime_config,
-        leader_llm=live_real_scenario.llm,
         search_document_evidence_fn=live_real_scenario.search_document_evidence_fn,
     )
 

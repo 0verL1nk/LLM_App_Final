@@ -9,42 +9,11 @@ def validate_runtime_prerequisites(*, api_key: str, model_name: str) -> str | No
     return None
 
 
-def load_scope_docs_with_text(
-    *,
-    scope_docs: list[dict[str, Any]],
-    load_document_text_fn,
-) -> tuple[list[dict[str, Any]], dict[str, int], str | None]:
-    scope_docs_with_text: list[dict[str, Any]] = []
-    cache_stats = {"session_hit": 0, "db_restore": 0, "extracted": 0}
-    for scope_doc in scope_docs:
-        scope_uid = str(scope_doc["uid"])
-        text, source = load_document_text_fn(scope_uid, scope_doc["file_path"])
-        if text is None:
-            return [], cache_stats, scope_uid
-        if source in cache_stats:
-            cache_stats[source] += 1
-        enriched = dict(scope_doc)
-        enriched["text"] = text
-        scope_docs_with_text.append(enriched)
-    return scope_docs_with_text, cache_stats, None
-
-
-def build_scope_cache_caption(cache_stats: dict[str, int]) -> str:
-    db_restore = int(cache_stats.get("db_restore", 0))
-    session_hit = int(cache_stats.get("session_hit", 0))
-    if db_restore > 0:
-        return f"文档内容已从数据库缓存恢复：{db_restore} 篇。"
-    if session_hit > 0:
-        return f"文档内容已命中会话缓存：{session_hit} 篇。"
-    return ""
-
-
 def build_turn_context(
     *,
     prompt: str,
     user_uuid: str,
     project_uid: str,
-    detect_language_fn,
     search_project_memory_items_fn,
     memory_limit: int = 4,
 ) -> dict[str, Any]:
@@ -60,10 +29,6 @@ def build_turn_context(
     )
     context: dict[str, Any] = {}
 
-    response_language = _normalize_language_code(detect_language_fn(base_prompt))
-    if response_language:
-        context["response_language"] = response_language
-
     memory_items = _normalize_memory_items(long_term_memories, max_chars=1600)
     if memory_items:
         context["memory_items"] = memory_items
@@ -78,15 +43,6 @@ def _collapse_inline_text(text: Any, *, limit: int) -> str:
         return compact
     clipped = max(1, int(limit)) - 3
     return f"{compact[:clipped]}..."
-
-
-def _normalize_language_code(value: Any) -> str:
-    normalized = str(value or "").strip().lower()
-    if normalized == "en":
-        return "en"
-    if normalized == "zh":
-        return "zh"
-    return ""
 
 
 def _normalize_memory_items(

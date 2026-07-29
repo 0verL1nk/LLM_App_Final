@@ -1,9 +1,3 @@
-from .page_helpers import (
-    check_api_key_configured,
-    check_task_and_content,
-    display_task_status,
-    start_async_task,
-)
 from .task_queue import (
     TaskStatus,
     create_task,
@@ -48,8 +42,6 @@ from .utils import (
     list_project_files,
     list_projects,
     login,
-    print_contents,
-    process_multy_optimization,
     register,
     remove_file_from_project,
     save_api_key,
@@ -58,7 +50,6 @@ from .utils import (
     save_file_to_database,
     save_model_name,
     set_project_file_active,
-    show_sidebar_api_key_setting,
     text_extraction,
     update_project,
 )
@@ -67,11 +58,9 @@ __all__ = [
     "get_content_by_uid",
     "text_extraction",
     "save_content_to_database",
-    "print_contents",
     "is_token_expired",
     "extract_files",
     "file_summary",
-    "process_multy_optimization",
     "generate_mindmap_data",
     "delete_content_by_uid",
     "LoggerManager",
@@ -104,7 +93,6 @@ __all__ = [
     "get_base_url",
     "get_user_base_url",
     "get_openai_client",
-    "show_sidebar_api_key_setting",
     "TaskStatus",
     "create_task",
     "update_task_status",
@@ -116,8 +104,4 @@ __all__ = [
     "task_text_extraction",
     "task_file_summary",
     "task_generate_mindmap",
-    "check_api_key_configured",
-    "check_task_and_content",
-    "start_async_task",
-    "display_task_status",
 ]

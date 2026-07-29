@@ -9,3 +9,4 @@ class AgentState(BaseAgentState):
 
     trace_labels: NotRequired[list[str]]
     trace_summary: NotRequired[str]
+    turn_system_context: NotRequired[str]

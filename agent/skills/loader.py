@@ -8,14 +8,15 @@ runtime callers can selectively load only what is needed.
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
+import numpy as np
 
-_TASK_TOKEN_PATTERN = re.compile(r"[a-z0-9_\-\u4e00-\u9fff]+")
+from agent.embedding_provider import get_embedding_model
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -23,7 +24,6 @@ class SkillMetadata:
     name: str
     description: str
     skill_path: Path
-    keywords: str = ""
 
 
 @dataclass(frozen=True)
@@ -41,7 +41,6 @@ class Skill:
     instructions: str
     skill_path: Path
     resources: SkillResources
-    keywords: str = ""
 
 
 def _extract_frontmatter(content: str) -> tuple[dict[str, str], str]:
@@ -60,7 +59,7 @@ def _extract_frontmatter(content: str) -> tuple[dict[str, str], str]:
             continue
         key, raw_value = line.split(":", 1)
         normalized_key = key.strip().lower()
-        if normalized_key not in {"name", "description", "keywords"}:
+        if normalized_key not in {"name", "description"}:
             continue
         value = raw_value.strip()
         if value[:1] == value[-1:] and value[:1] in {"'", '"'}:
@@ -73,18 +72,6 @@ def _list_files(path: Path) -> list[Path]:
     if not path.exists() or not path.is_dir():
         return []
     return sorted([item for item in path.rglob("*") if item.is_file()])
-
-
-def _task_terms(task: str) -> set[str]:
-    value = str(task or "").lower()
-    return {item for item in _TASK_TOKEN_PATTERN.findall(value) if len(item) >= 2}
-
-
-def _score_reference(path: Path, task_terms: set[str]) -> int:
-    stem_terms = _task_terms(path.stem.replace("-", " ").replace("_", " "))
-    if not task_terms:
-        return 0
-    return len(task_terms & stem_terms)
 
 
 def _relative_text(path: Path, root: Path) -> str:
@@ -103,6 +90,33 @@ def _read_reference_excerpt(path: Path, char_limit: int) -> str:
         return content.strip()
     clipped = content[:char_limit].rstrip()
     return f"{clipped}\n...(truncated)"
+
+
+def _rank_references(task: str, references: list[Path]) -> list[Path]:
+    if not references or not str(task or "").strip():
+        return sorted(references, key=lambda item: item.name)
+    documents = [
+        f"{path.stem}\n{_read_reference_excerpt(path, 800)}" for path in references
+    ]
+    try:
+        embeddings = get_embedding_model()
+        query_vector = np.asarray(embeddings.embed_query(task), dtype=np.float32)
+        document_vectors = np.asarray(
+            embeddings.embed_documents(documents), dtype=np.float32
+        )
+        denominators = np.linalg.norm(document_vectors, axis=1) * np.linalg.norm(
+            query_vector
+        )
+        scores = np.divide(
+            document_vectors @ query_vector,
+            denominators,
+            out=np.zeros_like(denominators),
+            where=denominators != 0,
+        )
+        return [references[int(index)] for index in np.argsort(scores)[::-1]]
+    except Exception as exc:
+        logger.warning("Semantic reference ranking failed: %s", exc)
+        return sorted(references, key=lambda item: item.name)
 
 
 class SkillLoader:
@@ -221,14 +235,7 @@ def build_skill_runtime_payload(
         return None
 
     references = skill.resources.references
-    task_terms = _task_terms(task)
-    ranked_references = sorted(
-        references,
-        key=lambda path: (_score_reference(path, task_terms), path.name),
-        reverse=True,
-    )
-    if ranked_references and _score_reference(ranked_references[0], task_terms) <= 0:
-        ranked_references = sorted(references, key=lambda item: item.name)
+    ranked_references = _rank_references(task, references)
     selected_references = ranked_references[: max(0, int(max_references))]
 
     payload: dict[str, Any] = {
