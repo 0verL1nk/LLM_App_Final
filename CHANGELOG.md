@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-07-31
+
+### Fixed
+- Declared the Electron main-process entry point so native installers can pass Electron Builder's package integrity check.
+
 ## [1.1.1] - 2026-07-31
 
 ### Added
@@ -87,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 53 unit tests + 6 integration tests + eval baselines
 - CLI entry point: `paper-sage`
 
-[Unreleased]: https://github.com/0verL1nk/PaperSage/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/0verL1nk/PaperSage/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/0verL1nk/PaperSage/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/0verL1nk/PaperSage/compare/v1.1.0...v1.1.1
 [1.0.0]: https://github.com/0verL1nk/PaperSage/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/0verL1nk/PaperSage/releases/tag/v0.1.0
