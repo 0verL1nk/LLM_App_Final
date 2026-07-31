@@ -2,7 +2,6 @@
 
 from .builder import build_middleware_list
 from .mindmap_format import MindmapFormatMiddleware, mindmap_format_middleware
-from .orchestration import OrchestrationMiddleware
 from .plan import plan_middleware
 from .todolist import todolist_middleware
 from .tool_selector import build_tool_selector_middleware
@@ -13,7 +12,6 @@ from .types import AgentState
 __all__ = [
     "AgentState",
     "MindmapFormatMiddleware",
-    "OrchestrationMiddleware",
     "TurnContextMiddleware",
     "TraceMiddleware",
     "mindmap_format_middleware",

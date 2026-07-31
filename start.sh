@@ -47,6 +47,6 @@ done
 # 等待 worker 启动
 sleep 2
 
-# 启动 Streamlit 应用（前台运行，这样容器不会退出）
-echo "启动 Streamlit 应用..."
-exec streamlit run main.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true
+# 启动 FastAPI 应用（同时托管 web/dist）
+echo "启动 PaperSage API..."
+exec uvicorn api.main:app --host 0.0.0.0 --port 8000

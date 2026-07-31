@@ -3,8 +3,9 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
+
+from langchain_core.messages import AIMessage, ToolMessage
 
 from agent.adapters.llm import create_chat_model
 from agent.application.evals import (
@@ -72,8 +73,35 @@ class _ScenarioAgent:
 
         answer = _answer_for_case(self._case)
         tool_calls = _tool_calls_for_case(self._case)
+        messages: list[Any] = []
+        delegated_roles = self._case.process_contract.required_subagent_types
+        if delegated_roles:
+            task_calls = [
+                {
+                    "id": f"task-{index}",
+                    "name": "task",
+                    "args": {
+                        "subagent_type": role,
+                        "description": f"完成 {role} 子任务",
+                    },
+                    "type": "tool_call",
+                }
+                for index, role in enumerate(delegated_roles, start=1)
+            ]
+            messages.append(AIMessage(content="", tool_calls=task_calls))
+            messages.extend(
+                ToolMessage(
+                    content=f"{role} 已完成，并返回可核验结果",
+                    tool_call_id=f"task-{index}",
+                    name="task",
+                )
+                for index, role in enumerate(delegated_roles, start=1)
+            )
+            messages.append(AIMessage(content=answer))
+        else:
+            messages.append(AIMessage(content=answer, tool_calls=tool_calls))
         result: dict[str, Any] = {
-            "messages": [SimpleNamespace(content=answer, tool_calls=tool_calls)],
+            "messages": messages,
         }
         if self._case.process_contract.require_plan:
             result["plan"] = {"goal": self._case.prompt, "description": "按步骤完成任务"}
@@ -160,6 +188,8 @@ def _answer_for_case(case: AgentEvalCase) -> str:
 def _tool_calls_for_case(case: AgentEvalCase) -> list[dict[str, Any]]:
     tool_calls: list[dict[str, Any]] = []
     for tool_name in case.process_contract.required_tool_names:
+        if tool_name == "task":
+            continue
         tool_calls.append({"name": tool_name, "args": {"query": case.prompt}})
     if not tool_calls and case.process_contract.requires_evidence:
         tool_calls.append({"name": "search_document", "args": {"query": case.prompt}})

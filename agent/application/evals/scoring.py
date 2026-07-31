@@ -103,6 +103,15 @@ def normalize_turn_result(turn_result: dict[str, Any]) -> dict[str, Any]:
     plan = _stable_dict(turn_result.get("plan"))
     runtime_state = _stable_dict(turn_result.get("runtime_state"))
     agent_plan = _stable_dict(turn_result.get("agent_plan"))
+    delegation_execution = _stable_dict(turn_result.get("delegation_execution")) or {}
+    delegation_tasks = _stable_list_of_dicts(delegation_execution.get("tasks"))
+    delegated_subagent_types = sorted(
+        {
+            str(task.get("subagent_type") or "").strip()
+            for task in delegation_tasks
+            if str(task.get("subagent_type") or "").strip()
+        }
+    )
     phase_path = str(turn_result.get("phase_path") or "").strip()
     trace_payload = turn_result.get("trace_payload")
     normalized_trace = trace_payload if isinstance(trace_payload, list) else []
@@ -143,6 +152,9 @@ def normalize_turn_result(turn_result: dict[str, Any]) -> dict[str, Any]:
         "output_messages": output_messages,
         "used_tool_names": used_tool_names,
         "execution_completion_ratio": execution_completion_ratio,
+        "delegation_count": len(delegation_tasks),
+        "delegated_subagent_types": delegated_subagent_types,
+        "parallel_delegation": any(bool(task.get("parallel")) for task in delegation_tasks),
         "run_latency_ms": float(turn_result.get("run_latency_ms") or 0.0),
         "used_document_rag": bool(turn_result.get("used_document_rag", False)),
         "leader_tool_names": (
@@ -219,14 +231,42 @@ def evaluate_case_result(
     tool_names_pass = all(
         tool_name in used_tool_names for tool_name in process_contract.required_tool_names
     )
+    delegated_subagent_types = normalized_result["delegated_subagent_types"]
+    subagent_types_pass = all(
+        role in delegated_subagent_types
+        for role in process_contract.required_subagent_types
+    )
+    delegation_count = int(normalized_result["delegation_count"])
+    delegation_count_pass = delegation_count >= process_contract.min_delegation_count
+    parallel_delegation_pass = (
+        not process_contract.require_parallel_delegation
+        or bool(normalized_result["parallel_delegation"])
+    )
 
-    process_success = all([evidence_pass, plan_pass, todo_pass, ratio_pass, phase_pass, tool_names_pass])
+    process_success = all(
+        [
+            evidence_pass,
+            plan_pass,
+            todo_pass,
+            ratio_pass,
+            phase_pass,
+            tool_names_pass,
+            subagent_types_pass,
+            delegation_count_pass,
+            parallel_delegation_pass,
+        ]
+    )
     completed = final_success and process_success
     process_checks = {
         "plan_passed": plan_pass,
         "todo_passed": todo_pass,
         "tool_names_passed": tool_names_pass,
         "used_tool_names": used_tool_names,
+        "subagent_types_passed": subagent_types_pass,
+        "delegated_subagent_types": delegated_subagent_types,
+        "delegation_count_passed": delegation_count_pass,
+        "delegation_count": delegation_count,
+        "parallel_delegation_passed": parallel_delegation_pass,
         "phase_labels_passed": phase_pass,
         "missing_phase_labels": missing_phase_labels,
         "ratio_passed": ratio_pass,

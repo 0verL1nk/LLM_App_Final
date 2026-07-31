@@ -2,9 +2,7 @@ from typing import Any
 
 from .repository import (
     ensure_memory_tables,
-    get_project_session_compact_memory,
     list_project_memory_items,
-    save_project_session_compact_memory,
     touch_memory_items,
     upsert_project_memory_item,
 )
@@ -12,8 +10,6 @@ from .service import search_project_memory_items
 
 __all__ = [
     "ensure_memory_tables",
-    "get_project_session_compact_memory",
-    "save_project_session_compact_memory",
     "upsert_project_memory_item",
     "list_project_memory_items",
     "touch_memory_items",

@@ -1,7 +1,6 @@
 ---
 name: plan_mode
 description: Structured planning mode for complex multi-step tasks.
-keywords: plan, todo, strategy, research, investigation
 ---
 
 # Plan Mode
@@ -46,7 +45,7 @@ Use `read_plan` to review your strategy at any time.
 After all todos completed:
 - Compile findings into final answer
 - Ensure every claim has evidence tags
-- Conclude with confidence level
+- State unresolved assumptions, missing evidence, and remaining risks explicitly
 
 ## Available Tools in This Mode
 

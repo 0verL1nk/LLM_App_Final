@@ -55,14 +55,14 @@ def _safe_collection_name(prefix: str, key: str) -> str:
     if not raw_key:
         raw_key = "default"
     # Chroma collection names have length limits; keep deterministic + compact.
-    digest = hashlib.sha1(raw_key.encode("utf-8")).hexdigest()[:16]
+    digest = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()[:16]
     compact = raw_key[:32]
     return f"{normalized_prefix}_{compact}_{digest}"[:63]
 
 
 def stable_vectorstore_key(payload: dict[str, Any]) -> str:
     serialized = json.dumps(payload, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
-    return hashlib.sha1(serialized.encode("utf-8")).hexdigest()
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 def _add_texts_in_batches(

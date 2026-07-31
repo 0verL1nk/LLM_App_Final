@@ -1,3 +1,8 @@
+from typing import Any
+
+TraceEvent = dict[str, Any]
+TracePayload = list[TraceEvent]
+
 PHASE_BY_PERFORMATIVE = {
     "request": "接收请求",
     "dispatch": "调度中",
@@ -19,6 +24,8 @@ PHASE_BY_PERFORMATIVE = {
     "skill_activate": "激活技能",
     "mode_activate": "激活模式",
     "member_output": "成员输出",
+    "delegate_task": "委派任务",
+    "delegate_result": "委派结果",
     "replan": "重规划",
     "fallback": "回退",
     "final": "输出最终答案",

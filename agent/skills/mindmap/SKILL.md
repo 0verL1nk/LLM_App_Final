@@ -1,6 +1,6 @@
 ---
 name: mindmap
-description: Generate strict JSON mind maps from document evidence with clear hierarchy and concise node labels.
+description: Generate validated A2UI mind-map surfaces from document evidence with clear hierarchy and concise node labels.
 ---
 
 # Mindmap Skill
@@ -10,7 +10,7 @@ description: Generate strict JSON mind maps from document evidence with clear hi
 Use this skill when:
 - User asks for a mind map, concept map, or knowledge structure
 - User wants hierarchical decomposition of a paper
-- Output must be machine-parseable JSON for visualization
+- Output must be a machine-parseable A2UI surface for visualization
 
 ## How to build the mind map
 
@@ -31,33 +31,22 @@ Use this skill when:
 - Merge duplicated or overlapping branches
 
 ### Step 4: Output format
-- Use **<mindmap> JSON </mindmap>** wrapper - NO markdown fences
-- Output pure JSON only, no explanations before or after
-- Never output Mermaid syntax, markdown code fences, headings, or prose
+- Output exactly three A2UI v0.9 JSONL envelopes - NO markdown fences or wrapper tags
+- Output only the three allowed A2UI messages, with no explanation before or after
+- Never output Mermaid, HTML, JavaScript, SVG, CSS, or arbitrary component names
 
 ## Output contract
 
-Wrap JSON with `<mindmap>` tags (no markdown fences):
+Emit exactly three JSON objects, one per line. Do not wrap them in any tag:
 
-<mindmap>
-{
-  "name": "主题",
-  "children": [
-    {
-      "name": "子主题",
-      "children": [
-        {"name": "要点1", "children": []},
-        {"name": "要点2", "children": []}
-      ]
-    }
-  ]
-}
-</mindmap>
+{"version":"v0.9","createSurface":{"surfaceId":"mindmap-1","catalogId":"https://papersage.local/a2ui/catalogs/mindmap-v1.json"}}
+{"version":"v0.9","updateComponents":{"surfaceId":"mindmap-1","components":[{"id":"root","component":"Mindmap","data":{"path":"/mindmap"}}]}}
+{"version":"v0.9","updateDataModel":{"surfaceId":"mindmap-1","path":"/mindmap","value":{"label":"主题","children":[{"label":"子主题","children":[{"label":"要点1","children":[]}]}]}}}
 
 Invalid examples:
 - `## 标题` followed by JSON
 - ```mermaid ... ```
-- Any explanation before `<mindmap>` or after `</mindmap>`
+- Any wrapper tag or explanation before/after the JSONL stream
 
 ## Quality checks
 

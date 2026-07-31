@@ -16,7 +16,9 @@ from agent.application.evals import (
     select_eval_cases,
 )
 from agent.application.turn_engine import execute_turn_core
-from agent.paper_agent import create_paper_agent_session
+from agent.profiles import paper_leader_profile
+from agent.prompts.paper_domain import build_external_research_prompt
+from agent.session_factory import AgentDependencies, AgentRuntimeOptions, create_agent_session
 
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "papers" / "rag_agentic_reasoning"
 
@@ -185,20 +187,32 @@ class LivePaperSageEvalRunner:
 
     def __call__(self, case: AgentEvalCase) -> dict[str, Any]:
         context = build_case_document_context(case, self.documents)
-        session = create_paper_agent_session(
-            llm=self.llm,
-            search_document_fn=context["search_document_fn"],
-            search_document_evidence_fn=context["search_document_evidence_fn"],
-            project_name=self.project_name,
-            scope_summary=str(context["scope_summary"]),
-            document_name=context["document_name"],
-            document_access=str(context["document_access"]),
+        document_access = str(context["document_access"])
+        system_prompt = None
+        if document_access == "none":
+            system_prompt = build_external_research_prompt(
+                project_name=self.project_name,
+                scope_summary=str(context["scope_summary"]),
+            )
+        session = create_agent_session(
+            profile=paper_leader_profile,
+            deps=AgentDependencies(
+                search_document_fn=context["search_document_fn"],
+                search_document_evidence_fn=context["search_document_evidence_fn"],
+                document_access=document_access,
+            ),
+            options=AgentRuntimeOptions(
+                llm=self.llm,
+                project_name=self.project_name,
+                scope_summary=str(context["scope_summary"]),
+                document_name=context["document_name"],
+                system_prompt=system_prompt,
+            ),
         )
         return execute_turn_core(
             prompt=case.prompt,
             leader_agent=session.agent,
             leader_runtime_config=session.runtime_config,
-            leader_llm=self.llm,
             search_document_evidence_fn=context["search_document_evidence_fn"],
             leader_tool_specs=session.tool_specs,
         )

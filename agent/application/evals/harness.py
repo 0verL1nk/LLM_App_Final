@@ -14,8 +14,6 @@ from .scoring import evaluate_case_result
 class ExecuteTurnEvalRunner:
     leader_agent: Any
     leader_runtime_config: dict[str, Any]
-    leader_llm: Any | None = None
-    policy_llm: Any | None = None
     search_document_evidence_fn: Any | None = None
     leader_tool_specs: list[dict[str, Any]] = field(default_factory=list)
 
@@ -24,8 +22,6 @@ class ExecuteTurnEvalRunner:
             prompt=case.prompt,
             leader_agent=self.leader_agent,
             leader_runtime_config=dict(self.leader_runtime_config),
-            leader_llm=self.leader_llm,
-            policy_llm=self.policy_llm,
             search_document_evidence_fn=self.search_document_evidence_fn,
             leader_tool_specs=list(self.leader_tool_specs),
         )

@@ -81,5 +81,4 @@ def build_case_feedback(
         ),
         "remediation_area": remediation_area,
         "recommended_actions": deduped_actions,
-        "confidence": "medium" if remediation_area else "high",
     }

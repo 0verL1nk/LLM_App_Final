@@ -84,7 +84,9 @@ def ensure_projects_tables(db_name: str = "./database.sqlite") -> None:
             session_name TEXT DEFAULT '',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            is_pinned INTEGER DEFAULT 0
+            is_pinned INTEGER DEFAULT 0,
+            is_main INTEGER DEFAULT 0,
+            parent_session_uid TEXT DEFAULT ''
         )
     """
     )
@@ -99,20 +101,6 @@ def ensure_projects_tables(db_name: str = "./database.sqlite") -> None:
             content TEXT NOT NULL,
             message_json TEXT NOT NULL,
             created_at TEXT NOT NULL
-        )
-    """
-    )
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS session_compact_memory (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_uid TEXT NOT NULL,
-            project_uid TEXT NOT NULL,
-            uuid TEXT NOT NULL,
-            compact_summary TEXT DEFAULT '',
-            anchors_json TEXT DEFAULT '[]',
-            updated_at TEXT NOT NULL,
-            UNIQUE(session_uid, project_uid, uuid)
         )
     """
     )
@@ -146,6 +134,32 @@ def ensure_projects_tables(db_name: str = "./database.sqlite") -> None:
     session_columns = {row[1] for row in cursor.fetchall()}
     if "thread_id" not in session_columns:
         cursor.execute("ALTER TABLE project_sessions ADD COLUMN thread_id TEXT DEFAULT ''")
+    if "is_main" not in session_columns:
+        cursor.execute("ALTER TABLE project_sessions ADD COLUMN is_main INTEGER DEFAULT 0")
+    if "parent_session_uid" not in session_columns:
+        cursor.execute("ALTER TABLE project_sessions ADD COLUMN parent_session_uid TEXT DEFAULT ''")
+    cursor.execute(
+        "SELECT DISTINCT project_uid, uuid FROM project_sessions WHERE is_main = 0"
+    )
+    for project_uid, user_uuid in cursor.fetchall():
+        cursor.execute(
+            "SELECT session_uid FROM project_sessions WHERE project_uid = ? AND uuid = ? AND is_main = 1 LIMIT 1",
+            (project_uid, user_uuid),
+        )
+        main_row = cursor.fetchone()
+        if main_row is None:
+            cursor.execute(
+                "SELECT session_uid FROM project_sessions WHERE project_uid = ? AND uuid = ? ORDER BY created_at ASC, id ASC LIMIT 1",
+                (project_uid, user_uuid),
+            )
+            main_row = cursor.fetchone()
+            if main_row is None:
+                continue
+            cursor.execute("UPDATE project_sessions SET is_main = 1, parent_session_uid = '' WHERE session_uid = ?", (main_row[0],))
+        cursor.execute(
+            "UPDATE project_sessions SET parent_session_uid = ? WHERE project_uid = ? AND uuid = ? AND session_uid != ? AND parent_session_uid = ''",
+            (main_row[0], project_uid, user_uuid, main_row[0]),
+        )
 
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_projects_uuid_updated_at ON projects(uuid, updated_at DESC)"
@@ -160,13 +174,13 @@ def ensure_projects_tables(db_name: str = "./database.sqlite") -> None:
         "CREATE INDEX IF NOT EXISTS idx_project_sessions_project_uid ON project_sessions(project_uid, updated_at DESC)"
     )
     cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_project_sessions_parent ON project_sessions(project_uid, uuid, parent_session_uid, updated_at DESC)"
+    )
+    cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_project_messages_session ON project_session_messages(session_uid, id ASC)"
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_project_messages_project ON project_session_messages(project_uid, uuid, id ASC)"
-    )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_session_compact_scope ON session_compact_memory(session_uid, project_uid, uuid)"
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_memory_items_scope ON memory_items(uuid, project_uid, memory_type, updated_at DESC)"
@@ -202,6 +216,8 @@ def create_project_session(
     uuid: str,
     session_name: str = "",
     is_pinned: int = 0,
+    is_main: bool = False,
+    parent_session_uid: str | None = None,
     db_name: str = "./database.sqlite",
 ) -> dict[str, Any]:
     ensure_projects_tables(db_name)
@@ -214,9 +230,9 @@ def create_project_session(
     cursor.execute(
         """
         INSERT INTO project_sessions (
-            session_uid, project_uid, uuid, session_name, created_at, updated_at, is_pinned
+            session_uid, project_uid, uuid, session_name, created_at, updated_at, is_pinned, is_main, parent_session_uid
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """,
         (
             session_uid,
@@ -226,6 +242,8 @@ def create_project_session(
             now,
             now,
             1 if int(is_pinned) else 0,
+            1 if is_main else 0,
+            "" if is_main else str(parent_session_uid or ""),
         ),
     )
     cursor.execute(
@@ -247,6 +265,8 @@ def create_project_session(
         "created_at": now,
         "updated_at": now,
         "is_pinned": 1 if int(is_pinned) else 0,
+        "is_main": bool(is_main),
+        "parent_session_uid": "" if is_main else str(parent_session_uid or ""),
         "message_count": 0,
         "last_message": "",
     }
@@ -317,6 +337,8 @@ def list_project_sessions(
             s.created_at,
             s.updated_at,
             s.is_pinned,
+            s.is_main,
+            s.parent_session_uid,
             (
                 SELECT COUNT(*)
                 FROM project_session_messages m
@@ -335,7 +357,7 @@ def list_project_sessions(
             ) AS last_message
         FROM project_sessions s
         WHERE s.project_uid = ? AND s.uuid = ?
-        ORDER BY s.is_pinned DESC, s.updated_at DESC, s.id DESC
+        ORDER BY s.is_main DESC, s.is_pinned DESC, s.updated_at DESC, s.id DESC
     """,
         (project_uid, uuid),
     )
@@ -350,8 +372,10 @@ def list_project_sessions(
             "created_at": row[4] or "",
             "updated_at": row[5] or "",
             "is_pinned": int(row[6] or 0),
-            "message_count": int(row[7] or 0),
-            "last_message": row[8] or "",
+            "is_main": bool(row[7]),
+            "parent_session_uid": row[8] or "",
+            "message_count": int(row[9] or 0),
+            "last_message": row[10] or "",
         }
         for row in rows
     ]
@@ -369,6 +393,7 @@ def ensure_default_project_session(
         project_uid=project_uid,
         uuid=uuid,
         session_name="默认会话",
+        is_main=True,
         db_name=db_name,
     )
     return str(created["session_uid"])
@@ -386,13 +411,6 @@ def delete_project_session(
     cursor.execute(
         """
         DELETE FROM project_session_messages
-        WHERE session_uid = ? AND project_uid = ? AND uuid = ?
-    """,
-        (session_uid, project_uid, uuid),
-    )
-    cursor.execute(
-        """
-        DELETE FROM session_compact_memory
         WHERE session_uid = ? AND project_uid = ? AND uuid = ?
     """,
         (session_uid, project_uid, uuid),

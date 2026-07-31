@@ -3,8 +3,8 @@ from pathlib import Path
 
 from agent.application.evals import AgentEvalCase
 
-MODULE_PATH = Path('/home/ling/LLM_App_Final/.worktrees/research-langchain-evals/tests/evals/run_agent_task_completion_live_smoke.py')
-spec = importlib.util.spec_from_file_location('live_smoke_runner', MODULE_PATH)
+MODULE_PATH = Path(__file__).with_name("run_agent_task_completion_live_smoke.py")
+spec = importlib.util.spec_from_file_location("live_smoke_runner", MODULE_PATH)
 live_smoke_runner = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(live_smoke_runner)

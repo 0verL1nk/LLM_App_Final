@@ -1,7 +1,13 @@
+import pytest
 from pydantic import BaseModel, Field
 
 from agent.profiles import AgentProfile
 from agent.session_factory import AgentDependencies, AgentRuntimeOptions, create_agent_session
+
+
+@pytest.fixture(autouse=True)
+def _disable_runtime_middleware(monkeypatch) -> None:
+    monkeypatch.setattr("agent.session_factory.build_middleware_list", lambda **_kwargs: [])
 
 
 def test_create_agent_session_uses_profile_prompt_builder_and_runtime_builder(monkeypatch):
@@ -65,6 +71,7 @@ def test_create_agent_session_uses_profile_prompt_builder_and_runtime_builder(mo
     assert captured["runtime_model"] == "fake-llm"
     assert captured["runtime_prompt"] == "PROFILE_PROMPT"
     assert captured["runtime_tools"][0].name == "search_document"
+    session.close()
 
 
 
@@ -101,6 +108,7 @@ def test_create_agent_session_tool_specs_default_manifest(monkeypatch):
     assert session.tool_specs[0]["name"] == "search_document"
     assert session.tool_specs[0]["args_schema"] == ""
     assert session.tool_specs[0]["schema_level"] == "manifest"
+    session.close()
 
 
 def test_create_agent_session_tool_specs_full_schema(monkeypatch):
@@ -135,6 +143,7 @@ def test_create_agent_session_tool_specs_full_schema(monkeypatch):
     assert session.tool_specs
     assert '"properties"' in session.tool_specs[0]["args_schema"]
     assert session.tool_specs[0]["schema_level"] == "full"
+    session.close()
 
 
 
@@ -167,6 +176,7 @@ def test_create_agent_session_builds_tools_from_profile_capabilities(monkeypatch
 
     assert captured["profile_name"] == "worker_profile"
     assert session.agent["tools"][0].name == "search_document"
+    session.close()
 
 
 def test_paper_leader_profile_prompt_builder_includes_leader_guidance():
@@ -180,7 +190,7 @@ def test_paper_leader_profile_prompt_builder_includes_leader_guidance():
 
     assert "当前对话项目：项目A" in prompt
     assert "你负责调度与最终回答" in prompt
-    assert "你决定是否需要团队分工" in prompt
+    assert "你决定是否需要使用 `task` 委派独立子任务" in prompt
 
 
 def test_create_agent_session_passes_profile_and_explicit_thread_id_to_runtime_builder(monkeypatch):
@@ -209,9 +219,9 @@ def test_create_agent_session_passes_profile_and_explicit_thread_id_to_runtime_b
     session = create_agent_session(
         profile=profile,
         deps=AgentDependencies(search_document_fn=lambda query: query),
-        options=AgentRuntimeOptions(llm="fake-llm", thread_id="team:thread-1"),
+        options=AgentRuntimeOptions(llm="fake-llm", thread_id="explicit-thread-1"),
     )
 
-    assert session.thread_id == "team:thread-1"
-    assert captured["kwargs"]["profile"] is profile
-    assert captured["kwargs"]["deps"].search_document_fn("ok") == "ok"
+    assert session.thread_id == "explicit-thread-1"
+    assert captured["kwargs"]["middleware"] == []
+    session.close()

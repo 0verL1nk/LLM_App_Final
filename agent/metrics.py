@@ -5,10 +5,9 @@ def create_session_metrics() -> dict[str, Any]:
     return {
         "total_queries": 0,
         "plan_enabled_count": 0,
-        "team_enabled_count": 0,
-        "team_rounds_total": 0,
-        "team_rounds_max": 0,
-        "team_fallback_count": 0,
+        "delegation_enabled_count": 0,
+        "delegation_rounds_total": 0,
+        "delegation_rounds_max": 0,
         "total_latency_ms": 0.0,
         "max_latency_ms": 0.0,
         "replan_rounds_total": 0,
@@ -32,15 +31,12 @@ def extract_replan_rounds(trace_payload: list[dict[str, str]] | None) -> int:
     return rounds
 
 
-def _extract_team_rounds(
-    team_execution: dict[str, Any] | None,
-    trace_payload: list[dict[str, str]] | None,
-) -> int:
-    if isinstance(team_execution, dict):
-        rounds = team_execution.get("rounds")
+def _extract_delegation_rounds(delegation_execution: dict[str, Any] | None) -> int:
+    if isinstance(delegation_execution, dict):
+        rounds = delegation_execution.get("rounds")
         if isinstance(rounds, int):
             return max(0, rounds)
-    return extract_replan_rounds(trace_payload)
+    return 0
 
 
 def _extract_step_metrics(trace_payload: list[dict[str, str]] | None) -> tuple[int, int, int]:
@@ -71,7 +67,7 @@ def record_query_metrics(
     trace_payload: list[dict[str, str]] | None = None,
     workflow_mode: str | None = None,
     policy_decision: dict[str, Any] | None = None,
-    team_execution: dict[str, Any] | None = None,
+    delegation_execution: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not isinstance(metrics, dict):
         metrics = create_session_metrics()
@@ -82,11 +78,10 @@ def record_query_metrics(
     if isinstance(policy_decision, dict):
         if bool(policy_decision.get("plan_enabled", False)):
             metrics["plan_enabled_count"] = int(metrics.get("plan_enabled_count", 0)) + 1
-        if bool(policy_decision.get("team_enabled", False)):
-            metrics["team_enabled_count"] = int(metrics.get("team_enabled_count", 0)) + 1
-
-    if isinstance(team_execution, dict) and team_execution.get("fallback_reason"):
-        metrics["team_fallback_count"] = int(metrics.get("team_fallback_count", 0)) + 1
+        if bool(policy_decision.get("delegation_enabled", False)):
+            metrics["delegation_enabled_count"] = int(
+                metrics.get("delegation_enabled_count", 0)
+            ) + 1
 
     safe_latency = max(0.0, float(latency_ms))
     metrics["total_latency_ms"] = float(metrics.get("total_latency_ms", 0.0)) + safe_latency
@@ -109,9 +104,13 @@ def record_query_metrics(
         metrics.get("step_verify_fail_total", 0)
     ) + step_verify_fail_total
 
-    team_rounds = _extract_team_rounds(team_execution, trace_payload)
-    metrics["team_rounds_total"] = int(metrics.get("team_rounds_total", 0)) + team_rounds
-    metrics["team_rounds_max"] = max(int(metrics.get("team_rounds_max", 0)), team_rounds)
+    delegation_rounds = _extract_delegation_rounds(delegation_execution)
+    metrics["delegation_rounds_total"] = int(
+        metrics.get("delegation_rounds_total", 0)
+    ) + delegation_rounds
+    metrics["delegation_rounds_max"] = max(
+        int(metrics.get("delegation_rounds_max", 0)), delegation_rounds
+    )
     return metrics
 
 
@@ -127,25 +126,28 @@ def summarize_session_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
     average_replan_rounds = (
         float(metrics.get("replan_rounds_total", 0)) / total_queries if total_queries > 0 else 0.0
     )
-    average_team_rounds = (
-        float(metrics.get("team_rounds_total", 0)) / total_queries if total_queries > 0 else 0.0
+    average_delegation_rounds = (
+        float(metrics.get("delegation_rounds_total", 0)) / total_queries
+        if total_queries > 0
+        else 0.0
     )
 
     plan_enabled_count = int(metrics.get("plan_enabled_count", 0))
-    team_enabled_count = int(metrics.get("team_enabled_count", 0))
+    delegation_enabled_count = int(metrics.get("delegation_enabled_count", 0))
     plan_enabled_ratio = (plan_enabled_count / total_queries) if total_queries > 0 else 0.0
-    team_enabled_ratio = (team_enabled_count / total_queries) if total_queries > 0 else 0.0
+    delegation_enabled_ratio = (
+        delegation_enabled_count / total_queries if total_queries > 0 else 0.0
+    )
 
     return {
         "total_queries": total_queries,
         "plan_enabled_count": plan_enabled_count,
         "plan_enabled_ratio": plan_enabled_ratio,
-        "team_enabled_count": team_enabled_count,
-        "team_enabled_ratio": team_enabled_ratio,
-        "team_rounds_total": int(metrics.get("team_rounds_total", 0)),
-        "team_rounds_max": int(metrics.get("team_rounds_max", 0)),
-        "average_team_rounds": average_team_rounds,
-        "team_fallback_count": int(metrics.get("team_fallback_count", 0)),
+        "delegation_enabled_count": delegation_enabled_count,
+        "delegation_enabled_ratio": delegation_enabled_ratio,
+        "delegation_rounds_total": int(metrics.get("delegation_rounds_total", 0)),
+        "delegation_rounds_max": int(metrics.get("delegation_rounds_max", 0)),
+        "average_delegation_rounds": average_delegation_rounds,
         "average_latency_ms": average_latency_ms,
         "max_latency_ms": float(metrics.get("max_latency_ms", 0.0)),
         "trace_events_total": int(metrics.get("trace_events_total", 0)),

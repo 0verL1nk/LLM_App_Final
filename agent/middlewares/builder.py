@@ -12,12 +12,17 @@ from langchain.agents.middleware import (
 )
 from openai import RateLimitError
 
-from ..subagent.loader import load_subagent_configs
+from ..capabilities import build_capability_tools
+from ..context_governance import compact_trigger_ratio, model_context_window_tokens
+from ..subagent.loader import load_subagent_definitions
 from .llm_logger import llm_logger_middleware
 from .mindmap_format import mindmap_format_middleware
-from .orchestration import OrchestrationMiddleware
+from .model_output_validation import (
+    EmptyModelOutputError,
+    model_output_validation_middleware,
+)
 from .plan import plan_middleware
-from .team import TeamMiddleware
+from .subagent_lifecycle import SubagentLifecycleMiddleware
 from .todolist import todolist_middleware
 from .tool_selector import build_tool_selector_middleware
 from .trace import TraceMiddleware
@@ -26,25 +31,26 @@ from .turn_context import turn_context_middleware
 _RUNTIME_MIDDLEWARE_IDS = (
     "trace",
     "llm_logger",
-    "orchestration",
-    "subagent",
-    "team",
     "todolist",
     "plan",
 )
 
 
-def _build_runtime_subagent_specs(model: Any) -> list[SubAgent | CompiledSubAgent]:
-    """Expand file-based subagent configs to the fully-specified deepagents shape."""
+def _build_runtime_subagent_specs(
+    model: Any,
+    deps: Any,
+) -> list[SubAgent | CompiledSubAgent]:
+    """Build bounded subagents with only their declared capabilities."""
     subagent_specs: list[SubAgent | CompiledSubAgent] = []
 
-    for config in load_subagent_configs():
+    for definition in load_subagent_definitions():
         spec: SubAgent = {
-            "name": config["name"],
-            "description": config["description"],
-            "system_prompt": config["system_prompt"],
-            "model": config["model"] if "model" in config else model,
-            "tools": [],
+            "name": definition.name,
+            "description": definition.description,
+            "system_prompt": definition.system_prompt,
+            "model": definition.model or model,
+            "tools": build_capability_tools(definition.capability_ids, deps),
+            "middleware": [SubagentLifecycleMiddleware(definition.name)],
         }
         subagent_specs.append(spec)
 
@@ -70,30 +76,27 @@ def build_middleware_list(
     if _is_enabled(profile, "trace"):
         middleware_list.append(TraceMiddleware())
 
-    if _is_enabled(profile, "llm_logger"):
-        middleware_list.append(llm_logger_middleware)
-
     middleware_list.append(
         ModelRetryMiddleware(
             max_retries=3,
-            retry_on=(RateLimitError,),
+            retry_on=(RateLimitError, EmptyModelOutputError),
             backoff_factor=2.0,
             initial_delay=1.0,
             max_delay=60.0,
             jitter=True,
+            on_failure="raise",
         )
     )
 
     middleware_list.append(turn_context_middleware)
 
-    if _is_enabled(profile, "orchestration"):
-        middleware_list.append(OrchestrationMiddleware(llm=model))
-
     # Enforce strict tagged JSON contract for mindmap outputs.
     middleware_list.append(mindmap_format_middleware)
 
     if _is_enabled(profile, "subagent"):
-        subagent_specs = _build_runtime_subagent_specs(model)
+        if deps is None:
+            raise ValueError("Subagent middleware requires runtime dependencies")
+        subagent_specs = _build_runtime_subagent_specs(model, deps)
         if subagent_specs:
             middleware_list.append(
                 SubAgentMiddleware(
@@ -101,9 +104,6 @@ def build_middleware_list(
                     subagents=subagent_specs,
                 )
             )
-
-    if _is_enabled(profile, "team"):
-        middleware_list.append(TeamMiddleware(default_model=model, dependencies=deps))
 
     if _is_enabled(profile, "todolist"):
         middleware_list.append(todolist_middleware)
@@ -118,10 +118,20 @@ def build_middleware_list(
         middleware_list.append(
             SummarizationMiddleware(
                 model=model,
-                trigger=[("fraction", 0.55)],
+                trigger=(
+                    "tokens",
+                    int(model_context_window_tokens() * compact_trigger_ratio()),
+                ),
                 keep=("messages", 20),
             )
         )
+
+    middleware_list.append(model_output_validation_middleware)
+
+    # Keep logging innermost so it observes the final provider-facing request
+    # after system instructions, tools, and summaries have been resolved.
+    if _is_enabled(profile, "llm_logger"):
+        middleware_list.append(llm_logger_middleware)
 
     return middleware_list
 

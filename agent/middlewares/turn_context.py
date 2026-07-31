@@ -1,19 +1,21 @@
 """Dynamic per-turn system context injection."""
 
-from __future__ import annotations
-
+from collections.abc import Callable
 from typing import Any
 
 from langchain.agents.middleware import AgentMiddleware
-from langchain_core.messages import SystemMessage
+from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
 
+from .system_message import append_system_instruction
 from .types import AgentState
 
 
 class TurnContextMiddleware(AgentMiddleware):
-    """Inject structured per-turn context as a system message."""
+    """Merge structured per-turn context into the provider system message."""
+
+    state_schema = AgentState
 
     def before_model(  # type: ignore[override]
         self,
@@ -23,7 +25,7 @@ class TurnContextMiddleware(AgentMiddleware):
     ) -> dict[str, Any] | None:
         messages = state.get("messages", [])
         if not messages:
-            return None
+            return {"turn_system_context": ""}
 
         last_msg = messages[-1]
         if not hasattr(last_msg, "type") or last_msg.type != "human":
@@ -32,9 +34,18 @@ class TurnContextMiddleware(AgentMiddleware):
         configurable = config.get("configurable", {}) if config else {}
         turn_context = configurable.get("turn_context")
         system_content = self._build_system_content(turn_context)
-        if not system_content:
-            return None
-        return {"messages": messages[:-1] + [SystemMessage(content=system_content), last_msg]}
+        return {"turn_system_context": system_content}
+
+    def wrap_model_call(
+        self,
+        request: ModelRequest[Any],
+        handler: Callable[[ModelRequest[Any]], ModelResponse[Any]],
+    ) -> ModelResponse[Any]:
+        """Keep dynamic instructions out of conversation history."""
+        state = request.state or {}
+        instruction = str(state.get("turn_system_context") or "").strip()
+        system_message = append_system_instruction(request.system_message, instruction)
+        return handler(request.override(system_message=system_message))
 
     @staticmethod
     def _build_system_content(turn_context: Any) -> str:
@@ -60,10 +71,10 @@ class TurnContextMiddleware(AgentMiddleware):
                     continue
                 memory_lines.append(f"- ({memory_type}) {content}")
             if memory_lines:
-                lines.append("Relevant long-term memory:")
+                lines.append("Semantically retrieved long-term memory candidates:")
                 lines.extend(memory_lines)
                 lines.append(
-                    "If memory conflicts with the current user request or current evidence, prefer the current request and current evidence."
+                    "Use a candidate only when it is directly relevant. If it conflicts with the current request or current evidence, ignore it and prefer the current information."
                 )
 
         return "\n".join(lines).strip()

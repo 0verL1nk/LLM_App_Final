@@ -9,6 +9,8 @@ from langchain.agents.middleware import AgentMiddleware
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langchain_core.messages import AIMessage, HumanMessage
 
+from ..application.a2ui_mindmap import parse_a2ui_mindmap_jsonl
+
 logger = logging.getLogger(__name__)
 
 _MAX_REWRITE_ATTEMPTS = 1
@@ -16,24 +18,22 @@ _MAX_BAD_OUTPUT_PREVIEW = 600
 _RETRY_PROMPT = """你刚才的思维导图输出格式不符合要求，必须重写。
 
 错误要求说明：
-- 必须只输出一个 `<mindmap>...</mindmap>` 包裹的 JSON 对象
-- 禁止输出 Mermaid
-- 禁止输出 Markdown 代码块
-- 禁止输出标题、说明文字、前后缀或任何额外文本
+- 必须只输出三行 A2UI v0.9 JSONL surface，不要任何 XML/HTML tag
+- catalogId 必须是 `https://papersage.local/a2ui/catalogs/mindmap-v1.json`，只允许 `Mindmap` 组件与 `/mindmap` 数据
+- 禁止输出 Mermaid、HTML、JavaScript、SVG、CSS 或 Markdown 代码块
 
 正确格式示例：
-<mindmap>
-{{"name":"主题","children":[{{"name":"子主题","children":[]}}]}}
-</mindmap>
+{{"version":"v0.9","createSurface":{{"surfaceId":"mindmap-1","catalogId":"https://papersage.local/a2ui/catalogs/mindmap-v1.json"}}}}
+{{"version":"v0.9","updateComponents":{{"surfaceId":"mindmap-1","components":[{{"id":"root","component":"Mindmap","data":{{"path":"/mindmap"}}}}]}}}}
+{{"version":"v0.9","updateDataModel":{{"surfaceId":"mindmap-1","path":"/mindmap","value":{{"label":"主题","children":[]}}}}}}
 
 你刚才的错误输出片段：
 {bad_output}
 
-请基于同一内容立即重写，并且只输出合法的 `<mindmap>...</mindmap>` 内容。"""
+请基于同一内容立即重写，并且只输出合法的 A2UI JSONL 内容。"""
 
 _FINAL_FAILURE_MESSAGE = (
-    "思维导图输出格式校验失败：必须只输出 `<mindmap>...</mindmap>` 包裹的单个 JSON 对象，"
-    "不能输出 Mermaid、Markdown 代码块或额外说明文字。请重试。"
+    "思维导图暂时无法生成，请重试。"
 )
 
 
@@ -102,50 +102,7 @@ def _extract_last_ai_message(messages: list[Any]) -> AIMessage | None:
 
 
 def _parse_strict_mindmap_payload(text: str) -> dict[str, Any] | None:
-    value = str(text or "").strip()
-    if not value.lower().startswith("<mindmap>") or not value.lower().endswith("</mindmap>"):
-        return None
-    prefix_len = len("<mindmap>")
-    suffix_len = len("</mindmap>")
-    inner = value[prefix_len:-suffix_len].strip()
-    if not inner:
-        return None
-    decoder = json.JSONDecoder()
-    try:
-        payload, end = decoder.raw_decode(inner)
-    except json.JSONDecodeError:
-        return None
-    if inner[end:].strip():
-        return None
-    if not isinstance(payload, dict):
-        return None
-    if not isinstance(payload.get("name"), str) or not str(payload.get("name")).strip():
-        return None
-    children = payload.get("children")
-    if children is not None and not isinstance(children, list):
-        return None
-    return payload
-
-
-def _looks_like_mindmap_output(text: str) -> bool:
-    value = str(text or "").strip().lower()
-    if not value:
-        return False
-    if "<mindmap" in value:
-        return True
-    if "```mermaid" in value:
-        return True
-    if "```" in value and "mindmap" in value:
-        return True
-    if value.startswith("mindmap"):
-        return True
-    if "\nmindmap" in value:
-        return True
-    if "root((" in value or "root ((" in value:
-        return True
-    if ("思维导图" in value or "脑图" in value or "概念图" in value) and "```" in value:
-        return True
-    return False
+    return parse_a2ui_mindmap_jsonl(text)
 
 
 def _preview_bad_output(text: str) -> str:
@@ -175,10 +132,7 @@ class MindmapFormatMiddleware(AgentMiddleware):
             answer = _content_to_text(ai_message.content)
             if _parse_strict_mindmap_payload(answer) is not None:
                 return response
-            if not (
-                _looks_like_mindmap_output(answer)
-                or _expects_mindmap_response(list(current_request.messages or []))
-            ):
+            if not _expects_mindmap_response(list(current_request.messages or [])):
                 return response
 
             if attempt >= _MAX_REWRITE_ATTEMPTS:

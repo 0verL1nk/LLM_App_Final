@@ -1,10 +1,10 @@
 """Tool selector middleware configuration."""
 
-import json
 import logging
 from typing import Any
 
 from langchain.agents.middleware import AgentMiddleware
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +12,12 @@ DEFAULT_SYSTEM_PROMPT = "Your goal is to select the most relevant tools for answ
 DEFAULT_MAX_TOOLS = 8  # Default maximum number of tools to select
 
 
+class ToolSelection(BaseModel):
+    tools: list[str] = Field(default_factory=list)
+
+
 class SimpleToolSelectorMiddleware(AgentMiddleware):
-    """Tool selector that uses JSON text parsing instead of structured output."""
+    """Use model-native structured output to select the relevant tool subset."""
 
     def __init__(
         self,
@@ -85,15 +89,19 @@ Available tools:
 
 User query: {user_message.content}
 
-Output JSON format (no markdown):
-{{"tools": ["tool1", "tool2", ...]}}"""
+Return the selected tool names through the required structured output schema."""
 
         try:
-            response = self.model.invoke([{"role": "user", "content": prompt}])
-            response_text = response.content if hasattr(response, "content") else str(response)
-
-            # Extract JSON from response
-            selected_names = self._extract_json(response_text, available_tools)
+            response = self.model.with_structured_output(ToolSelection).invoke(
+                [{"role": "user", "content": prompt}]
+            )
+            selection = (
+                response
+                if isinstance(response, ToolSelection)
+                else ToolSelection.model_validate(response)
+            )
+            valid_names = {tool.name for tool in available_tools}
+            selected_names = [name for name in selection.tools if name in valid_names]
 
             # Limit to max_tools
             if self.max_tools is not None:
@@ -103,28 +111,6 @@ Output JSON format (no markdown):
         except Exception as e:
             logger.warning(f"Tool selection failed: {e}, using all tools")
             return [tool.name for tool in available_tools]
-
-    def _extract_json(self, response_text: str, available_tools: list[Any]) -> list[str]:
-        """Extract tool names from JSON response."""
-        valid_names = {tool.name for tool in available_tools}
-
-        # Remove markdown code blocks
-        text = response_text.strip()
-        if text.startswith("```json"):
-            text = text[7:]
-        elif text.startswith("```"):
-            text = text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        text = text.strip()
-
-        try:
-            data = json.loads(text)
-            tools = data.get("tools", [])
-            return [name for name in tools if name in valid_names]
-        except Exception:
-            # Fallback: extract tool names from text
-            return [name for name in valid_names if name in response_text]
 
 
 def build_tool_selector_middleware(model: Any) -> SimpleToolSelectorMiddleware:

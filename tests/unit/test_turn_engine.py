@@ -2,7 +2,6 @@ from agent.application.turn_engine import (
     _maybe_to_dict,
     build_search_document_fn,
     execute_turn_core,
-    try_parse_mindmap,
 )
 
 
@@ -41,6 +40,31 @@ def test_execute_turn_core_with_injected_executor_replaces_evidence():
     assert result["evidence_items"]
     assert len(result["evidence_items"]) == 1
     assert result["evidence_items"][0]["chunk_id"] == "c1"
+    assert result["retrieved_evidence_items"][0]["chunk_id"] == "c1"
+
+
+def test_execute_turn_core_streams_answer_deltas_without_reinvoking() -> None:
+    from types import SimpleNamespace
+
+    class _StreamingAgent:
+        def invoke(self, *_args, **_kwargs):
+            raise AssertionError("streaming run must not invoke the agent twice")
+
+        def stream(self, *_args, **_kwargs):
+            yield {"type": "messages", "data": (SimpleNamespace(content="流式"), {"langgraph_node": "model"})}
+            yield {"type": "messages", "data": (SimpleNamespace(content="回答"), {"langgraph_node": "model"})}
+            yield {"type": "values", "data": {"messages": [SimpleNamespace(content="流式回答", tool_calls=[])]}}
+
+    events: list[dict[str, object]] = []
+    result = execute_turn_core(
+        prompt="请回答",
+        leader_agent=_StreamingAgent(),
+        leader_runtime_config={},
+        on_event=events.append,
+    )
+
+    assert result["answer"] == "流式回答"
+    assert [event["content"] for event in events] == ["流式", "回答"]
 
 
 def test_execute_turn_core_without_document_rag_skips_evidence():
@@ -371,73 +395,6 @@ def test_execute_turn_core_logs_final_answer(caplog) -> None:
     assert "TURN_FINAL_ANSWER: 最终回答内容" in caplog.text
 
 
-def test_try_parse_mindmap_accepts_extra_text_after_json_inside_tag() -> None:
-    answer = """<mindmap>
-{
-  "name": "Seed-TTS系统",
-  "children": [{"name": "模型", "children": []}]
-}
-补充说明：这一层表示核心模块。
-</mindmap>"""
-
-    parsed = try_parse_mindmap(answer)
-
-    assert parsed == {
-        "name": "Seed-TTS系统",
-        "children": [{"name": "模型", "children": []}],
-    }
-
-
-def test_try_parse_mindmap_accepts_wrapped_text_around_tag() -> None:
-    answer = """下面是导图结果：
-<mindmap>
-{
-  "name": "主题",
-  "children": []
-}
-</mindmap>
-以上。"""
-
-    parsed = try_parse_mindmap(answer)
-
-    assert parsed == {"name": "主题", "children": []}
-
-
-def test_try_parse_mindmap_ignores_second_json_object_inside_tag() -> None:
-    answer = """<mindmap>
-{"name": "主题", "children": []}
-{"other": 1}
-</mindmap>"""
-
-    parsed = try_parse_mindmap(answer)
-
-    assert parsed == {"name": "主题", "children": []}
-
-
-def test_try_parse_mindmap_ignores_trailing_braces_in_comment_text() -> None:
-    answer = """<mindmap>
-{"name": "主题", "children": []}
-注释里还有 {brace}
-</mindmap>"""
-
-    parsed = try_parse_mindmap(answer)
-
-    assert parsed == {"name": "主题", "children": []}
-
-
-def test_try_parse_mindmap_accepts_repeated_mindmap_blocks() -> None:
-    answer = """<mindmap>
-{"name": "主题A", "children": []}
-</mindmap>
-<mindmap>
-{"name": "主题B", "children": []}
-</mindmap>"""
-
-    parsed = try_parse_mindmap(answer)
-
-    assert parsed == {"name": "主题A", "children": []}
-
-
 def test_maybe_to_dict_handles_none_and_noncallable_values():
     assert _maybe_to_dict(None) is None
     assert _maybe_to_dict({"x": 1}) == {"x": 1}
@@ -449,14 +406,34 @@ def test_maybe_to_dict_handles_none_and_noncallable_values():
     assert _maybe_to_dict(_Payload()) == {"ok": True}
 
 
-def test_execute_turn_core_exposes_team_handoff_and_scheduler_convenience():
+def test_execute_turn_core_exposes_observed_delegation_and_scheduler_state():
     from unittest.mock import Mock
 
     mock_agent = Mock()
     mock_agent.invoke.return_value = {
-        "messages": [Mock(content="请先执行 todo", tool_calls=[])],
-        "needs_team": True,
-        "team_handoff": {"mode": "leader_teammate", "reason": "multi-role"},
+        "messages": [
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "task-1",
+                        "name": "task",
+                        "args": {
+                            "subagent_type": "researcher",
+                            "description": "检索证据",
+                        },
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "name": "task",
+                "tool_call_id": "task-1",
+                "content": "证据结果",
+            },
+            {"role": "assistant", "content": "请先执行 todo", "tool_calls": []},
+        ],
         "todo_scheduler_hint": {
             "ready_todo_ids": ["todo-2"],
             "blocked_todo_ids": [],
@@ -469,17 +446,12 @@ def test_execute_turn_core_exposes_team_handoff_and_scheduler_convenience():
                 "content": "检索证据",
                 "status": "completed",
                 "depends_on": [],
-                "assignee": "researcher",
-                "execution_backend": "local",
-                "result": {"output": "done"},
             },
             {
                 "id": "todo-2",
                 "content": "整理结论",
                 "status": "ready",
                 "depends_on": ["todo-1"],
-                "assignee": "writer",
-                "execution_backend": "a2a",
             },
         ],
     }
@@ -490,11 +462,12 @@ def test_execute_turn_core_exposes_team_handoff_and_scheduler_convenience():
         leader_runtime_config={},
     )
 
-    assert result["policy_decision"]["team_enabled"] is True
-    assert result["team_handoff"]["mode"] == "leader_teammate"
+    assert result["policy_decision"]["delegation_enabled"] is True
     assert result["todo_scheduler_hint"]["ready_todo_ids"] == ["todo-2"]
-    assert result["team_execution"]["enabled"] is True
-    assert result["team_execution"]["todo_stats"]["done"] == 1
-    assert result["team_execution"]["todo_stats"]["todo"] == 1
-    assert result["team_execution"]["todo_records"][0]["assignee"] == "researcher"
-    assert result["team_execution"]["todo_records"][1]["dependencies"] == ["todo-1"]
+    assert result["delegation_execution"]["enabled"] is True
+    assert result["delegation_execution"]["roles"] == ["researcher"]
+    assert result["delegation_execution"]["tasks"][0]["status"] == "completed"
+    assert result["delegation_rounds"] == 1
+    assert any(
+        event["performative"] == "delegate_task" for event in result["trace_payload"]
+    )

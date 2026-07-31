@@ -4,6 +4,7 @@
 支持配置化开关和失败回退
 支持邻域扩展和证据来源输出
 """
+
 import hashlib
 import json
 import logging
@@ -25,6 +26,7 @@ from .vector_store import build_vectorstore, stable_vectorstore_key
 
 logger = logging.getLogger(__name__)
 PROJECT_INDEX_SCHEMA_VERSION = 1
+IngestionProgressCallback = Callable[[str, int | None, int | None], None]
 
 
 # BM25 依赖可用性检查
@@ -32,6 +34,7 @@ def _check_bm25_available() -> bool:
     """检查 rank_bm25 库是否可用"""
     try:
         import rank_bm25  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -43,6 +46,7 @@ BM25_AVAILABLE = _check_bm25_available()
 @dataclass
 class ChunkMetadata:
     """Chunk 元数据"""
+
     chunk_id: str
     section_path: str = ""
     source_page: int | None = None
@@ -54,6 +58,7 @@ class ChunkMetadata:
 @dataclass
 class RetrievalChunk:
     """检索结果 Chunk"""
+
     content: str
     score: float
     source: str  # "dense" or "sparse"
@@ -63,6 +68,7 @@ class RetrievalChunk:
 @dataclass
 class RetrievalResult:
     """检索结果（包含证据来源）"""
+
     chunks: list[str]
     sources: list[dict]  # 每个 chunk 的来源信息
     metadata: dict = field(default_factory=dict)  # 检索轨迹元数据
@@ -71,6 +77,7 @@ class RetrievalResult:
 @dataclass
 class RetrievalTrace:
     """检索轨迹"""
+
     dense_candidate_count: int = 0
     sparse_candidate_count: int = 0
     rrf_candidate_count: int = 0
@@ -87,8 +94,8 @@ def _project_index_cache_root() -> Path:
     return Path(raw)
 
 
-def _sha1_text(value: str) -> str:
-    return hashlib.sha1(value.encode("utf-8")).hexdigest()
+def _hash_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def _settings_signature_for_project_index(settings: Any) -> str:
@@ -99,7 +106,7 @@ def _settings_signature_for_project_index(settings: Any) -> str:
         "chunk_overlap": int(getattr(settings, "rag_chunk_overlap", 80) or 80),
     }
     digest_input = json.dumps(payload, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
-    return _sha1_text(digest_input)[:16]
+    return _hash_text(digest_input)[:16]
 
 
 def _project_doc_index_path(
@@ -110,8 +117,8 @@ def _project_doc_index_path(
     text_hash: str,
 ) -> Path:
     root = _project_index_cache_root()
-    project_key = _sha1_text(str(project_uid or "__default__"))[:16]
-    doc_key = _sha1_text(str(doc_uid or "__doc__"))[:16]
+    project_key = _hash_text(str(project_uid or "__default__"))[:16]
+    doc_key = _hash_text(str(doc_uid or "__doc__"))[:16]
     return root / project_key / f"{doc_key}.{settings_signature}.{text_hash}.pkl"
 
 
@@ -183,6 +190,7 @@ def _build_project_doc_index_artifact(
     text_hash: str,
     splitter: RecursiveCharacterTextSplitter,
     embeddings: FastEmbedEmbeddings,
+    progress_callback: IngestionProgressCallback | None = None,
 ) -> dict[str, Any]:
     doc_docs = splitter.create_documents(
         [normalized_text],
@@ -195,13 +203,21 @@ def _build_project_doc_index_artifact(
         ],
     )
     chunks = [doc.page_content for doc in doc_docs]
-    metadatas = [
-        dict(doc.metadata) if isinstance(doc.metadata, dict) else {}
-        for doc in doc_docs
-    ]
-    embedding_vectors = _normalize_embedding_vectors(
-        embeddings.embed_documents(chunks) if chunks else []
-    )
+    if progress_callback is not None:
+        progress_callback("chunking", len(chunks), len(chunks))
+    metadatas = [dict(doc.metadata) if isinstance(doc.metadata, dict) else {} for doc in doc_docs]
+    embedding_vectors: list[list[float]] = []
+    batch_size = max(1, int(os.getenv("RAG_INDEX_BATCH_SIZE", "256")))
+    total_chunks = len(chunks)
+    for start in range(0, total_chunks, batch_size):
+        batch = chunks[start : start + batch_size]
+        embedding_vectors.extend(_normalize_embedding_vectors(embeddings.embed_documents(batch)))
+        if progress_callback is not None:
+            progress_callback(
+                "embedding",
+                min(start + len(batch), total_chunks),
+                total_chunks,
+            )
     return {
         "schema_version": PROJECT_INDEX_SCHEMA_VERSION,
         "project_uid": project_uid,
@@ -230,7 +246,11 @@ def _load_project_doc_index_artifact(path: Path) -> dict[str, Any] | None:
     chunks = payload.get("chunks")
     metadatas = payload.get("metadatas")
     embeddings = payload.get("embeddings")
-    if not isinstance(chunks, list) or not isinstance(metadatas, list) or not isinstance(embeddings, list):
+    if (
+        not isinstance(chunks, list)
+        or not isinstance(metadatas, list)
+        or not isinstance(embeddings, list)
+    ):
         return None
     if len(chunks) != len(metadatas) or len(chunks) != len(embeddings):
         return None
@@ -257,8 +277,11 @@ def _load_or_build_project_doc_index_artifact(
     settings_signature: str,
     splitter: RecursiveCharacterTextSplitter,
     embeddings: FastEmbedEmbeddings,
+    allow_build: bool = True,
+    require_persistence: bool = False,
+    progress_callback: IngestionProgressCallback | None = None,
 ) -> tuple[dict[str, Any], bool]:
-    text_hash = _sha1_text(normalized_text)
+    text_hash = _hash_text(normalized_text)
     path = _project_doc_index_path(
         project_uid=project_uid,
         doc_uid=doc_uid,
@@ -268,6 +291,10 @@ def _load_or_build_project_doc_index_artifact(
     cached = _load_project_doc_index_artifact(path)
     if isinstance(cached, dict):
         return cached, True
+    if not allow_build:
+        raise FileNotFoundError(
+            f"Published RAG artifact is unavailable: project={project_uid} doc={doc_uid}"
+        )
     built = _build_project_doc_index_artifact(
         project_uid=project_uid,
         doc_uid=doc_uid,
@@ -277,12 +304,73 @@ def _load_or_build_project_doc_index_artifact(
         text_hash=text_hash,
         splitter=splitter,
         embeddings=embeddings,
+        progress_callback=progress_callback,
     )
     try:
         _save_project_doc_index_artifact(path, built)
     except Exception as exc:
-        logger.warning("Failed to persist project index artifact: project=%s doc=%s err=%s", project_uid, doc_uid, exc)
+        if require_persistence:
+            raise RuntimeError(
+                f"Failed to publish RAG artifact: project={project_uid} doc={doc_uid}"
+            ) from exc
+        logger.warning(
+            "Failed to persist project index artifact: project=%s doc=%s err=%s",
+            project_uid,
+            doc_uid,
+            exc,
+        )
     return built, False
+
+
+def build_project_document_index_with_settings(
+    *,
+    project_uid: str,
+    doc_uid: str,
+    doc_name: str,
+    document_text: str,
+    progress_callback: IngestionProgressCallback | None = None,
+) -> dict[str, Any]:
+    """Build one complete document index payload for an external store."""
+    settings = load_agent_settings()
+    normalized_text = str(document_text or "").strip()
+    if not normalized_text:
+        raise ValueError("Cannot ingest an empty document")
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=settings.rag_chunk_size,
+        chunk_overlap=settings.rag_chunk_overlap,
+        separators=["\n\n", "\n", "。", "！", "？", ".", "!", "?"],
+        add_start_index=True,
+    )
+    if progress_callback is not None:
+        progress_callback("loading_model", None, None)
+    embeddings = FastEmbedEmbeddings(
+        model_name=settings.local_embedding_model,
+        cache_dir=settings.local_embedding_cache_dir,
+    )
+    settings_signature = _settings_signature_for_project_index(settings)
+    text_hash = _hash_text(normalized_text)
+    artifact = _build_project_doc_index_artifact(
+        project_uid=project_uid,
+        doc_uid=doc_uid,
+        doc_name=doc_name,
+        normalized_text=normalized_text,
+        settings_signature=settings_signature,
+        text_hash=text_hash,
+        splitter=splitter,
+        embeddings=embeddings,
+        progress_callback=progress_callback,
+    )
+    chunk_count = len(artifact.get("chunks", []))
+    return {
+        **artifact,
+        "index_version": f"{settings_signature}:{text_hash}",
+        "text_hash": text_hash,
+        "chunk_count": chunk_count,
+        "reused": False,
+        "source_char_count": len(normalized_text),
+        "indexed_char_count": len(normalized_text),
+        "truncated": False,
+    }
 
 
 def _cosine_topk(
@@ -340,7 +428,16 @@ def _retrieval_result_to_evidence_payload(
             doc_name=source_doc_name if isinstance(source_doc_name, str) else doc_name,
             chunk_id=str(source.get("chunk_id") or f"chunk_{index}"),
             text=chunk,
-            score=float(source.get("score", 0.0)) if isinstance(source, dict) else 0.0,
+            score=(
+                float(source["score"])
+                if isinstance(source, dict) and isinstance(source.get("score"), (int, float))
+                else None
+            ),
+            rank=(
+                int(source["rank"])
+                if isinstance(source, dict) and isinstance(source.get("rank"), int)
+                else index + 1
+            ),
             page_no=source.get("page_no") if isinstance(source.get("page_no"), int) else None,
             offset_start=offset_start,
             offset_end=(offset_start + len(chunk)) if isinstance(offset_start, int) else None,
@@ -394,11 +491,7 @@ def _build_bm25_retriever(
                 key=lambda x: x[1],
                 reverse=True,
             )
-            return [
-                (idx, score)
-                for idx, score in top_indices[:top_k]
-                if score > 0
-            ]
+            return [(idx, score) for idx, score in top_indices[:top_k] if score > 0]
 
         return search
 
@@ -456,10 +549,7 @@ def _normalize_scores(scores: list[float]) -> list[float]:
     max_score = max(scores)
     if max_score == min_score:
         return [1.0] * len(scores)
-    return [
-        (s - min_score) / (max_score - min_score)
-        for s in scores
-    ]
+    return [(s - min_score) / (max_score - min_score) for s in scores]
 
 
 def _rerank_docs(
@@ -478,10 +568,7 @@ def _rerank_docs(
     try:
         from flashrank import RerankRequest
 
-        passages = [
-            {"id": str(index), "text": doc.page_content}
-            for index, doc in enumerate(docs)
-        ]
+        passages = [{"id": str(index), "text": doc.page_content} for index, doc in enumerate(docs)]
         rerank_request = RerankRequest(query=query, passages=passages)
         reranked = reranker.rerank(rerank_request)
         selected: list[str] = []
@@ -504,6 +591,7 @@ def _build_local_reranker(model_name: str) -> Any | None:
     """构建本地重排序模型（与 local_rag.py 一致）"""
     try:
         from flashrank import Ranker
+
         return Ranker(model_name=model_name)
     except Exception:
         return None
@@ -665,10 +753,7 @@ class HybridRetriever:
             k=self.dense_k,
         )
         trace.dense_candidate_count = len(dense_docs)
-        dense_results = [
-            (i, 1.0 / (i + 1))
-            for i in range(len(dense_docs))
-        ]
+        dense_results = [(i, 1.0 / (i + 1)) for i in range(len(dense_docs))]
 
         # 2. Sparse 检索（BM25）
         sparse_results: list[tuple[int, float]] = []
@@ -681,8 +766,7 @@ class HybridRetriever:
                     scores = [s for _, s in sparse_results]
                     normalized = _normalize_scores(scores)
                     sparse_results = [
-                        (idx, normalized[i])
-                        for i, (idx, _) in enumerate(sparse_results)
+                        (idx, normalized[i]) for i, (idx, _) in enumerate(sparse_results)
                     ]
             except Exception as e:
                 logger.warning(f"BM25 检索失败: {e}")
@@ -739,15 +823,20 @@ class HybridRetriever:
                     if selected_doc is not None and isinstance(selected_doc.metadata, dict)
                     else {}
                 )
-                sources.append({
-                    "chunk_id": f"chunk_{original_idx}" if original_idx is not None else f"chunk_{i}",
-                    "index": original_idx if original_idx is not None else i,
-                    "score": 1.0 / (i + 1) if i < len(fused_results) else 0,
-                    "doc_uid": metadata.get("doc_uid", ""),
-                    "doc_name": metadata.get("doc_name", ""),
-                    "project_uid": metadata.get("project_uid", ""),
-                    "page_no": metadata.get("page_no"),
-                })
+                sources.append(
+                    {
+                        "chunk_id": f"chunk_{original_idx}"
+                        if original_idx is not None
+                        else f"chunk_{i}",
+                        "index": original_idx if original_idx is not None else i,
+                        "score": None,
+                        "rank": i + 1,
+                        "doc_uid": metadata.get("doc_uid", ""),
+                        "doc_name": metadata.get("doc_name", ""),
+                        "project_uid": metadata.get("project_uid", ""),
+                        "page_no": metadata.get("page_no"),
+                    }
+                )
             return RetrievalResult(
                 chunks=ranked_chunks,
                 sources=sources,
@@ -797,8 +886,7 @@ class HybridRetriever:
                         scores = [s for _, s in sparse_results]
                         normalized = _normalize_scores(scores)
                         sparse_results = [
-                            (idx, normalized[i])
-                            for i, (idx, _) in enumerate(sparse_results)
+                            (idx, normalized[i]) for i, (idx, _) in enumerate(sparse_results)
                         ]
                 except Exception:
                     pass
@@ -856,15 +944,20 @@ class HybridRetriever:
                     if selected_doc is not None and isinstance(selected_doc.metadata, dict)
                     else {}
                 )
-                sources.append({
-                    "chunk_id": f"chunk_{original_idx}" if original_idx is not None else f"chunk_{i}",
-                    "index": original_idx if original_idx is not None else i,
-                    "score": 1.0 / (i + 1),
-                    "doc_uid": metadata.get("doc_uid", ""),
-                    "doc_name": metadata.get("doc_name", ""),
-                    "project_uid": metadata.get("project_uid", ""),
-                    "page_no": metadata.get("page_no"),
-                })
+                sources.append(
+                    {
+                        "chunk_id": f"chunk_{original_idx}"
+                        if original_idx is not None
+                        else f"chunk_{i}",
+                        "index": original_idx if original_idx is not None else i,
+                        "score": None,
+                        "rank": i + 1,
+                        "doc_uid": metadata.get("doc_uid", ""),
+                        "doc_name": metadata.get("doc_name", ""),
+                        "project_uid": metadata.get("project_uid", ""),
+                        "page_no": metadata.get("page_no"),
+                    }
+                )
             return RetrievalResult(
                 chunks=ranked_chunks,
                 sources=sources,
@@ -935,7 +1028,7 @@ def build_hybrid_retriever(
     vectorstore_key = stable_vectorstore_key(
         {
             "mode": "hybrid_doc_dense",
-            "text_sha1": _sha1_text(document_text),
+            "text_sha256": _hash_text(document_text),
             "chunk_size": chunk_size,
             "chunk_overlap": chunk_overlap,
             "embedding_model": embedding_model,
@@ -1002,7 +1095,7 @@ def build_hybrid_evidence_retriever(
             "project_uid": str(project_uid or ""),
             "doc_uid": str(doc_uid or ""),
             "doc_name": str(doc_name or ""),
-            "text_sha1": _sha1_text(document_text),
+            "text_sha256": _hash_text(document_text),
             "chunk_size": chunk_size,
             "chunk_overlap": chunk_overlap,
             "embedding_model": embedding_model,
@@ -1048,7 +1141,8 @@ def build_hybrid_evidence_retriever(
                     doc_name=doc_name,
                     chunk_id=f"chunk_{i}",
                     text=text,
-                    score=float(1.0 / (i + 1)),
+                    score=None,
+                    rank=i + 1,
                 )
                 for i, text in enumerate(result)
             ],
@@ -1101,14 +1195,16 @@ def build_local_evidence_retriever_with_settings(
 def build_project_evidence_retriever_with_settings(
     documents: list[dict[str, str]],
     project_uid: str = "",
+    *,
+    allow_index_build: bool = True,
 ) -> Callable[[str], dict[str, Any]]:
     settings = load_agent_settings()
     raw_max_project_chars = int(settings.rag_project_max_chars)
     raw_max_project_chunks = int(settings.rag_project_max_chunks)
     max_project_chars = raw_max_project_chars if raw_max_project_chars > 0 else None
     max_project_chunks = raw_max_project_chunks if raw_max_project_chunks > 0 else None
-    project_rerank_enabled = (
-        bool(settings.rag_rerank_enabled) and bool(settings.rag_project_rerank_enabled)
+    project_rerank_enabled = bool(settings.rag_rerank_enabled) and bool(
+        settings.rag_project_rerank_enabled
     )
     min_relevance_score = _resolve_min_relevance_score(settings)
     splitter = RecursiveCharacterTextSplitter(
@@ -1134,10 +1230,7 @@ def build_project_evidence_retriever_with_settings(
         cache_dir=settings.local_embedding_cache_dir,
     )
     for item in documents:
-        if (
-            (isinstance(remaining_chars, int) and remaining_chars <= 0)
-            or truncated_by_chunks
-        ):
+        if (isinstance(remaining_chars, int) and remaining_chars <= 0) or truncated_by_chunks:
             break
         if not isinstance(item, dict):
             continue
@@ -1149,12 +1242,16 @@ def build_project_evidence_retriever_with_settings(
         if not isinstance(doc_uid, str) or not doc_uid.strip():
             continue
         normalized_text = text.strip()
-        if isinstance(remaining_chars, int) and len(normalized_text) > remaining_chars:
+        if (
+            allow_index_build
+            and isinstance(remaining_chars, int)
+            and len(normalized_text) > remaining_chars
+        ):
             normalized_text = normalized_text[: max(remaining_chars, 0)]
             truncated_by_chars = True
         if not normalized_text:
             continue
-        if isinstance(remaining_chars, int):
+        if allow_index_build and isinstance(remaining_chars, int):
             remaining_chars -= len(normalized_text)
         normalized_doc_name = doc_name if isinstance(doc_name, str) else ""
         doc_index_artifact, reused_from_cache = _load_or_build_project_doc_index_artifact(
@@ -1165,6 +1262,7 @@ def build_project_evidence_retriever_with_settings(
             settings_signature=settings_signature,
             splitter=splitter,
             embeddings=embeddings,
+            allow_build=allow_index_build,
         )
         if reused_from_cache:
             reused_doc_indexes += 1
@@ -1180,14 +1278,17 @@ def build_project_evidence_retriever_with_settings(
                 truncated_by_chunks = True
                 break
             chunk_text = doc_chunks[index]
-            metadata = (
-                dict(doc_metadatas[index]) if isinstance(doc_metadatas[index], dict) else {}
-            )
+            metadata = dict(doc_metadatas[index]) if isinstance(doc_metadatas[index], dict) else {}
             chunk_vector = doc_embeddings[index]
             if not isinstance(chunk_text, str):
                 continue
             if not isinstance(chunk_vector, list) or not chunk_vector:
                 continue
+            if not allow_index_build and isinstance(remaining_chars, int):
+                if len(chunk_text) > remaining_chars:
+                    truncated_by_chars = True
+                    break
+                remaining_chars -= len(chunk_text)
             metadata["chunk_index"] = chunk_counter
             metadata["chunk_id"] = f"{doc_uid}:chunk_{chunk_counter}"
             metadata["doc_uid"] = doc_uid
@@ -1218,6 +1319,7 @@ def build_project_evidence_retriever_with_settings(
         )
 
     if not chunks:
+
         def _empty(_query: str) -> dict[str, Any]:
             payload = EvidencePayload(
                 evidences=[],
@@ -1233,11 +1335,7 @@ def build_project_evidence_retriever_with_settings(
         return _empty
 
     dense_k = max(1, min(int(settings.rag_dense_candidate_k), len(chunks)))
-    reranker = (
-        _build_local_reranker(settings.rag_rerank_model)
-        if project_rerank_enabled
-        else None
-    )
+    reranker = _build_local_reranker(settings.rag_rerank_model) if project_rerank_enabled else None
 
     def search_project_evidence(query: str) -> dict[str, Any]:
         query_vector = _normalize_embedding_vector(embeddings.embed_query(query))
@@ -1320,10 +1418,13 @@ def build_project_evidence_retriever_with_settings(
                     score=(
                         doc_scores[matched_idx]
                         if matched_idx is not None and matched_idx < len(doc_scores)
-                        else 0.0
+                        else None
                     ),
+                    rank=rank + 1,
                     offset_start=offset_start,
-                    offset_end=(offset_start + len(chunk)) if isinstance(offset_start, int) else None,
+                    offset_end=(offset_start + len(chunk))
+                    if isinstance(offset_start, int)
+                    else None,
                 )
             )
 
@@ -1374,6 +1475,7 @@ def build_local_vector_retriever_with_settings(document_text: str) -> Callable[[
     else:
         # 使用原有的纯 Dense 检索
         from .local import build_local_vector_retriever
+
         return build_local_vector_retriever(document_text)
 
 
@@ -1417,11 +1519,7 @@ def preprocess_query(
 
         result = response.choices[0].message.content
         # 解析结果
-        sub_queries = [
-            q.strip()
-            for q in result.split("\n")
-            if q.strip()
-        ]
+        sub_queries = [q.strip() for q in result.split("\n") if q.strip()]
 
         if sub_queries:
             return sub_queries
@@ -1534,11 +1632,7 @@ def query_split(
             return [query]
 
         # 解析结果
-        sub_queries = [
-            q.strip()
-            for q in result.split("\n")
-            if q.strip() and q.strip() != query
-        ]
+        sub_queries = [q.strip() for q in result.split("\n") if q.strip() and q.strip() != query]
 
         if sub_queries:
             logger.info(f"Query 拆分: {query} -> {sub_queries}")

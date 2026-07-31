@@ -3,13 +3,14 @@ import logging
 import os
 import sqlite3
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 from uuid import uuid4
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from .capabilities import build_profile_tools
+from .middlewares import build_middleware_list
 from .profiles import AgentProfile
 from .runtime_agent import create_runtime_agent
 
@@ -21,12 +22,14 @@ class AgentDependencies:
     search_document_fn: Callable[[str], str]
     search_document_evidence_fn: Callable[[str], dict[str, Any]] | None = None
     read_document_fn: Callable[[int, int], tuple[str, int]] | None = None
+    read_document_by_id_fn: Callable[[str, int, int], tuple[str, int]] | None = None
     list_documents_fn: Callable[[], list[dict[str, Any]]] | None = None
     doc_id_to_text: dict[str, str] | None = None
     doc_id_default: str = ""
     project_uid: str | None = None
     session_uid: str | None = None
     user_uuid: str | None = None
+    document_access: str = "scoped"
 
 
 @dataclass(frozen=True)
@@ -46,10 +49,20 @@ class AgentSession:
     thread_id: str
     tool_specs: list[dict[str, str]]
     profile_name: str = ""
+    _checkpoint_connection: sqlite3.Connection | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
     @property
     def runtime_config(self) -> dict[str, dict[str, str]]:
         return {"configurable": {"thread_id": self.thread_id}}
+
+    def close(self) -> None:
+        """Release resources owned by this session."""
+        if self._checkpoint_connection is not None:
+            self._checkpoint_connection.close()
 
 
 def create_agent_session(
@@ -71,20 +84,28 @@ def create_agent_session(
     )
 
     tools = build_profile_tools(profile, deps)
-    tool_specs = _build_tool_specs(tools)
     thread_id = _resolve_thread_id(deps, explicit_thread_id=options.thread_id)
-    checkpointer = _build_checkpointer()
     enable_tool_selector = _resolve_enable_tool_selector(options.enable_tool_selector)
-
-    agent = create_runtime_agent(
+    middleware = build_middleware_list(
         model=options.llm,
-        tools=tools,
-        system_prompt=final_system_prompt,
-        checkpointer=checkpointer,
-        enable_tool_selector=enable_tool_selector,
         profile=profile,
         deps=deps,
+        enable_tool_selector=enable_tool_selector,
     )
+    tool_specs = _build_tool_specs([*tools, *_collect_middleware_tools(middleware)])
+    checkpointer, checkpoint_connection = _build_checkpointer()
+
+    try:
+        agent = create_runtime_agent(
+            model=options.llm,
+            tools=tools,
+            system_prompt=final_system_prompt,
+            middleware=middleware,
+            checkpointer=checkpointer,
+        )
+    except Exception:
+        checkpoint_connection.close()
+        raise
     logger.info(
         "Created agent session: profile=%s thread_id=%s tools=%s",
         profile.name,
@@ -96,7 +117,22 @@ def create_agent_session(
         thread_id=thread_id,
         tool_specs=tool_specs,
         profile_name=profile.name,
+        _checkpoint_connection=checkpoint_connection,
     )
+
+
+def _collect_middleware_tools(middleware: list[Any]) -> list[Any]:
+    tools: list[Any] = []
+    seen_names: set[str] = set()
+    for item in middleware:
+        for tool_item in getattr(item, "tools", ()):
+            name = str(getattr(tool_item, "name", "") or "").strip()
+            key = name or repr(tool_item)
+            if key in seen_names:
+                continue
+            seen_names.add(key)
+            tools.append(tool_item)
+    return tools
 
 
 def _resolve_thread_id(deps: AgentDependencies, *, explicit_thread_id: str | None = None) -> str:
@@ -115,13 +151,13 @@ def _resolve_thread_id(deps: AgentDependencies, *, explicit_thread_id: str | Non
     return thread_id
 
 
-def _build_checkpointer() -> SqliteSaver:
+def _build_checkpointer() -> tuple[SqliteSaver, sqlite3.Connection]:
     checkpointer_db_path = os.getenv("CHECKPOINTER_DB_PATH", "./data/checkpoints.db")
     checkpointer_dir = os.path.dirname(checkpointer_db_path)
     if checkpointer_dir:
         os.makedirs(checkpointer_dir, exist_ok=True)
     conn = sqlite3.connect(checkpointer_db_path, check_same_thread=False)
-    return SqliteSaver(conn)
+    return SqliteSaver(conn), conn
 
 
 def _resolve_enable_tool_selector(explicit_value: bool | None) -> bool:

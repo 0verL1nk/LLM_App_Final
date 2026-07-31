@@ -1,5 +1,5 @@
 import datetime
-import json
+import hashlib
 import sqlite3
 from typing import Any
 from uuid import uuid4
@@ -14,17 +14,22 @@ def ensure_memory_tables(db_name: str = "./database.sqlite") -> None:
     cursor = conn.cursor()
     cursor.execute(
         """
-        CREATE TABLE IF NOT EXISTS session_compact_memory (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_uid TEXT NOT NULL,
-            project_uid TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS memory_events (
+            event_uid TEXT PRIMARY KEY,
             uuid TEXT NOT NULL,
-            compact_summary TEXT DEFAULT '',
-            anchors_json TEXT DEFAULT '[]',
-            updated_at TEXT NOT NULL,
-            UNIQUE(session_uid, project_uid, uuid)
+            project_uid TEXT NOT NULL,
+            session_uid TEXT NOT NULL,
+            prompt TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            status TEXT NOT NULL,
+            error_message TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
         )
-    """
+        """
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_memory_events_scope ON memory_events(uuid, project_uid, status, created_at)"
     )
     cursor.execute(
         """
@@ -48,9 +53,6 @@ def ensure_memory_tables(db_name: str = "./database.sqlite") -> None:
     """
     )
     cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_session_compact_scope ON session_compact_memory(session_uid, project_uid, uuid)"
-    )
-    cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_memory_items_scope ON memory_items(uuid, project_uid, memory_type, updated_at DESC)"
     )
     cursor.execute(
@@ -63,83 +65,6 @@ def ensure_memory_tables(db_name: str = "./database.sqlite") -> None:
     memory_columns = {row[1] for row in cursor.fetchall()}
     if "expires_at" not in memory_columns:
         cursor.execute("ALTER TABLE memory_items ADD COLUMN expires_at TEXT DEFAULT ''")
-    conn.commit()
-    conn.close()
-
-
-def get_project_session_compact_memory(
-    session_uid: str,
-    project_uid: str,
-    uuid: str,
-    db_name: str = "./database.sqlite",
-) -> dict[str, Any]:
-    ensure_memory_tables(db_name)
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT compact_summary, anchors_json, updated_at
-        FROM session_compact_memory
-        WHERE session_uid = ? AND project_uid = ? AND uuid = ?
-        LIMIT 1
-    """,
-        (session_uid, project_uid, uuid),
-    )
-    row = cursor.fetchone()
-    conn.close()
-    if not row:
-        return {"compact_summary": "", "anchors": [], "updated_at": ""}
-
-    compact_summary = str(row[0] or "")
-    anchors_raw = row[1]
-    anchors: list[Any] = []
-    if isinstance(anchors_raw, str) and anchors_raw.strip():
-        try:
-            parsed = json.loads(anchors_raw)
-            if isinstance(parsed, list):
-                anchors = parsed
-        except Exception:
-            anchors = []
-    return {
-        "compact_summary": compact_summary,
-        "anchors": anchors,
-        "updated_at": str(row[2] or ""),
-    }
-
-
-def save_project_session_compact_memory(
-    session_uid: str,
-    project_uid: str,
-    uuid: str,
-    compact_summary: str,
-    anchors: list[dict[str, Any]] | None = None,
-    db_name: str = "./database.sqlite",
-) -> None:
-    ensure_memory_tables(db_name)
-    now = _now_str()
-    anchors_payload = anchors if isinstance(anchors, list) else []
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        INSERT INTO session_compact_memory (
-            session_uid, project_uid, uuid, compact_summary, anchors_json, updated_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(session_uid, project_uid, uuid) DO UPDATE SET
-            compact_summary = excluded.compact_summary,
-            anchors_json = excluded.anchors_json,
-            updated_at = excluded.updated_at
-    """,
-        (
-            session_uid,
-            project_uid,
-            uuid,
-            str(compact_summary or ""),
-            json.dumps(anchors_payload, ensure_ascii=False),
-            now,
-        ),
-    )
     conn.commit()
     conn.close()
 
@@ -320,3 +245,238 @@ def touch_memory_items(
         )
     conn.commit()
     conn.close()
+
+
+def create_memory_event(
+    *,
+    uuid: str,
+    project_uid: str,
+    session_uid: str,
+    prompt: str,
+    answer: str,
+    db_name: str = "./database.sqlite",
+) -> str:
+    prompt_text = str(prompt or "").strip()
+    answer_text = str(answer or "").strip()
+    if not prompt_text or not answer_text:
+        return ""
+    event_uid = hashlib.sha256(
+        f"{uuid}\0{project_uid}\0{session_uid}\0{prompt_text}\0{answer_text}".encode("utf-8")
+    ).hexdigest()
+    ensure_memory_tables(db_name)
+    now = _now_str()
+    conn = sqlite3.connect(db_name, timeout=10)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT OR IGNORE INTO memory_events (
+            event_uid, uuid, project_uid, session_uid, prompt, answer,
+            status, error_message, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'pending', '', ?, ?)
+        """,
+        (event_uid, uuid, project_uid, session_uid, prompt_text, answer_text, now, now),
+    )
+    conn.commit()
+    conn.close()
+    return event_uid
+
+
+def get_memory_event(
+    *, event_uid: str, db_name: str = "./database.sqlite"
+) -> dict[str, Any] | None:
+    ensure_memory_tables(db_name)
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT event_uid, uuid, project_uid, session_uid, prompt, answer,
+               status, error_message, created_at, updated_at
+        FROM memory_events WHERE event_uid = ? LIMIT 1
+        """,
+        (event_uid,),
+    )
+    row = cursor.fetchone()
+    conn.close()
+    if row is None:
+        return None
+    keys = (
+        "event_uid", "uuid", "project_uid", "session_uid", "prompt", "answer",
+        "status", "error_message", "created_at", "updated_at",
+    )
+    return {key: str(value or "") for key, value in zip(keys, row, strict=True)}
+
+
+def claim_memory_event(
+    *, event_uid: str, db_name: str = "./database.sqlite"
+) -> dict[str, Any] | None:
+    """Atomically claim a pending or failed event for idempotent background processing."""
+    ensure_memory_tables(db_name)
+    conn = sqlite3.connect(db_name, timeout=10, isolation_level=None)
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        cursor = conn.cursor()
+        stale_before = (
+            datetime.datetime.now() - datetime.timedelta(minutes=15)
+        ).strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute(
+            """
+            UPDATE memory_events
+            SET status = 'processing', error_message = '', updated_at = ?
+            WHERE event_uid = ? AND (
+                status IN ('pending', 'failed')
+                OR (status = 'processing' AND updated_at < ?)
+            )
+            """,
+            (_now_str(), event_uid, stale_before),
+        )
+        if cursor.rowcount != 1:
+            conn.commit()
+            return None
+        cursor.execute(
+            """
+            SELECT event_uid, uuid, project_uid, session_uid, prompt, answer,
+                   status, error_message, created_at, updated_at
+            FROM memory_events WHERE event_uid = ? LIMIT 1
+            """,
+            (event_uid,),
+        )
+        row = cursor.fetchone()
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    if row is None:
+        return None
+    keys = (
+        "event_uid", "uuid", "project_uid", "session_uid", "prompt", "answer",
+        "status", "error_message", "created_at", "updated_at",
+    )
+    return {key: str(value or "") for key, value in zip(keys, row, strict=True)}
+
+
+def mark_memory_event(
+    *,
+    event_uid: str,
+    status: str,
+    error_message: str = "",
+    clear_payload: bool = False,
+    db_name: str = "./database.sqlite",
+) -> None:
+    ensure_memory_tables(db_name)
+    conn = sqlite3.connect(db_name, timeout=10)
+    cursor = conn.cursor()
+    if clear_payload:
+        cursor.execute(
+            """
+            UPDATE memory_events
+            SET status = ?, error_message = ?, prompt = '', answer = '', updated_at = ?
+            WHERE event_uid = ?
+            """,
+            (status, str(error_message or "")[:1000], _now_str(), event_uid),
+        )
+    else:
+        cursor.execute(
+            """
+            UPDATE memory_events
+            SET status = ?, error_message = ?, updated_at = ?
+            WHERE event_uid = ?
+            """,
+            (status, str(error_message or "")[:1000], _now_str(), event_uid),
+        )
+    conn.commit()
+    conn.close()
+
+
+def apply_memory_consolidation(
+    *,
+    event: dict[str, Any],
+    operations: list[dict[str, Any]],
+    db_name: str = "./database.sqlite",
+) -> None:
+    """Apply model-proposed operations under deterministic scope and schema constraints."""
+    for operation in operations:
+        if not isinstance(operation, dict):
+            continue
+        action = str(operation.get("action") or "")
+        memory_uid = str(operation.get("memory_uid") or "").strip()
+        if action == "delete" and memory_uid:
+            _delete_scoped_memory(
+                memory_uid=memory_uid,
+                uuid=event["uuid"],
+                project_uid=event["project_uid"],
+                db_name=db_name,
+            )
+            continue
+        content = str(operation.get("content") or "").strip()
+        if action == "update" and memory_uid and content:
+            if _update_scoped_memory(
+                memory_uid=memory_uid,
+                uuid=event["uuid"],
+                project_uid=event["project_uid"],
+                memory_type=str(operation.get("memory_type") or "semantic"),
+                title=str(operation.get("title") or ""),
+                content=content,
+                source_prompt=f"memory_event:{event['event_uid']}",
+                source_answer="",
+                db_name=db_name,
+            ):
+                continue
+        if action == "create" and content:
+            upsert_project_memory_item(
+                uuid=event["uuid"],
+                project_uid=event["project_uid"],
+                session_uid=event["session_uid"],
+                memory_type=str(operation.get("memory_type") or "semantic"),
+                title=str(operation.get("title") or ""),
+                content=content,
+                source_prompt=f"memory_event:{event['event_uid']}",
+                source_answer="",
+                db_name=db_name,
+            )
+
+
+def _delete_scoped_memory(
+    *, memory_uid: str, uuid: str, project_uid: str, db_name: str
+) -> None:
+    conn = sqlite3.connect(db_name, timeout=10)
+    cursor = conn.cursor()
+    cursor.execute(
+        "DELETE FROM memory_items WHERE memory_uid = ? AND uuid = ? AND project_uid = ?",
+        (memory_uid, uuid, project_uid),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _update_scoped_memory(
+    *,
+    memory_uid: str,
+    uuid: str,
+    project_uid: str,
+    memory_type: str,
+    title: str,
+    content: str,
+    source_prompt: str,
+    source_answer: str,
+    db_name: str,
+) -> bool:
+    conn = sqlite3.connect(db_name, timeout=10)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        UPDATE memory_items
+        SET memory_type = ?, title = ?, content = ?, source_prompt = ?,
+            source_answer = ?, updated_at = ?
+        WHERE memory_uid = ? AND uuid = ? AND project_uid = ?
+        """,
+        (
+            memory_type, title, content, source_prompt, source_answer, _now_str(),
+            memory_uid, uuid, project_uid,
+        ),
+    )
+    updated = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return updated

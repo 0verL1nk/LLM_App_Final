@@ -1,3 +1,10 @@
+FROM node:22-alpine AS web-builder
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
+
 # 使用官方Python镜像作为基础镜像
 FROM python:3.11-slim AS base
 
@@ -55,12 +62,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # 复制应用代码
 COPY . .
+COPY --from=web-builder /web/dist ./web/dist
 
 # 创建必要的目录
 RUN mkdir -p uploads
 
-# 暴露Streamlit默认端口
-EXPOSE 8501
+# 暴露 FastAPI 端口
+EXPOSE 8000
 
 # 复制启动脚本
 COPY start.sh /start.sh
@@ -68,7 +76,7 @@ RUN chmod +x /start.sh
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+    CMD curl -f http://localhost:8000/api/v1/health || exit 1
 
 # 使用启动脚本启动所有服务
 CMD ["/start.sh"]

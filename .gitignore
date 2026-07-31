@@ -31,8 +31,14 @@ uploads/
 .git/
 .gitignore
 
-# Streamlit 配置（保留，因为这是项目配置）
-# .streamlit/
+# Frontend build artifacts
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+web/release/
+web/.desktop-backend/
+web/.pyinstaller-work/
+tmp/pdfs/
 
 # 其他
 .DS_Store
@@ -49,6 +55,8 @@ models
 .coverage
 
 docs/*
+!docs/architecture/
+!docs/architecture/agent-runtime.md
 
 .serena
 

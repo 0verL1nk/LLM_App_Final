@@ -1,51 +1,50 @@
-"""LLM 输入输出日志记录 middleware"""
+"""Provider-facing LLM request and response logging middleware."""
+
 import json
 import logging
+from collections.abc import Callable
 from typing import Any
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
-from langchain_core.runnables import RunnableConfig
-from langgraph.runtime import Runtime
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, ModelResponse
+from langchain_core.messages import AIMessage
 
 logger = logging.getLogger(__name__)
 
 
 class LLMLoggerMiddleware(AgentMiddleware):
-    """记录完整的 LLM 输入和输出"""
+    """Log the final request that is passed to the model provider."""
 
-    def before_model(
-        self, state: AgentState, runtime: Runtime, config: RunnableConfig | None = None
-    ) -> dict[str, Any] | None:
-        """记录 LLM 输入"""
-        messages = state.get("messages", [])
-        if not messages:
-            return None
+    @staticmethod
+    def _log_input(request: ModelRequest[Any]) -> None:
+        messages = list(request.messages or [])
 
         try:
-            # 提取最后几条消息作为输入上下文
             recent_messages = messages[-5:] if len(messages) > 5 else messages
-            input_log = []
+            input_log: list[dict[str, str]] = []
+            if request.system_message is not None:
+                input_log.append(
+                    {
+                        "role": "system",
+                        "content": str(request.system_message.content)[:1000],
+                    }
+                )
             for msg in recent_messages:
                 role = getattr(msg, "type", "unknown")
                 content = getattr(msg, "content", "")
                 input_log.append({"role": role, "content": str(content)[:500]})
 
-            logger.info(f"LLM_INPUT: {json.dumps(input_log, ensure_ascii=False)}")
+            logger.info("LLM_INPUT: %s", json.dumps(input_log, ensure_ascii=False))
         except Exception as e:
-            logger.warning(f"Failed to log LLM input: {e}")
+            logger.warning("Failed to log LLM input: %s", e)
 
-        return None
-
-    def after_model(
-        self, state: AgentState, runtime: Runtime, config: RunnableConfig | None = None
-    ) -> dict[str, Any] | None:
-        """记录 LLM 输出"""
-        messages = state.get("messages", [])
-        if not messages:
+    @staticmethod
+    def _log_output(response: ModelResponse[Any]) -> None:
+        result = list(response.result or [])
+        last_msg = next((item for item in reversed(result) if isinstance(item, AIMessage)), None)
+        if last_msg is None:
             return None
 
         try:
-            last_msg = messages[-1]
             role = getattr(last_msg, "type", "unknown")
             content = getattr(last_msg, "content", "")
             tool_calls = getattr(last_msg, "tool_calls", None)
@@ -62,11 +61,19 @@ class LLMLoggerMiddleware(AgentMiddleware):
                     for tc in (tool_calls if isinstance(tool_calls, list) else [])
                 ]
 
-            logger.info(f"LLM_OUTPUT: {json.dumps(output_log, ensure_ascii=False)}")
+            logger.info("LLM_OUTPUT: %s", json.dumps(output_log, ensure_ascii=False))
         except Exception as e:
-            logger.warning(f"Failed to log LLM output: {e}")
+            logger.warning("Failed to log LLM output: %s", e)
 
-        return None
+    def wrap_model_call(
+        self,
+        request: ModelRequest[Any],
+        handler: Callable[[ModelRequest[Any]], ModelResponse[Any]],
+    ) -> ModelResponse[Any]:
+        self._log_input(request)
+        response = handler(request)
+        self._log_output(response)
+        return response
 
 
 llm_logger_middleware = LLMLoggerMiddleware()

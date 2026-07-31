@@ -1,22 +1,23 @@
 import json
 import os
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 import pytest
-from langchain_core.messages import HumanMessage
 
 from agent.application.turn_engine import execute_turn_core
 from agent.archive import list_agent_outputs, save_agent_output
 from agent.llm_provider import build_openai_compatible_chat_model
-from agent.middlewares.orchestration import OrchestrationMiddleware
-from agent.paper_agent import create_paper_agent_session
+from agent.profiles import paper_leader_profile
+from agent.session_factory import (
+    AgentDependencies,
+    AgentRuntimeOptions,
+    AgentSession,
+    create_agent_session,
+)
 from agent.stream import iter_agent_response_deltas
 from utils.utils import extract_json_string
-
-WORKFLOW_REACT = "react"
-WORKFLOW_PLAN_ACT = "plan_act"
-WORKFLOW_PLAN_ACT_REPLAN = "plan_act_replan"
 
 
 def _load_env_file(env_path: Path) -> None:
@@ -95,19 +96,12 @@ def _result_has_tool_call(result: dict, tool_name: str) -> bool:
     return False
 
 
-def _predict_workflow_mode(prompt: str, llm) -> tuple[str, str]:
-    middleware = OrchestrationMiddleware(llm=llm)
-    middleware.before_model(
-        {"messages": [HumanMessage(content=prompt)]},
-        runtime=None,
-        config={"configurable": {"state": {}, "llm": llm}},
+def _create_session(llm: Any) -> AgentSession:
+    return create_agent_session(
+        profile=paper_leader_profile,
+        deps=AgentDependencies(search_document_fn=_doc_search),
+        options=AgentRuntimeOptions(llm=llm),
     )
-    analysis = middleware._last_analysis or {}
-    if analysis.get("needs_team"):
-        return WORKFLOW_PLAN_ACT_REPLAN, str(analysis.get("reason") or "")
-    if analysis.get("is_complex"):
-        return WORKFLOW_PLAN_ACT, str(analysis.get("reason") or "")
-    return WORKFLOW_REACT, str(analysis.get("reason") or "")
 
 
 @pytest.fixture(scope="module")
@@ -153,55 +147,32 @@ def test_live_model_roundtrip_with_thinking_toggle(
 
 
 def test_live_agent_roundtrip(live_config: dict[str, str]) -> None:
-    session = create_paper_agent_session(
-        llm=_build_live_llm(live_config),
-        search_document_fn=_doc_search,
-    )
+    session = _create_session(_build_live_llm(live_config))
     answer = _collect_answer(session, "请告诉我文档里的代号是什么？只返回代号")
     assert answer
     assert "427" in answer
 
 
-def test_live_router_roundtrip(live_config: dict[str, str]) -> None:
+def test_live_turn_engine_reports_runtime_policy(live_config: dict[str, str]) -> None:
     llm = _build_live_llm(live_config)
-    mode, reason = _predict_workflow_mode(
-        "请比较两种方法的优缺点并给出 trade-off 建议。",
-        llm,
-    )
-    assert mode in {WORKFLOW_REACT, WORKFLOW_PLAN_ACT, WORKFLOW_PLAN_ACT_REPLAN}
-    assert reason
-
-
-def test_live_turn_engine_emits_middleware_events(live_config: dict[str, str]) -> None:
-    llm = _build_live_llm(live_config)
-    session = create_paper_agent_session(
-        llm=llm,
-        search_document_fn=_doc_search,
-    )
+    session = _create_session(llm)
     events: list[dict] = []
 
     result = execute_turn_core(
         prompt="请比较方法A和方法B的优缺点，并给出 trade-off 建议。",
         leader_agent=session.agent,
         leader_runtime_config=session.runtime_config,
-        leader_llm=llm,
         on_event=lambda item: events.append(dict(item)),
     )
 
     assert result["answer"]
-    assert any(
-        str(item.get("performative") or "") in {"complexity_analysis", "complexity_result"}
-        for item in events
-    )
+    assert result["policy_decision"]["source"] == "runtime"
 
 
 def test_live_mindmap_and_archive_roundtrip(
     live_config: dict[str, str], tmp_path: Path
 ) -> None:
-    session = create_paper_agent_session(
-        llm=_build_live_llm(live_config),
-        search_document_fn=_doc_search,
-    )
+    session = _create_session(_build_live_llm(live_config))
     prompt = (
         "请基于文档生成思维导图，严格只输出 JSON 对象。"
         '格式必须为 {"name":"主题","children":[{"name":"子主题","children":[...]}]}，'
@@ -230,10 +201,7 @@ def test_live_mindmap_and_archive_roundtrip(
 
 
 def test_live_agent_auto_calls_mindmap_skill(live_config: dict[str, str]) -> None:
-    session = create_paper_agent_session(
-        llm=_build_live_llm(live_config),
-        search_document_fn=_doc_search,
-    )
+    session = _create_session(_build_live_llm(live_config))
     result = session.agent.invoke(
         {
             "messages": [

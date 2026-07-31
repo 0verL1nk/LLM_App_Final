@@ -55,3 +55,7 @@
 #### Scenario: 多用户隔离
 - **WHEN** 多个用户使用系统时
 - **THEN** 每个用户的thread_id独立，不会相互干扰
+
+#### Scenario: 释放会话资源
+- **WHEN** session 缓存被淘汰或用户删除会话
+- **THEN** AgentSession 关闭其拥有的 SQLite 连接

@@ -28,6 +28,7 @@ def test_agentic_search_skill_documents_canonical_document_citations() -> None:
 
 def test_mindmap_skill_explicitly_forbids_mermaid_and_markdown_wrappers() -> None:
     content = (ROOT / "agent/skills/mindmap/SKILL.md").read_text(encoding="utf-8")
-    assert "<mindmap> JSON </mindmap>" in content
-    assert "Never output Mermaid syntax" in content
+    assert "A2UI v0.9 JSONL" in content
+    assert "Do not wrap them in any tag" in content
+    assert "Never output Mermaid" in content
     assert "```mermaid ... ```" in content

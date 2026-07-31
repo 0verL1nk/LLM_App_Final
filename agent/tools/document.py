@@ -8,14 +8,7 @@ from typing import Any
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from .utils import (
-    _is_dangerous_query,
-    _is_low_information_query,
-    _normalize_query_cache_key,
-    _preview,
-    _query_overlap_score,
-    _sanitize_query,
-)
+from .utils import _is_dangerous_query, _preview, _sanitize_query
 
 logger = logging.getLogger(__name__)
 
@@ -57,65 +50,6 @@ def build_search_document_tool(
     search_document_evidence_fn: Callable[[str], dict[str, Any]] | None = None,
 ) -> Any:
     """构建文档搜索工具"""
-    cached_text_results: dict[str, str] = {}
-    cached_evidence_payloads: dict[str, dict[str, Any]] = {}
-    cached_queries: dict[str, str] = {}
-    query_family_threshold = 0.75
-
-    def _build_dedupe_payload(
-        payload: dict[str, Any],
-        *,
-        query: str,
-        reason: str,
-        matched_query: str | None = None,
-    ) -> str:
-        dedupe_payload = dict(payload)
-        meta = dedupe_payload.get("meta")
-        meta_payload = dict(meta) if isinstance(meta, dict) else {}
-        base_message = "Identical query reused cached result; refine query instead of repeating it."
-        if reason == "same_query_family":
-            base_message = (
-                "A closely related query already returned evidence. Do not call search_document again "
-                "for this query family; synthesize from the existing results or move to the final answer."
-            )
-        meta_payload["dedupe"] = {
-            "reused_cached_result": True,
-            "query": query,
-            "reason": reason,
-            "matched_query": matched_query or query,
-            "message": base_message,
-            "should_stop": True,
-        }
-        dedupe_payload["meta"] = meta_payload
-        return json.dumps(dedupe_payload, ensure_ascii=False)
-
-    def _build_policy_block_payload(query: str, *, reason: str, message: str) -> str:
-        payload = {
-            "evidences": [],
-            "meta": {
-                "query_policy": {
-                    "blocked": True,
-                    "query": query,
-                    "reason": reason,
-                    "message": message,
-                }
-            },
-        }
-        return json.dumps(payload, ensure_ascii=False)
-
-    def _find_similar_cache_key(query: str, *, exact_key: str) -> tuple[str, str] | None:
-        best_match: tuple[str, str] | None = None
-        best_score = 0.0
-        for cached_key, cached_query in cached_queries.items():
-            if cached_key == exact_key:
-                continue
-            score = _query_overlap_score(query, cached_query)
-            if score < query_family_threshold or score <= best_score:
-                continue
-            best_score = score
-            best_match = (cached_key, cached_query)
-        return best_match
-
     @tool(
         "search_document",
         description="""Search uploaded paper content for relevant evidence snippets using RAG.
@@ -143,7 +77,6 @@ Example: Based on the research<evidence>chunk_abc123|p5|o100-200</evidence>, the
     )
     def search_document(query: str) -> str:
         safe_query = _sanitize_query(query)
-        cache_key = _normalize_query_cache_key(safe_query)
         logger.info(
             "tool.search_document called: query_len=%s query_preview=%s",
             len(safe_query),
@@ -155,52 +88,7 @@ Example: Based on the research<evidence>chunk_abc123|p5|o100-200</evidence>, the
         if _is_dangerous_query(safe_query):
             logger.warning("tool.search_document blocked by policy")
             return "Blocked by tool policy: query appears unsafe for document search."
-        if _is_low_information_query(safe_query):
-            logger.warning(
-                "tool.search_document blocked: low_information_query query_preview=%s",
-                _preview(safe_query),
-            )
-            if search_document_evidence_fn is not None:
-                return _build_policy_block_payload(
-                    safe_query,
-                    reason="low_information_query",
-                    message=(
-                        "Query is too generic to produce new evidence. Reuse the existing evidence or ask "
-                        "a more specific document question instead of repeating broad terms like page/table/result."
-                    ),
-                )
-            return (
-                "Blocked by tool policy: query is too generic to produce new evidence. "
-                "Use a more specific document question."
-            )
         if search_document_evidence_fn is not None:
-            cached_payload = cached_evidence_payloads.get(cache_key)
-            if isinstance(cached_payload, dict):
-                logger.info(
-                    "tool.search_document dedupe hit: mode=evidence_json query_preview=%s",
-                    _preview(safe_query),
-                )
-                return _build_dedupe_payload(
-                    cached_payload,
-                    query=safe_query,
-                    reason="identical_or_normalized_query",
-                )
-            similar_match = _find_similar_cache_key(safe_query, exact_key=cache_key)
-            if similar_match is not None:
-                matched_key, matched_query = similar_match
-                similar_payload = cached_evidence_payloads.get(matched_key)
-                if isinstance(similar_payload, dict):
-                    logger.info(
-                        "tool.search_document family dedupe hit: mode=evidence_json query_preview=%s matched_query_preview=%s",
-                        _preview(safe_query),
-                        _preview(matched_query),
-                    )
-                    return _build_dedupe_payload(
-                        similar_payload,
-                        query=safe_query,
-                        reason="same_query_family",
-                        matched_query=matched_query,
-                    )
             try:
                 evidence_payload = search_document_evidence_fn(safe_query)
                 evidence_count = (
@@ -208,9 +96,6 @@ Example: Based on the research<evidence>chunk_abc123|p5|o100-200</evidence>, the
                     if isinstance(evidence_payload, dict)
                     else 0
                 )
-                if isinstance(evidence_payload, dict):
-                    cached_evidence_payloads[cache_key] = dict(evidence_payload)
-                    cached_queries.setdefault(cache_key, safe_query)
                 logger.info(
                     "tool.search_document success: mode=evidence_json evidences=%s",
                     evidence_count,
@@ -218,49 +103,9 @@ Example: Based on the research<evidence>chunk_abc123|p5|o100-200</evidence>, the
                 return json.dumps(evidence_payload, ensure_ascii=False)
             except Exception:
                 logger.exception("tool.search_document evidence function failed, fallback=text")
-                if cache_key in cached_text_results:
-                    logger.info(
-                        "tool.search_document dedupe hit: mode=text query_preview=%s",
-                        _preview(safe_query),
-                    )
-                    return cached_text_results[cache_key]
-                similar_match = _find_similar_cache_key(safe_query, exact_key=cache_key)
-                if similar_match is not None:
-                    matched_key, matched_query = similar_match
-                    cached_result = cached_text_results.get(matched_key)
-                    if isinstance(cached_result, str):
-                        logger.info(
-                            "tool.search_document family dedupe hit: mode=text query_preview=%s matched_query_preview=%s",
-                            _preview(safe_query),
-                            _preview(matched_query),
-                        )
-                        return cached_result
-                result = search_document_fn(safe_query)
-                cached_text_results[cache_key] = result
-                cached_queries.setdefault(cache_key, safe_query)
-                return result
-        if cache_key in cached_text_results:
-            logger.info(
-                "tool.search_document dedupe hit: mode=text query_preview=%s",
-                _preview(safe_query),
-            )
-            return cached_text_results[cache_key]
-        similar_match = _find_similar_cache_key(safe_query, exact_key=cache_key)
-        if similar_match is not None:
-            matched_key, matched_query = similar_match
-            cached_result = cached_text_results.get(matched_key)
-            if isinstance(cached_result, str):
-                logger.info(
-                    "tool.search_document family dedupe hit: mode=text query_preview=%s matched_query_preview=%s",
-                    _preview(safe_query),
-                    _preview(matched_query),
-                )
-                return cached_result
+                return search_document_fn(safe_query)
         logger.info("tool.search_document success: mode=text")
-        result = search_document_fn(safe_query)
-        cached_text_results[cache_key] = result
-        cached_queries.setdefault(cache_key, safe_query)
-        return result
+        return search_document_fn(safe_query)
 
     return search_document
 
@@ -294,8 +139,12 @@ def build_list_document_tool(
                 "doc_name": str(doc.get("doc_name") or doc.get("file_name") or ""),
             }
             if verbose:
-                text = doc.get("text") or ""
-                entry["char_length"] = len(str(text))
+                char_length = doc.get("char_length")
+                entry["char_length"] = (
+                    int(char_length)
+                    if isinstance(char_length, int)
+                    else len(str(doc.get("text") or ""))
+                )
             items.append(entry)
         logger.info("tool.list_document success: count=%s", len(items))
         return json.dumps({"count": len(items), "documents": items}, ensure_ascii=False)
@@ -308,6 +157,7 @@ def build_read_document_tool(
     search_document_fn: Callable[[str], str],
     doc_id_to_text: dict[str, str] | None = None,
     default_doc_id: str = "",
+    read_document_by_id_fn: Callable[[str, int, int], tuple[str, int]] | None = None,
 ) -> Any:
     """构建文档阅读工具
 
@@ -323,7 +173,8 @@ def build_read_document_tool(
         description="Read a specific portion of a document by character offset and limit. "
         "Use doc_id to select which document (from list_document output). "
         "Use offset to skip to a position, limit to control chunk size. "
-        "Set include_rag=True to get relevant context around the reading position.",
+        "Set include_rag=True to get relevant context around the reading position. "
+        "Returns JSON with a citeable evidence span; use its citation field for every claim derived from the span.",
         args_schema=ReadDocumentInput,
     )
     def read_document(
@@ -337,8 +188,16 @@ def build_read_document_tool(
             include_rag,
         )
 
+        if callable(read_document_by_id_fn):
+            content, total = read_document_by_id_fn(doc_id, offset, limit)
+            doc_label = doc_id.strip() or "文档"
+            if total <= 0:
+                return (
+                    f"Document '{doc_id}' is not ready or not available in the current scope. "
+                    "Use list_document to inspect ready documents."
+                )
         # 多文档模式
-        if doc_id_to_text is not None:
+        elif doc_id_to_text is not None:
             target_doc_id = doc_id.strip() or default_doc_id
             if not target_doc_id:
                 available = list(doc_id_to_text.keys())
@@ -369,12 +228,32 @@ def build_read_document_tool(
             query = f"position_{offset}"
             rag_context = search_document_fn(query)
 
-        result = f"=== {doc_label} (字符位置 {offset} - {offset + limit}) ===\n"
-        result += f"总长度: {total} 字符\n"
-        result += f"当前 chunk: {len(content)} 字符\n\n"
-        if rag_context:
-            result += f"=== 相关上下文 (RAG) ===\n{rag_context}\n\n"
-        result += f"=== 内容 ===\n{content}"
+        safe_offset = max(0, int(offset))
+        offset_end = safe_offset + len(content)
+        chunk_id = f"{doc_label}:offset_{safe_offset}_{offset_end}"
+        citation = f"{chunk_id}|pnull|o{safe_offset}-{offset_end}"
+        result = json.dumps(
+            {
+                "evidences": [
+                    {
+                        "chunk_id": chunk_id,
+                        "doc_uid": doc_label,
+                        "text": content,
+                        "page_no": None,
+                        "offset_start": safe_offset,
+                        "offset_end": offset_end,
+                        "citation": citation,
+                    }
+                ],
+                "related_context": rag_context,
+                "trace": {
+                    "mode": "sequential_read",
+                    "total_chars": total,
+                    "returned_chars": len(content),
+                },
+            },
+            ensure_ascii=False,
+        )
         logger.info(
             "tool.read_document success: doc_id=%s chunk_len=%s total_len=%s",
             doc_id or "default",

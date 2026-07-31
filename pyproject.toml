@@ -14,16 +14,16 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "streamlit>=1.54.0,<1.55.0",
-    "streamlit-extras>=0.3.0",
-    "streamlit-echarts>=0.4.0",
+    "fastapi>=0.116.0,<1.0.0",
+    "uvicorn[standard]>=0.35.0,<1.0.0",
+    "python-multipart>=0.0.20,<1.0.0",
     "typing-extensions>=4.12.0",
+    "numpy>=1.26.0,<2.4.0",
     "pymupdf>=1.24.0,<2.0.0",
     "markitdown>=0.1.0",
     "openai>=2.20.0,<3.0.0",
@@ -37,15 +37,18 @@ dependencies = [
     "langchain-core>=1.0.0,<2.0.0",
     "langchain-openai>=1.0.0,<2.0.0",
     "chromadb>=0.5.23,<1.0.0",
-    "deepagents>=0.4.11,<0.5.0",
+    "deepagents>=0.5.4,<0.6.0",
     "langgraph>=0.3.0",
     "langgraph-checkpoint-sqlite>=2.0.0,<4.0.0",
     "fastembed>=0.7.1,<1.0.0",
     "flashrank>=0.2.10,<1.0.0",
     "redis>=5.0.0",
     "rq>=1.15.0",
-    "a2a-sdk>=0.3.24",
-    "argon2-cffi==25.1.0"
+    "argon2-cffi==25.1.0",
+    "rapidocr>=3.9.1",
+    "onnxruntime>=1.24.3",
+    "striprtf>=0.0.32",
+    "lancedb>=0.34.0",
 ]
 
 [project.urls]
@@ -72,8 +75,8 @@ dev = [
 ]
 
 [project.scripts]
-paper-sage = "main:_cli_entry"
-papersage = "main:_cli_entry"
+paper-sage = "api.main:run"
+papersage = "api.main:run"
 
 [build-system]
 requires = ["hatchling"]
@@ -83,22 +86,15 @@ build-backend = "hatchling.build"
 # 或者直接使用 uv pip install 安装依赖
 
 [tool.hatch.build.targets.wheel]
-packages = ["agent", "utils", "ui"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"main.py" = "main.py"
-"pages/0_agent_center.py" = "pages/0_agent_center.py"
-"pages/1_file_center.py" = "pages/1_file_center.py"
-"pages/2_settings.py" = "pages/2_settings.py"
-"pages/3_project_center.py" = "pages/3_project_center.py"
+packages = ["agent", "api", "utils"]
 
 [tool.hatch.build.targets.sdist]
 include = [
     "agent/",
+    "api/",
     "utils/",
-    "ui/",
-    "pages/",
-    "main.py",
+    "web/src/",
+    "web/package.json",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
@@ -112,7 +108,7 @@ artifacts = [
 ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
@@ -131,10 +127,8 @@ ignore-init-module-imports = true
 
 [tool.vulture]
 paths = [
-    "main.py",
+    "api",
     "agent",
-    "ui",
-    "pages",
     "utils",
     "scripts",
     "tests",
@@ -160,11 +154,11 @@ sort_by_size = true
 
 [tool.ty]
 [tool.ty.environment]
-python-version = "3.12"
+python-version = "3.11"
 
 [tool.ty.src]
 include = [
-    "main.py",
+    "api",
     "agent/domain",
     "agent/tools",
     "agent/application/contracts.py",
@@ -172,6 +166,5 @@ include = [
 exclude = [
     "tests/",
     "docs/",
-    "pages/",
     "utils/",
 ]

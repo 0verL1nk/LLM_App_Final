@@ -16,8 +16,6 @@ class AgentCenterTurnRequest:
 class AgentCenterRuntimeDeps:
     leader_agent: Any
     leader_runtime_config: dict[str, Any]
-    leader_llm: Any | None
-    policy_llm: Any | None = None
     search_document_evidence_fn: EvidenceRetriever | None = None
     leader_tool_specs: list[dict[str, Any]] | None = None
 
@@ -33,8 +31,6 @@ def execute_agent_center_turn(
         turn_context=request.turn_context,
         leader_agent=deps.leader_agent,
         leader_runtime_config=deps.leader_runtime_config,
-        leader_llm=deps.leader_llm,
-        policy_llm=deps.policy_llm,
         search_document_evidence_fn=deps.search_document_evidence_fn,
         leader_tool_specs=deps.leader_tool_specs,
         on_event=on_event,
