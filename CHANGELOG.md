@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-07-31
+
+### Added
+- Cross-platform Electron packaging, installer checksums, and GitHub build provenance for the workspace application.
+
+### Changed
+- Migrated the web workspace and release workflows from npm to pnpm.
+
 ## [1.1.0] - 2026-03-22
 
 ## [1.0.5] - 2026-03-16
@@ -79,7 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 53 unit tests + 6 integration tests + eval baselines
 - CLI entry point: `paper-sage`
 
-[Unreleased]: https://github.com/0verL1nk/PaperSage/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/0verL1nk/PaperSage/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/0verL1nk/PaperSage/compare/v1.1.0...v1.1.1
 [1.0.0]: https://github.com/0verL1nk/PaperSage/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/0verL1nk/PaperSage/releases/tag/v0.1.0
 [1.0.1]: https://github.com/0verL1nk/PaperSage/compare/v1.0.0...v1.0.1
