@@ -1,97 +1,147 @@
 # PaperSage
 
-PaperSage 是一个面向论文阅读、证据检索与多 Agent 研究协作的项目式工作台。前端采用独立的 Vite React 应用，FastAPI 提供稳定的 HTTP 边界；文档上传、OCR、Embedding、长期记忆整理均在后台执行，不阻塞会话创建。
+> 面向科研阅读、可追溯证据与多 Agent 协作的项目式研究工作台。
+
+![PaperSage 系统能力总览](images/main.jpg)
+
+PaperSage 将文献、会话、检索证据、长期记忆与 Agent 活动统一放进研究项目。上传资料后，解析、OCR 与索引在后台进行；用户可以立即开始对话，资料就绪后自动进入后续检索范围。
 
 ## 核心能力
 
-- 项目工作台：资料、会话、证据与研究活动统一归属项目。
-- Supervisor/Subagent：Leader 可并行委派 researcher、reviewer、writer，并依据真实 tool call 展示执行状态。
-- 项目级 RAG：完整文档切分后写入 LanceDB，原生 Dense + FTS + RRF 混合召回；找相关资料先从全项目证据检索，不把文件目录注入提示词。
-- 异步文档处理：上传后自动提取、OCR、Embedding 和版本发布，前端立即显示每份文件的真实阶段与进度。
-- 长期记忆与会话命名：每轮结束后异步调用模型整理项目记忆；首个有效回答会异步生成会话标题，不覆盖手动命名。
-- 持久会话：SQLite 保存项目、消息、设置与 ingestion 状态，LangGraph checkpoint 保存 Agent 状态。
+- **项目式研究空间**：项目拥有资料库、主会话与分支会话、证据、记忆和研究活动，避免跨任务混杂上下文。
+- **可追溯问答**：项目级 RAG 使用 LanceDB、Dense 向量、全文检索与 RRF 混合召回；回答中的证据可回到原文片段。
+- **异步资料处理**：多文件上传后依次经历提取、OCR、分块、Embedding 与发布，前端显示真实进度且不阻塞会话。
+- **多 Agent 协作**：Leader 可委派 researcher、reviewer、writer 等子 Agent；委派和工具调用由持久事件流驱动，而非模拟进度。
+- **持久化研究过程**：SQLite 保存项目、消息、运行事件和摄取状态，LangGraph checkpoint 保存 Agent 状态；中途离开后可恢复运行与流式答案。
+- **研究产物**：支持证据引用、Markdown/KaTeX 渲染、上下文检查器，以及受限 A2UI 协议生成的思维导图。
 
-## 技术栈
+## 使用方式
 
-前端位于 `web/`：Vite、React、TypeScript、Tailwind CSS、shadcn/ui、Radix UI、TanStack Query、TanStack Router、Zustand、React Hook Form、Zod、Lucide React。
+1. 新建或选择一个研究项目。
+2. 在“资料库”中一次上传多份 PDF、DOCX 或文本资料；不必等待索引完成。
+3. 进入主会话提问，或在需要探索不同方向时创建分支会话。
+4. 在回答侧边检查器中查看引用证据、资料状态与实际执行活动。
 
-后端位于 `api/` 与 `agent/`：FastAPI、LangChain/LangGraph、Deep Agents、SQLite、LanceDB、FastEmbed、RapidOCR、RQ/Redis。
+## 架构概览
 
-## 本地开发
-
-要求 Python 3.11+、uv、Node.js 22+ 与 pnpm（通过 Corepack 管理）。
-
-```bash
-make install-dev      # 安装 Python 依赖
-make web-install      # 按 pnpm-lock 安装前端依赖
-make run              # 一键启动 API :8000 与 Vite :5173
+```mermaid
+flowchart LR
+  UI[React 工作台] --> API[FastAPI /api/v1]
+  API --> APP[Application 用例]
+  APP --> AGENT[Leader 与 Subagents]
+  APP --> RAG[LanceDB 混合检索]
+  APP --> DB[(SQLite)]
+  RAG --> DOC[解析 / OCR / 分块 / Embedding]
+  AGENT --> SSE[持久 Run 事件流]
+  SSE --> UI
 ```
 
-也可以分别启动：
+前端是独立的 Vite + React 应用：TanStack Router 管理可导航状态，TanStack Query 管理服务端缓存与轮询，Zustand 仅保存 UI 状态，shadcn/ui 与 Radix UI 提供无障碍组件基础。后端使用 FastAPI 作为传输边界，`agent/domain`、`agent/application` 和 `agent/adapters` 保持分层；UI 不直接调用模型或数据库。
+
+更多设计细节见：[Web 应用架构](docs/architecture/web-application.md)、[Agent 运行时](docs/architecture/agent-runtime.md)、[桌面应用](docs/architecture/desktop-application.md)。
+
+## 快速开始
+
+### 环境要求
+
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/)
+- Node.js 22+
+- pnpm 11（建议通过 Corepack 使用）
 
 ```bash
-make api-dev
-make web-dev
+corepack enable
+make install-dev      # 安装 Python 开发依赖
+make web-install      # 按 pnpm-lock.yaml 安装前端依赖
+make run              # 同时启动 API :8000 和 Vite :5173
 ```
 
-生产构建与运行：
+浏览器打开 `http://127.0.0.1:5173`。也可以分别启动：
+
+```bash
+make api-dev          # FastAPI，支持 reload
+make web-dev          # Vite 开发服务器
+```
+
+生产构建由 FastAPI 托管前端静态文件：
 
 ```bash
 make web-build
-make serve            # FastAPI 在 :8000 托管 web/dist
+make serve            # http://127.0.0.1:8000
 ```
 
-## 目录结构
+## 桌面端
+
+桌面版将 React 前端与 FastAPI 服务一起打包为 Electron 应用，并使用应用内自定义标题栏。
+
+```bash
+make desktop-dev
+make desktop-package-win    # Windows NSIS
+make desktop-package-mac    # 仅 macOS 上执行，生成 DMG
+make desktop-package-linux  # 仅 Linux 上执行，生成 AppImage 与 deb
+```
+
+发布 `vX.Y.Z` tag 时，GitHub Actions 会在 Windows、macOS、Linux 原生 runner 上构建安装包、生成 SHA-256 清单，并为公开 Release 生成 GitHub/Sigstore 构建证明。版本号必须同时匹配 `pyproject.toml` 与 `web/package.json`。具体的签名、公证和验证操作见[桌面发布运维说明](docs/architecture/desktop-release.md)。
+
+## 项目结构
 
 ```text
-api/                    # HTTP transport、schema 与路由
-web/src/
-  components/ui/        # shadcn/ui 源码组件
-  components/           # 应用壳与领域 UI
-  pages/                # 路由页面
-  lib/                  # API、Zod schema、Query hooks
-  stores/               # Zustand UI 状态
+api/                    # FastAPI 路由、schema 与 HTTP transport
+web/
+  src/components/       # 应用壳、领域组件与 shadcn/ui 组件
+  src/pages/            # 项目、研究、资料库、设置页面
+  src/lib/              # API client、Zod schema、Query hooks、平台边界
+  src/stores/           # Zustand UI 状态
+  electron/             # Electron main / preload / 开发启动器
 agent/
   domain/               # 领域模型与契约
   application/          # 用例编排
-  adapters/             # SQLite、LanceDB、文件与模型适配
-  subagent/             # 子 Agent 定义
-tests/                  # Python unit / integration / eval
-docs/architecture/      # 架构决策与边界
-```
-
-## 质量门禁
-
-```bash
-make web-lint
-make web-typecheck
-make web-test
-make web-build
-make test-all
-make quality-full
+  adapters/             # SQLite、LanceDB、文件、模型等外部适配
+  subagent/             # 子 Agent 定义与协作能力
+tests/                  # 单元、集成与评测
+docs/architecture/      # 架构与运维文档
 ```
 
 ## 配置
 
-复制 `.env.example` 并在 Web 设置页保存用户级 API Key、模型名称和兼容 Base URL。密钥只由后端读取，API 不返回完整值。
-
-主要运行时变量：
+复制 `.env.example` 为 `.env`，或在应用“设置”中保存用户级模型配置。密钥仅由后端读取，API 不会返回完整密钥。
 
 ```bash
+# OpenAI-compatible 模型服务
+OPENAI_COMPATIBLE_BASE_URL=https://your-provider.example/v1
+OPENAI_MODEL_NAME=your-model
+OPENAI_API_KEY=your-secret
+
+# 项目级 RAG：0 表示不限制资料规模
 AGENT_LANCEDB_DIR=./.cache/lancedb
 LOCAL_RAG_PROJECT_MAX_CHARS=0
 LOCAL_RAG_PROJECT_MAX_CHUNKS=0
 RAG_INDEX_BATCH_SIZE=256
-DOC_PARSE_BACKEND=auto
+
+# 可选：Web 搜索与 Redis 队列
+BRAVE_SEARCH_API_KEY=
+REDIS_HOST=localhost
 ```
 
-完整 Web 架构与 API 契约见 [docs/architecture/web-application.md](docs/architecture/web-application.md)。
-## 桌面端发布
+不要提交 `.env`、API Key、签名证书或 Apple notarization 凭据。完整配置项见 [.env.example](.env.example)。
 
-桌面版把 Vite 前端和 FastAPI 服务一起打包；窗口采用应用内自定义标题栏。开发时执行 `make desktop-dev`，本机构建执行 `make desktop-package-win`、`make desktop-package-mac` 或 `make desktop-package-linux`；产物在 `web/release/`。首次构建会收集 OCR 和本地检索依赖，耗时较长。
+## 开发与质量门禁
 
-推送 `v*` tag 会触发 GitHub Actions 在 Windows、macOS 与 Linux runner 分别构建 NSIS、DMG、AppImage/deb，并统一作为 GitHub Release 附件发布；PR 则只验证前端、Electron 入口与服务资源边界。
+```bash
+make check             # 快速本地门禁：核心 lint/typecheck、Web 检查、单测
+make ci                # 完整离线 CI：锁文件、质量、前端测试/构建、全量测试
+make test-unit         # Python 单元测试
+make web-test          # Vitest 前端组件测试
+make quality-full      # Python + 前端 lint/typecheck
+make test-evals        # 离线 Agent 评测
+```
 
-正式公开发布前须配置代码签名与 macOS 公证密钥；详见 [桌面发布运维说明](docs/architecture/desktop-release.md)。
+变更请遵守 [AGENTS.md](AGENTS.md)：保持 `UI → application → domain` 的依赖方向，业务改动附带测试和文档，并避免把运行时编排或数据访问写入 UI。
 
-公开 Release 同时附带免费 GitHub/Sigstore 构建证明和 `SHA256SUMS.txt`，用于验证安装包来源与完整性。
+## 贡献
+
+提交前至少运行与改动范围对应的测试。Pull Request 请说明问题背景、变更范围、风险与回滚方式，并附上执行过的验证命令。详细工程约束与评审清单见 [AGENTS.md](AGENTS.md)。
+
+## License
+
+本项目采用 [MIT License](LICENSE)。
