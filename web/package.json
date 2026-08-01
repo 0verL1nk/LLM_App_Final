@@ -1,7 +1,7 @@
 {
   "name": "papersage-web",
   "private": true,
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "AI research workspace for scholarly reading and writing.",
   "author": "PaperSage Contributors",
   "homepage": "https://github.com/0verL1nk/PaperSage",
@@ -23,9 +23,9 @@
     "desktop:dev": "node electron/dev.cjs",
     "desktop:backend": "node scripts/package-backend.cjs",
     "desktop:package": "pnpm run desktop:package:win",
-    "desktop:package:win": "pnpm run build && pnpm run desktop:backend && electron-builder --win nsis",
-    "desktop:package:mac": "pnpm run build && pnpm run desktop:backend && electron-builder --mac dmg",
-    "desktop:package:linux": "pnpm run build && pnpm run desktop:backend && electron-builder --linux AppImage deb",
+    "desktop:package:win": "pnpm run build && pnpm run desktop:backend && electron-builder --win nsis --publish never",
+    "desktop:package:mac": "pnpm run build && pnpm run desktop:backend && electron-builder --mac dmg --publish never",
+    "desktop:package:linux": "pnpm run build && pnpm run desktop:backend && electron-builder --linux AppImage deb --publish never",
     "desktop:checksums": "node scripts/write-checksums.cjs"
   },
   "dependencies": {

@@ -87,6 +87,7 @@ def process_document_ingestion(
         else:
             extraction = extract_document_payload(
                 file_path,
+                user_uuid=user_uuid,
                 progress_callback=_report,
             )
             text = extraction.get("text")

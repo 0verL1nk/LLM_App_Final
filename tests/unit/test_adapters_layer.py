@@ -93,7 +93,7 @@ def test_extract_document_payload_parses_rtf_disguised_as_doc(tmp_path):
     assert "Second line" in payload["text"]
 
 
-def test_extract_document_payload_uses_small_ocr_for_scanned_pdf(monkeypatch):
+def test_extract_document_payload_uses_vision_ocr_for_scanned_pdf(monkeypatch):
     monkeypatch.setattr("agent.adapters.document._extract_rtf_text", lambda _path: None)
     monkeypatch.setattr(
         "agent.adapters.document.extract_files",
@@ -102,17 +102,18 @@ def test_extract_document_payload_uses_small_ocr_for_scanned_pdf(monkeypatch):
 
     progress = []
     monkeypatch.setattr(
-        "agent.adapters.document._extract_scanned_pdf_with_rapidocr",
-        lambda _path, progress_callback: (progress_callback("ocr", 1, 1) or "识别后的正文"),
+        "agent.adapters.document._extract_scanned_pdf_with_vision_model",
+        lambda _path, user_uuid, progress_callback: (progress_callback("ocr", 1, 1) or "识别后的正文"),
     )
 
     payload = extract_document_payload(
         "/tmp/scanned.pdf",
+        user_uuid="u1",
         progress_callback=lambda *items: progress.append(items),
     )
 
     assert payload["text"] == "识别后的正文"
-    assert payload["parser"] == "rapidocr-small"
+    assert payload["parser"] == "vision-ocr"
     assert progress == [("ocr", 1, 1)]
 
 

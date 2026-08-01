@@ -2,7 +2,7 @@ export interface DesktopWindowControls {
   minimize: () => Promise<void>
   toggleMaximize: () => Promise<boolean>
   close: () => Promise<void>
-  checkForUpdates: () => Promise<{ supported: boolean }>
+  checkForUpdates: () => Promise<{ supported: boolean; status: "unsupported" | "up-to-date" | "available" | "failed"; version?: string }>
 }
 
 declare global {

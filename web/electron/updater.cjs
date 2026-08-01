@@ -1,5 +1,5 @@
 /**
- * @typedef {{ isPackaged: boolean }} ElectronApp
+ * @typedef {{ isPackaged: boolean, getVersion: () => string }} ElectronApp
  * @typedef {{ showMessageBox: (options: object) => Promise<{ response: number }> }} ElectronDialog
  * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, quitAndInstall: () => void, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean }} ElectronUpdater
  */
@@ -17,7 +17,7 @@ function supportsAutomaticUpdates({ isPackaged, platform, appImage }) {
 
 /**
  * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, dialog: ElectronDialog, logger?: Pick<Console, "error">, platform?: NodeJS.Platform, appImage?: string }} dependencies
- * @returns {{ checkForUpdates: () => Promise<{ supported: boolean }>, scheduleCheck: () => void }}
+ * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string }>, scheduleCheck: () => void }}
  */
 function createUpdateService({ app, autoUpdater, dialog, logger = console, platform = process.platform, appImage = process.env.APPIMAGE }) {
   const supported = supportsAutomaticUpdates({ isPackaged: app.isPackaged, platform, appImage })
@@ -40,10 +40,16 @@ function createUpdateService({ app, autoUpdater, dialog, logger = console, platf
   }
 
   const checkForUpdates = async () => {
-    if (!supported || checking) return { supported }
+    if (!supported || checking) return { supported, status: "unsupported" }
     checking = true
-    try { await autoUpdater.checkForUpdates() } catch (error) { reportError(error) } finally { checking = false }
-    return { supported }
+    try {
+      const result = await autoUpdater.checkForUpdates()
+      const version = String(result?.updateInfo?.version || "")
+      return { supported, status: version && version !== app.getVersion() ? "available" : "up-to-date", version: version || undefined }
+    } catch (error) {
+      reportError(error)
+      return { supported, status: "failed" }
+    } finally { checking = false }
   }
 
   return { checkForUpdates, scheduleCheck: () => { if (supported) setTimeout(() => { void checkForUpdates() }, 12_000) } }
