@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-08-01
+
+### Fixed
+- Added the required maintainer metadata so Linux releases include both AppImage and DEB packages.
+
 ## [1.1.3] - 2026-08-01
 
 ### Fixed
@@ -97,7 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 53 unit tests + 6 integration tests + eval baselines
 - CLI entry point: `paper-sage`
 
-[Unreleased]: https://github.com/0verL1nk/PaperSage/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/0verL1nk/PaperSage/compare/v1.1.4...HEAD
+[1.1.4]: https://github.com/0verL1nk/PaperSage/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/0verL1nk/PaperSage/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/0verL1nk/PaperSage/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/0verL1nk/PaperSage/compare/v1.1.0...v1.1.1

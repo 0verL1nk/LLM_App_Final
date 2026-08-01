@@ -1,7 +1,7 @@
 {
   "name": "papersage-web",
   "private": true,
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "AI research workspace for scholarly reading and writing.",
   "author": "PaperSage Contributors",
   "homepage": "https://github.com/0verL1nk/PaperSage",
@@ -91,7 +91,11 @@
     "extraResources": [{ "from": ".desktop-backend", "to": "backend" }],
     "win": { "target": ["nsis"] },
     "mac": { "target": ["dmg"], "category": "public.app-category.productivity" },
-    "linux": { "target": ["AppImage", "deb"], "category": "Office" },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office",
+      "maintainer": "PaperSage Contributors <0verL1nk@users.noreply.github.com>"
+    },
     "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
   }
 }
