@@ -77,12 +77,21 @@ jobs:
           }
 
       - name: Build installer
+        shell: pwsh
         run: |
+          if ("${{ matrix.name }}" -eq "macOS") {
+            if ($env:MAC_CSC_LINK) {
+              $env:CSC_LINK = $env:MAC_CSC_LINK
+              $env:CSC_KEY_PASSWORD = $env:MAC_CSC_KEY_PASSWORD
+            } else {
+              $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
+            }
+          }
           pnpm --dir web run ${{ matrix.command }}
           pnpm --dir web run desktop:checksums
         env:
-          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
