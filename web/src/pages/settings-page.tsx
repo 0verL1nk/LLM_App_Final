@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CheckCircle2, Database, LockKeyhole, Save, ServerCog } from "lucide-react"
+import { Link } from "@tanstack/react-router"
+import { ArrowLeft, CheckCircle2, Database, LockKeyhole, Save, ServerCog } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -16,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 import { keys, useSettings } from "@/lib/queries"
 import { settingsSchema } from "@/lib/schemas"
+import { useUiStore } from "@/stores/ui-store"
 
 const formSchema = z.object({
   api_key: z.string(),
@@ -32,6 +34,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 export function SettingsPage() {
+  const currentProjectId = useUiStore((state) => state.currentProjectId)
   const query = useSettings()
   const client = useQueryClient()
   const form = useForm<SettingsForm>({
@@ -67,7 +70,7 @@ export function SettingsPage() {
   const configured = query.data?.api_key_configured
   return <div className="mx-auto w-full max-w-3xl px-5 py-10 lg:px-8">
     <header className="mb-9 space-y-3">
-      <PaperSageBrand className="text-sm text-muted-foreground" />
+      <div className="flex items-center justify-between gap-4"><PaperSageBrand className="text-sm text-muted-foreground" />{currentProjectId && <Button variant="ghost" size="sm" asChild><Link to="/projects/$projectId" params={{ projectId: currentProjectId }}><ArrowLeft />返回项目</Link></Button>}</div>
       <div><h1 className="text-3xl font-semibold tracking-tight">设置</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">配置用于研究和资料库的模型连接。密钥只保存于服务端，已保存的值不会回传到浏览器。</p></div>
     </header>
 
@@ -92,7 +95,7 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80"><div className="mx-auto flex max-w-3xl items-center justify-between gap-4"><p className="hidden text-xs text-muted-foreground sm:block">配置变更不会中断已经开始的研究。</p><Button type="submit" className="ml-auto" disabled={save.isPending || !form.formState.isDirty}><Save className="size-4" />{save.isPending ? "保存中…" : "保存设置"}</Button></div></div>
+      <div className="sticky bottom-0 z-20 -mx-5 border-t bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:-mx-8 lg:px-8"><div className="mx-auto flex max-w-3xl items-center justify-between gap-4"><p className="hidden text-xs text-muted-foreground sm:block">配置变更不会中断已经开始的研究。</p><Button type="submit" className="ml-auto" disabled={save.isPending || !form.formState.isDirty}><Save className="size-4" />{save.isPending ? "保存中…" : "保存设置"}</Button></div></div>
     </form>
   </div>
 }

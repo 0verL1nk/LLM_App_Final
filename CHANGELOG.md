@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.6] - 2026-08-01
+
+### Fixed
+- Kept the active project available when opening global settings, with a direct return path to the project workspace.
+- Contained Electron scrolling in the workspace and applied the product scrollbar treatment to native overflow regions.
+
 ## [1.1.5] - 2026-08-01
 
 ### Fixed

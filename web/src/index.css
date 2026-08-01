@@ -127,8 +127,42 @@
     @apply bg-background text-foreground antialiased;
     min-width: 320px;
     }
-  html {
-    @apply font-sans;
+    html {
+        @apply font-sans;
+    }
+
+    /* Electron has one deliberate document scroller. Nested overflow regions
+       retain their semantics but share the product's restrained scrollbar. */
+    html.desktop-app,
+    html.desktop-app body,
+    html.desktop-app #root {
+        height: 100%;
+        overflow: hidden;
+    }
+
+    html.desktop-app * {
+        scrollbar-color: color-mix(in oklch, var(--muted-foreground) 52%, transparent) transparent;
+        scrollbar-width: thin;
+    }
+
+    html.desktop-app ::-webkit-scrollbar {
+        width: 0.625rem;
+        height: 0.625rem;
+    }
+
+    html.desktop-app ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    html.desktop-app ::-webkit-scrollbar-thumb {
+        border: 0.1875rem solid transparent;
+        border-radius: 999px;
+        background-clip: padding-box;
+        background-color: color-mix(in oklch, var(--muted-foreground) 52%, transparent);
+    }
+
+    html.desktop-app ::-webkit-scrollbar-thumb:hover {
+        background-color: color-mix(in oklch, var(--muted-foreground) 72%, transparent);
     }
 }
 
