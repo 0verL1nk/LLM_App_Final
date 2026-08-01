@@ -42,8 +42,10 @@ function DesktopUpdatesCard() {
     setChecking(true)
     try {
       const result = await desktop.checkForUpdates()
-      if (result.supported) toast.message("正在检查更新", { description: "如有新版本，系统会询问是否下载。" })
-      else toast.message("此安装方式由系统包管理器更新")
+      if (result.status === "available") toast.success(`发现新版本 ${result.version ?? ""}`.trim(), { description: "系统已询问是否下载。" })
+      else if (result.status === "up-to-date") toast.success("已是最新版本")
+      else if (result.status === "unsupported") toast.message("此安装方式由系统包管理器更新")
+      else toast.error("检查更新失败", { description: "请检查网络后重试。" })
     } catch (error) {
       toast.error("无法检查更新", { description: error instanceof Error ? error.message : "请稍后重试。" })
     } finally {

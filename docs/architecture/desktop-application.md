@@ -14,4 +14,6 @@ In Electron, the app shell owns the viewport: the document itself never scrolls,
 
 Packaged desktop clients use `electron-updater` with the public GitHub Release provider. The updater reads Builder-generated `latest.yml` metadata, prompts before downloading, and asks before restart/install. NSIS on Windows and AppImage on Linux are supported; DEB is intentionally updated by the operating system package manager. macOS auto-update additionally requires a signed release; release CI emits both DMG and ZIP because the ZIP is required for macOS update metadata.
 
+The desktop backend deliberately excludes local RapidOCR/OpenCV. Text PDFs continue to parse locally with PyMuPDF; scanned PDFs use the user's configured vision-capable model. This keeps the OCR feature while avoiding a large native OCR runtime in every installation.
+
 GitHub Actions uses the same native package commands for tagged releases. It builds Windows, macOS, and Linux artifacts on their respective runners, then attaches the generated packages and update metadata to the GitHub Release.

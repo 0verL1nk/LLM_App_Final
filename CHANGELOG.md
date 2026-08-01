@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.8] - 2026-08-01
+
+### Fixed
+- Kept desktop conversation scrolling inside the message region and show a definitive result after an update check.
+- Place a Windows installation selected at a drive root in a `PaperSage` subfolder automatically.
+
+### Changed
+- Replaced bundled local RapidOCR/OpenCV with configured vision-model OCR for scanned PDFs, reducing the packaged backend by about 126 MB.
+
 ## [1.1.7] - 2026-08-01
 
 ### Added

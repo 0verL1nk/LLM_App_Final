@@ -132,7 +132,7 @@ def test_enqueue_ingestion_keeps_ready_state_if_local_job_finishes_immediately(
     _init_project_binding(db_name)
     monkeypatch.setattr(
         "agent.application.rag_ingestion.extract_document_payload",
-        lambda _path, progress_callback=None: {
+        lambda _path, user_uuid=None, progress_callback=None: {
             "result": 1,
             "text": "extracted paper",
         },
