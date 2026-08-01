@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 import { BookOpen, ChevronDown, Menu, MessageSquarePlus, Settings } from "lucide-react"
+import { useEffect } from "react"
 import { toast } from "sonner"
 
 import { ResearchSessionList } from "@/components/research-session-list"
@@ -41,7 +42,9 @@ function WorkspaceSidebar({ includeBrand = false }: { includeBrand?: boolean }) 
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const navigate = useNavigate()
   const projects = useProjects()
-  const projectId = pathname.match(/^\/projects\/([^/]+)/)?.[1]
+  const routeProjectId = pathname.match(/^\/projects\/([^/]+)/)?.[1]
+  const rememberedProjectId = useUiStore((state) => state.currentProjectId)
+  const projectId = routeProjectId ?? rememberedProjectId
   const currentProject = projects.data?.find((project) => project.project_uid === projectId)
   const sessions = useSessions(projectId ?? "", Boolean(projectId))
   const createSession = useCreateSession(projectId ?? "")
@@ -59,10 +62,23 @@ function WorkspaceSidebar({ includeBrand = false }: { includeBrand?: boolean }) 
 }
 
 export function AppShell() {
-  const { mobileNavOpen, setMobileNavOpen } = useUiStore()
+  const { mobileNavOpen, setMobileNavOpen, setCurrentProjectId } = useUiStore()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
   const desktop = Boolean(desktopWindowControls())
+  const routeProjectId = pathname.match(/^\/projects\/([^/]+)/)?.[1]
+
+  useEffect(() => {
+    if (routeProjectId) setCurrentProjectId(routeProjectId)
+  }, [routeProjectId, setCurrentProjectId])
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.toggle("desktop-app", desktop)
+    return () => root.classList.remove("desktop-app")
+  }, [desktop])
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className={cn("bg-background", desktop ? "h-dvh overflow-hidden" : "min-h-screen")}>
       <DesktopTitlebar />
       <aside className={cn("fixed bottom-0 left-0 z-40 hidden w-64 border-r bg-sidebar p-3 md:flex md:flex-col", desktop ? "top-9" : "top-0")}>
         <WorkspaceSidebar includeBrand />
@@ -81,7 +97,7 @@ export function AppShell() {
           <div className="border-t pt-3"><Navigation /></div>
         </SheetContent>
       </Sheet>
-      <main className={cn("md:pl-64", desktop && "pt-9")}><Outlet /></main>
+      <main className={cn("min-w-0 md:pl-64", desktop && "h-dvh overflow-y-auto overscroll-contain pt-9")}><Outlet /></main>
     </div>
   )
 }
