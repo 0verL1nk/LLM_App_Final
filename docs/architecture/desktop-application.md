@@ -12,4 +12,6 @@ Electron is intentionally limited to `web/electron/`:
 
 In Electron, the app shell owns the viewport: the document itself never scrolls, while the central content region provides the single application scroller. Native overflow inside sheets and code blocks uses the same thin themed scrollbar; persistent navigation panes continue to use Radix `ScrollArea`.
 
+Packaged desktop clients use `electron-updater` with the public GitHub Release provider. The updater reads Builder-generated `latest.yml` metadata, prompts before downloading, and asks before restart/install. NSIS on Windows and AppImage on Linux are supported; DEB is intentionally updated by the operating system package manager. macOS auto-update additionally requires a signed release; release CI emits both DMG and ZIP because the ZIP is required for macOS update metadata.
+
 GitHub Actions uses the same native package commands for tagged releases. It builds Windows, macOS, and Linux artifacts on their respective runners, then attaches the generated packages and update metadata to the GitHub Release.
