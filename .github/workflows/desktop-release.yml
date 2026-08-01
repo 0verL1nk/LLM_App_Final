@@ -24,7 +24,7 @@ jobs:
             artifact: PaperSage-Windows
             files: |
               web/release/*.exe
-              web/release/*.yml
+              web/release/latest.yml
               web/release/*.blockmap
           - name: macOS
             os: macos-latest
@@ -33,7 +33,7 @@ jobs:
             files: |
               web/release/*.dmg
               web/release/*.zip
-              web/release/*.yml
+              web/release/latest-mac.yml
               web/release/*.blockmap
           - name: Linux
             os: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
             files: |
               web/release/*.AppImage
               web/release/*.deb
-              web/release/*.yml
+              web/release/latest-linux.yml
               web/release/*.blockmap
     steps:
       - uses: actions/checkout@v6
@@ -98,21 +98,11 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      - name: Attest release packages
-        if: github.event.repository.private == false
-        uses: actions/attest@v4
-        with:
-          subject-path: |
-            ${{ matrix.files }}
-            web/release/SHA256SUMS.txt
-
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}-${{ github.ref_name }}
-          path: |
-            ${{ matrix.files }}
-            web/release/SHA256SUMS.txt
+          path: ${{ matrix.files }}
           if-no-files-found: error
           retention-days: 14
 
@@ -126,8 +116,36 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           path: release
+
+      - name: Consolidate release assets
+        shell: pwsh
+        run: |
+          $outputDirectory = Join-Path $PWD "release-assets"
+          New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+          $assets = Get-ChildItem -Path "release" -Recurse -File
+          foreach ($asset in $assets) {
+            $destination = Join-Path $outputDirectory $asset.Name
+            if (Test-Path $destination) {
+              throw "Duplicate release asset name: $($asset.Name)"
+            }
+            Copy-Item -LiteralPath $asset.FullName -Destination $destination
+          }
+          $checksums = Get-ChildItem -Path $outputDirectory -File |
+            Sort-Object Name |
+            ForEach-Object {
+              $hash = Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
+              "$($hash.Hash.ToLowerInvariant())  $($_.Name)"
+            }
+          Set-Content -LiteralPath (Join-Path $outputDirectory "SHA256SUMS.txt") -Value $checksums
+
+      - name: Attest consolidated release assets
+        if: github.event.repository.private == false
+        uses: actions/attest@v4
+        with:
+          subject-path: release-assets/*
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: release/**/*
+          files: release-assets/*

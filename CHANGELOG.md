@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-08-01
+
+### Fixed
+- Consolidated release assets before publishing to avoid duplicate checksum and debug-file names across platforms.
+
 ## [1.1.4] - 2026-08-01
 
 ### Fixed
@@ -102,7 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 53 unit tests + 6 integration tests + eval baselines
 - CLI entry point: `paper-sage`
 
-[Unreleased]: https://github.com/0verL1nk/PaperSage/compare/v1.1.4...HEAD
+[Unreleased]: https://github.com/0verL1nk/PaperSage/compare/v1.1.5...HEAD
+[1.1.5]: https://github.com/0verL1nk/PaperSage/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/0verL1nk/PaperSage/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/0verL1nk/PaperSage/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/0verL1nk/PaperSage/compare/v1.1.1...v1.1.2
