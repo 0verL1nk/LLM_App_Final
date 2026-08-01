@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.9] - 2026-08-01
+
+### Fixed
+- Kept the runtime package version aligned with Python package metadata so tagged PyPI releases can publish successfully.
+
 ## [1.1.8] - 2026-08-01
 
 ### Fixed

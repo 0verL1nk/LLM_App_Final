@@ -154,6 +154,7 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           gh release upload "${{ github.ref_name }}" `
             release-assets/latest.yml `
