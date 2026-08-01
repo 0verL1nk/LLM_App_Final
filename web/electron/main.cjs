@@ -1,11 +1,14 @@
-const { app, BrowserWindow, ipcMain } = require("electron")
+const { app, BrowserWindow, dialog, ipcMain } = require("electron")
+const { autoUpdater } = require("electron-updater")
 const { spawn } = require("node:child_process")
 const net = require("node:net")
 const path = require("node:path")
 const fs = require("node:fs")
+const { createUpdateService } = require("./updater.cjs")
 
 const apiPort = Number(process.env.PAPERSAGE_DESKTOP_PORT || 18765)
 let backend
+const updates = createUpdateService({ app, autoUpdater, dialog })
 
 function waitForPort(port, timeoutMs = 30000) {
   const startedAt = Date.now()
@@ -70,7 +73,11 @@ ipcMain.handle("window:toggle-maximize", (event) => {
   return window.isMaximized()
 })
 ipcMain.handle("window:close", (event) => BrowserWindow.fromWebContents(event.sender)?.close())
+ipcMain.handle("updates:check", () => updates.checkForUpdates())
 
-app.whenReady().then(createWindow).catch((error) => { console.error(error); app.quit() })
+app.whenReady().then(async () => {
+  await createWindow()
+  updates.scheduleCheck()
+}).catch((error) => { console.error(error); app.quit() })
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit() })
 app.on("before-quit", () => { if (backend && !backend.killed) backend.kill() })

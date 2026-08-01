@@ -1,7 +1,7 @@
 {
   "name": "papersage-web",
   "private": true,
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "AI research workspace for scholarly reading and writing.",
   "author": "PaperSage Contributors",
   "homepage": "https://github.com/0verL1nk/PaperSage",
@@ -17,7 +17,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "node --test electron/updater.node.cjs && vitest run",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview",
     "desktop:dev": "node electron/dev.cjs",
@@ -39,6 +39,7 @@
     "class-variance-authority": "latest",
     "clsx": "latest",
     "cmdk": "^1.1.1",
+    "electron-updater": "6.8.5",
     "embla-carousel-react": "^8.6.0",
     "katex": "^0.18.1",
     "lucide-react": "latest",
@@ -86,16 +87,53 @@
   "build": {
     "appId": "com.papersage.desktop",
     "productName": "PaperSage",
-    "directories": { "output": "release", "buildResources": "build" },
-    "files": ["dist/**", "electron/**", "package.json"],
-    "extraResources": [{ "from": ".desktop-backend", "to": "backend" }],
-    "win": { "target": ["nsis"] },
-    "mac": { "target": ["dmg"], "category": "public.app-category.productivity" },
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "!electron/**/*.node.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": ".desktop-backend",
+        "to": "backend"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "0verL1nk",
+        "repo": "PaperSage",
+        "releaseType": "release"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "Office",
       "maintainer": "PaperSage Contributors <0verL1nk@users.noreply.github.com>"
     },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.7] - 2026-08-01
+
+### Added
+- Added opt-in desktop update checks backed by PaperSage GitHub Releases, including download and restart confirmation.
+
+### Changed
+- Configured Electron Builder's GitHub update provider and macOS ZIP update artifact; DEB remains managed by the operating system package manager.
+
 ## [1.1.6] - 2026-08-01
 
 ### Fixed

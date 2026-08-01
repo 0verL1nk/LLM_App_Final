@@ -1,8 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ArrowLeft, CheckCircle2, Database, LockKeyhole, Save, ServerCog } from "lucide-react"
-import { useEffect } from "react"
+import { ArrowLeft, CheckCircle2, Database, Download, LockKeyhole, Save, ServerCog } from "lucide-react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
+import { desktopWindowControls } from "@/lib/platform"
 import { keys, useSettings } from "@/lib/queries"
 import { settingsSchema } from "@/lib/schemas"
 import { useUiStore } from "@/stores/ui-store"
@@ -31,6 +32,25 @@ type SettingsForm = z.infer<typeof formSchema>
 
 function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-xs text-destructive">{message}</p> : null
+}
+
+function DesktopUpdatesCard() {
+  const desktop = desktopWindowControls()
+  const [checking, setChecking] = useState(false)
+  if (!desktop) return null
+  const checkForUpdates = async (): Promise<void> => {
+    setChecking(true)
+    try {
+      const result = await desktop.checkForUpdates()
+      if (result.supported) toast.message("正在检查更新", { description: "如有新版本，系统会询问是否下载。" })
+      else toast.message("此安装方式由系统包管理器更新")
+    } catch (error) {
+      toast.error("无法检查更新", { description: error instanceof Error ? error.message : "请稍后重试。" })
+    } finally {
+      setChecking(false)
+    }
+  }
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Download className="size-4 text-primary" />桌面更新</CardTitle><CardDescription>通过 PaperSage 的 GitHub Release 检查更新。发现新版本后，由你确认下载和重启安装。</CardDescription></CardHeader><CardContent><Button type="button" variant="outline" onClick={() => void checkForUpdates()} disabled={checking}><Download />{checking ? "检查中…" : "检查更新"}</Button></CardContent></Card>
 }
 
 export function SettingsPage() {
@@ -94,6 +114,8 @@ export function SettingsPage() {
           <div className="space-y-2"><Label htmlFor="max-chunks">单项目分块上限</Label><Input id="max-chunks" type="number" min="0" {...form.register("local_rag_project_max_chunks", { valueAsNumber: true })} /><p className="text-xs leading-5 text-muted-foreground">0 为不限制分块数量。</p><FieldError message={form.formState.errors.local_rag_project_max_chunks?.message} /></div>
         </CardContent>
       </Card>
+
+      <DesktopUpdatesCard />
 
       <div className="sticky bottom-0 z-20 -mx-5 border-t bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:-mx-8 lg:px-8"><div className="mx-auto flex max-w-3xl items-center justify-between gap-4"><p className="hidden text-xs text-muted-foreground sm:block">配置变更不会中断已经开始的研究。</p><Button type="submit" className="ml-auto" disabled={save.isPending || !form.formState.isDirty}><Save className="size-4" />{save.isPending ? "保存中…" : "保存设置"}</Button></div></div>
     </form>
