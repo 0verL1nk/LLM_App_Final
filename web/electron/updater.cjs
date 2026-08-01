@@ -2,6 +2,7 @@
  * @typedef {{ isPackaged: boolean, getVersion: () => string }} ElectronApp
  * @typedef {{ showMessageBox: (options: object) => Promise<{ response: number }> }} ElectronDialog
  * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, quitAndInstall: () => void, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean }} ElectronUpdater
+ * @typedef {{ status: "downloading" | "progress" | "ready" | "failed", version?: string, percent?: number }} UpdateStatus
  */
 
 /**
@@ -16,25 +17,43 @@ function supportsAutomaticUpdates({ isPackaged, platform, appImage }) {
 }
 
 /**
- * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, dialog: ElectronDialog, logger?: Pick<Console, "error">, platform?: NodeJS.Platform, appImage?: string }} dependencies
+ * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, dialog: ElectronDialog, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, platform?: NodeJS.Platform, appImage?: string }} dependencies
  * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string }>, scheduleCheck: () => void }}
  */
-function createUpdateService({ app, autoUpdater, dialog, logger = console, platform = process.platform, appImage = process.env.APPIMAGE }) {
+function createUpdateService({ app, autoUpdater, dialog, logger = console, notify = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE }) {
   const supported = supportsAutomaticUpdates({ isPackaged: app.isPackaged, platform, appImage })
   let checking = false
+  let downloading = false
   const reportError = (error) => logger.error("PaperSage update check failed", error)
-  const download = () => autoUpdater.downloadUpdate().catch(reportError)
+  const download = async (version) => {
+    if (downloading) return
+    downloading = true
+    notify({ status: "downloading", version })
+    try {
+      await autoUpdater.downloadUpdate()
+    } catch (error) {
+      reportError(error)
+      notify({ status: "failed" })
+    } finally {
+      downloading = false
+    }
+  }
 
   if (supported) {
     autoUpdater.autoDownload = false
-    autoUpdater.autoInstallOnAppQuit = false
-    autoUpdater.on("error", reportError)
-    autoUpdater.on("update-available", async (info) => {
-      const result = await dialog.showMessageBox({ type: "info", title: "有可用更新", message: `PaperSage ${info.version} 已可下载。`, detail: "下载完成后，你可以选择立即重启安装。", buttons: ["下载更新", "稍后"], defaultId: 0, cancelId: 1 })
-      if (result.response === 0) download()
+    autoUpdater.autoInstallOnAppQuit = true
+    autoUpdater.on("error", (error) => {
+      reportError(error)
+      if (downloading) notify({ status: "failed" })
     })
+    autoUpdater.on("update-available", async (info) => {
+      const result = await dialog.showMessageBox({ type: "info", title: "发现新版本", message: `PaperSage ${info.version} 已准备好下载。`, detail: "下载期间可以继续使用 PaperSage；完成后会提醒你重启安装。", buttons: ["开始下载", "暂不更新"], defaultId: 0, cancelId: 1 })
+      if (result.response === 0) await download(info.version)
+    })
+    autoUpdater.on("download-progress", (progress) => notify({ status: "progress", percent: Number(progress.percent || 0) }))
     autoUpdater.on("update-downloaded", async () => {
-      const result = await dialog.showMessageBox({ type: "info", title: "更新已准备就绪", message: "重启 PaperSage 后即可完成更新。", buttons: ["立即重启", "下次启动时安装"], defaultId: 0, cancelId: 1 })
+      notify({ status: "ready" })
+      const result = await dialog.showMessageBox({ type: "info", title: "更新已下载完成", message: "现在重启即可使用新版本。", detail: "如果暂不重启，下一次退出 PaperSage 时会自动完成更新。", buttons: ["立即重启", "退出时更新"], defaultId: 0, cancelId: 1 })
       if (result.response === 0) autoUpdater.quitAndInstall()
     })
   }

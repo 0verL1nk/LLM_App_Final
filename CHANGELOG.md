@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.10] - 2026-08-02
+
+### Fixed
+- Show clear, user-facing update download progress, completion, and failure feedback in the desktop app.
+- Normalize drive-root installation choices to an absolute path such as `E:\PaperSage`.
+
 ## [1.1.9] - 2026-08-01
 
 ### Fixed
