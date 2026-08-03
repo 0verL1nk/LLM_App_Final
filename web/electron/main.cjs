@@ -8,7 +8,12 @@ const { createUpdateService } = require("./updater.cjs")
 
 const apiPort = Number(process.env.PAPERSAGE_DESKTOP_PORT || 18765)
 let backend
-const updates = createUpdateService({ app, autoUpdater, dialog })
+const updates = createUpdateService({
+  app,
+  autoUpdater,
+  dialog,
+  notify: (status) => BrowserWindow.getAllWindows().forEach((window) => window.webContents.send("updates:status", status)),
+})
 
 function waitForPort(port, timeoutMs = 30000) {
   const startedAt = Date.now()

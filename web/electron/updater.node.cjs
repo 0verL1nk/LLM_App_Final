@@ -31,3 +31,36 @@ test("manual checks return an explicit current or available version result", asy
   updater.checkForUpdates = async () => ({ updateInfo: { version: "1.1.8" } })
   assert.deepEqual(await service.checkForUpdates(), { supported: true, status: "up-to-date", version: "1.1.8" })
 })
+
+test("downloads report progress and completion to the renderer", async () => {
+  const listeners = {}
+  const statuses = []
+  const updater = {
+    autoDownload: true,
+    autoInstallOnAppQuit: true,
+    checkForUpdates: async () => ({ updateInfo: { version: "1.2.0" } }),
+    downloadUpdate: async () => undefined,
+    quitAndInstall: () => undefined,
+    on: (event, listener) => { listeners[event] = listener },
+  }
+  createUpdateService({
+    app: { isPackaged: true, getVersion: () => "1.1.8" },
+    autoUpdater: updater,
+    dialog: { showMessageBox: async () => ({ response: 0 }) },
+    logger: { error: () => undefined },
+    notify: (status) => statuses.push(status),
+    platform: "win32",
+  })
+
+  assert.equal(updater.autoInstallOnAppQuit, true)
+
+  await listeners["update-available"]({ version: "1.2.0" })
+  listeners["download-progress"]({ percent: 42.4 })
+  await listeners["update-downloaded"]()
+
+  assert.deepEqual(statuses, [
+    { status: "downloading", version: "1.2.0" },
+    { status: "progress", percent: 42.4 },
+    { status: "ready" },
+  ])
+})

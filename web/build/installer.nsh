@@ -6,7 +6,9 @@
   Function .onVerifyInstDir
     ${GetRoot} "$INSTDIR" $0
     ${If} "$INSTDIR" == "$0"
-      StrCpy $INSTDIR "$INSTDIRPaperSage"
+      ; GetRoot returns a drive root with its trailing backslash, so this
+      ; always produces an absolute path such as E:\PaperSage.
+      StrCpy $INSTDIR "$0PaperSage"
     ${EndIf}
   FunctionEnd
 !macroend

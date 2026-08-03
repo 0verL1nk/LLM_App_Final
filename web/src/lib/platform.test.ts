@@ -12,7 +12,7 @@ describe("desktopWindowControls", () => {
   })
 
   it("returns only the explicitly preloaded desktop controls", () => {
-    const controls = { minimize: async () => undefined, toggleMaximize: async () => false, close: async () => undefined, checkForUpdates: async () => ({ supported: true, status: "up-to-date" as const }) }
+    const controls = { minimize: async () => undefined, toggleMaximize: async () => false, close: async () => undefined, checkForUpdates: async () => ({ supported: true, status: "up-to-date" as const }), onUpdateStatus: () => () => undefined }
     vi.stubGlobal("window", { papersageDesktop: controls })
     expect(desktopWindowControls()).toBe(controls)
   })
