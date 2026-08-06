@@ -7,6 +7,10 @@ on:
 jobs:
   review:
     runs-on: ubuntu-latest
+    # Forks and Dependabot runs do not receive repository secrets. Keep the
+    # required review check green when the optional AI reviewer is unavailable.
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     permissions:
       contents: write
       pull-requests: write
@@ -41,6 +45,7 @@ jobs:
           fi
 
       - name: PR Review with Progress Tracking
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         uses: anthropics/claude-code-action@v1
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

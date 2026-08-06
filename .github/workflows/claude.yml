@@ -21,6 +21,10 @@ jobs:
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))) ||
       (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
+    # A missing optional AI-review credential must not make ordinary PR checks
+    # fail, including Dependabot and forked pull requests.
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     permissions:
       contents: write
       pull-requests: write
@@ -76,6 +80,7 @@ jobs:
 
       - name: Run Claude Code
         id: claude
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         uses: anthropics/claude-code-action@v1
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
