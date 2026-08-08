@@ -1,6 +1,13 @@
-from agent.adapters.paddle_ocr import OcrProfile, extract_document_with_paddle_ocr
-from agent.rag.hybrid import _build_project_doc_index_artifact
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from agent.adapters.paddle_ocr import (
+    OcrProfile,
+    _office_kind,
+    _persist_preview_pages,
+    _render_document_pages,
+    extract_document_with_paddle_ocr,
+)
+from agent.rag.hybrid import _build_project_doc_index_artifact
 
 
 class _FakePipeline:
@@ -130,3 +137,34 @@ def test_cross_page_vl_keeps_layout_locations(monkeypatch, tmp_path):
             "confidence": None,
         },
     ]
+
+
+def test_office_com_converter_selects_supported_file_kinds(tmp_path):
+    assert _office_kind(tmp_path / "paper.docx") == "word"
+    assert _office_kind(tmp_path / "slides.pptx") == "powerpoint"
+    assert _office_kind(tmp_path / "data.xlsx") == "excel"
+    assert _office_kind(tmp_path / "paper.pdf") is None
+
+
+def test_persisted_preview_pages_match_ocr_page_order(tmp_path):
+    pages = [tmp_path / "source-one.png", tmp_path / "source-two.png"]
+    pages[0].write_bytes(b"one")
+    pages[1].write_bytes(b"two")
+
+    persisted = _persist_preview_pages(pages, tmp_path / "previews")
+
+    assert persisted == [
+        {"page_no": 1, "file_name": "page-00001.png"},
+        {"page_no": 2, "file_name": "page-00002.png"},
+    ]
+    assert (tmp_path / "previews/page-00001.png").read_bytes() == b"one"
+
+
+def test_plain_text_is_typeset_into_a_preview_page(tmp_path):
+    source = tmp_path / "notes.txt"
+    source.write_text("A locally rendered text document can be highlighted.", encoding="utf-8")
+
+    pages = _render_document_pages(str(source), tmp_path / "rendered")
+
+    assert [page.name for page in pages] == ["page-00001.png"]
+    assert pages[0].is_file()

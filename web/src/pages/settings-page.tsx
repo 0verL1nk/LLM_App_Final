@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 import { desktopWindowControls } from "@/lib/platform"
-import { keys, useSettings } from "@/lib/queries"
+import { keys, useDocumentConversion, useSettings } from "@/lib/queries"
 import { settingsSchema } from "@/lib/schemas"
 import { useUiStore } from "@/stores/ui-store"
 
@@ -61,7 +61,7 @@ function DesktopUpdatesCard() {
       else if (result.status === "up-to-date") toast.success("已是最新版本", { description: "暂时不需要更新。" })
       else if (result.status === "unsupported") toast.message("此安装方式由系统更新", { description: "请通过你的软件商店或包管理器更新。" })
       else toast.error("暂时无法检查更新", { description: "请确认网络连接后再试一次。" })
-    } catch (error) {
+    } catch {
       toast.error("暂时无法检查更新", { description: "请稍后再试一次。" })
     } finally {
       setChecking(false)
@@ -78,6 +78,12 @@ function DesktopDiagnosticsCard() {
     if (error) toast.error("无法打开日志文件夹", { description: error })
   }
   return <Card><CardHeader><CardTitle className="flex items-center gap-2"><FileWarning className="size-4 text-primary" />诊断日志</CardTitle><CardDescription>异常发生后，可在这里打开日志文件夹。日志可能包含操作和文档处理的技术信息，请勿公开分享。</CardDescription></CardHeader><CardContent><Button type="button" variant="outline" onClick={() => void openLogs()}><FolderOpen />打开日志文件夹</Button></CardContent></Card>
+}
+
+function DocumentPreviewCard() {
+  const capability = useDocumentConversion()
+  const ready = capability.data?.office_preview_ready
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><FileWarning className="size-4 text-primary" />Office 文件预览</CardTitle><CardDescription>{ready ? "此设备已具备 Office 文件转 PDF 与定位所需的本地转换器。" : "PDF、图片与 TXT 可直接预览；DOCX、PPTX、XLSX 需要本地转换器。"}</CardDescription></CardHeader><CardContent className="flex flex-wrap items-center gap-2"><Badge variant={ready ? "secondary" : "outline"}>{ready ? "已就绪" : "需要安装"}</Badge>{capability.data?.microsoft_office && <Badge variant="outline">Microsoft Office</Badge>}{capability.data?.libreoffice && <Badge variant="outline">LibreOffice</Badge>}{!ready && <p className="w-full text-xs leading-5 text-muted-foreground">安装 Microsoft 365/Office 桌面版或 LibreOffice 后，重新打开此页即可自动检测；文件和资料库内容不会丢失。</p>}</CardContent></Card>
 }
 
 export function SettingsPage() {
@@ -144,6 +150,7 @@ export function SettingsPage() {
 
       <DesktopUpdatesCard />
       <DesktopDiagnosticsCard />
+      <DocumentPreviewCard />
 
       <div className="sticky bottom-0 z-20 -mx-5 border-t bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:-mx-8 lg:px-8"><div className="mx-auto flex max-w-3xl items-center justify-between gap-4"><p className="hidden text-xs text-muted-foreground sm:block">配置变更不会中断已经开始的研究。</p><Button type="submit" className="ml-auto" disabled={save.isPending || !form.formState.isDirty}><Save className="size-4" />{save.isPending ? "保存中…" : "保存设置"}</Button></div></div>
     </form>

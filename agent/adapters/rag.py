@@ -1,5 +1,5 @@
-import threading
 import json
+import threading
 from collections.abc import Callable
 from typing import Any
 

@@ -3,6 +3,7 @@
 import hashlib
 import logging
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from ..adapters.document import extract_document_payload
@@ -56,6 +57,7 @@ def process_document_ingestion(
     doc_name: str,
     file_path: str,
     db_name: str = "./database.sqlite",
+    force_extraction: bool = False,
 ) -> dict[str, Any]:
     """Extract, embed, and atomically publish one project document."""
     try:
@@ -81,7 +83,11 @@ def process_document_ingestion(
             )
 
         stored_text = get_document_text(doc_uid=doc_uid, uuid=user_uuid, db_name=db_name)
-        if stored_text and str(stored_text.get("file_path") or "") == file_path:
+        if (
+            stored_text
+            and not force_extraction
+            and str(stored_text.get("file_path") or "") == file_path
+        ):
             normalized_text = str(stored_text.get("text_content") or "").strip()
             extraction: dict[str, Any] = {"parser": "stored_text"}
             source_spans: list[dict[str, Any]] = []
@@ -89,6 +95,7 @@ def process_document_ingestion(
             extraction = extract_document_payload(
                 file_path,
                 user_uuid=user_uuid,
+                preview_dir=str(Path(file_path).parent / "previews" / doc_uid),
                 progress_callback=_report,
             )
             text = extraction.get("text")
@@ -216,6 +223,7 @@ def enqueue_document_ingestion(
             doc_name,
             file_path,
             db_name,
+            force,
         )
     except Exception as exc:
         update_ingestion_progress(

@@ -6,12 +6,12 @@
 
 PaperSage 将文献、会话、检索证据、长期记忆与 Agent 活动统一放进研究项目。上传资料后，解析、OCR 与索引在后台进行；用户可以立即开始对话，资料就绪后自动进入后续检索范围。
 
-普通文档和可提取文本的 PDF 在本地解析；扫描型 PDF 会使用你在“设置”中配置的支持视觉输入的模型进行逐页 OCR，以避免把本地 OCR 运行时打进所有桌面安装包。
+资料在本地后台按统一流程处理：PDF、图片、TXT 直接渲染为页面；Word、PowerPoint、Excel 先由本机 Microsoft Office 或 LibreOffice 转为 PDF。随后使用 PaddleOCR 逐页识别并保存页面、坐标与置信度，因此回答中的引用可以打开对应原文页并高亮。模型首次使用时下载到本地缓存，不会预置进桌面安装包。
 
 ## 核心能力
 
 - **项目式研究空间**：项目拥有资料库、主会话与分支会话、证据、记忆和研究活动，避免跨任务混杂上下文。
-- **可追溯问答**：项目级 RAG 使用 LanceDB、Dense 向量、全文检索与 RRF 混合召回；回答中的证据可回到原文片段。
+- **可追溯问答**：项目级 RAG 使用 LanceDB、Dense 向量、全文检索与 RRF 混合召回；回答中的证据可打开原文页并按 OCR 坐标高亮。
 - **异步资料处理**：多文件上传后依次经历提取、OCR、分块、Embedding 与发布，前端显示真实进度且不阻塞会话。
 - **多 Agent 协作**：Leader 可委派 researcher、reviewer、writer 等子 Agent；委派和工具调用由持久事件流驱动，而非模拟进度。
 - **持久化研究过程**：SQLite 保存项目、消息、运行事件和摄取状态，LangGraph checkpoint 保存 Agent 状态；中途离开后可恢复运行与流式答案。
@@ -20,7 +20,7 @@ PaperSage 将文献、会话、检索证据、长期记忆与 Agent 活动统一
 ## 使用方式
 
 1. 新建或选择一个研究项目。
-2. 在“资料库”中一次上传多份 PDF、DOCX 或文本资料；不必等待索引完成。
+2. 在“资料库”中一次上传多份 PDF、DOCX、PPTX、XLSX、图片或文本资料；不必等待索引完成。
 3. 进入主会话提问，或在需要探索不同方向时创建分支会话。
 4. 在回答侧边检查器中查看引用证据、资料状态与实际执行活动。
 
@@ -120,12 +120,18 @@ LOCAL_RAG_PROJECT_MAX_CHARS=0
 LOCAL_RAG_PROJECT_MAX_CHUNKS=0
 RAG_INDEX_BATCH_SIZE=256
 
+# 可选：PaddleOCR 模型缓存与 Office 转换器路径
+AGENT_OCR_CACHE_DIR=./.cache/paddleocr
+LIBREOFFICE_BIN=
+
 # 可选：Web 搜索与 Redis 队列
 BRAVE_SEARCH_API_KEY=
 REDIS_HOST=localhost
 ```
 
 不要提交 `.env`、API Key、签名证书或 Apple notarization 凭据。完整配置项见 [.env.example](.env.example)。
+
+Office 文档预览依赖本机 Microsoft Office 桌面版或 LibreOffice；缺少时，设置页会说明如何安装。历史资料需要在资料库中点击“重试”后才会生成可定位的页面预览。
 
 ## 开发与质量门禁
 

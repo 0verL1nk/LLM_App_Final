@@ -79,7 +79,7 @@
     "jsdom": "latest",
     "shadcn": "^4.13.1",
     "tailwindcss": "latest",
-    "typescript": "latest",
+    "typescript": "6.0.3",
     "typescript-eslint": "latest",
     "vite": "latest",
     "vitest": "latest"

@@ -62,6 +62,12 @@ export const settingsSchema = z.object({
   local_rag_project_max_chunks: z.number().nullable().optional(),
 })
 
+export const documentConversionSchema = z.object({
+  microsoft_office: z.boolean(),
+  libreoffice: z.boolean(),
+  office_preview_ready: z.boolean(),
+})
+
 export const turnResultSchema = z.object({
   answer: z.string(),
   trace_payload: z.array(z.record(z.string(), z.unknown())).default([]),

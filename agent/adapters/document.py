@@ -17,6 +17,7 @@ def extract_document_payload(
     file_path: str,
     *,
     user_uuid: str | None = None,
+    preview_dir: str | None = None,
     progress_callback: ExtractionProgressCallback | None = None,
 ) -> dict[str, Any]:
     """Extract every supported document through a rendered PaddleOCR pipeline."""
@@ -24,6 +25,7 @@ def extract_document_payload(
     try:
         payload = extract_document_with_paddle_ocr(
             file_path,
+            preview_dir=preview_dir,
             progress_callback=progress_callback,
         )
     except PaddleOcrError as exc:
@@ -35,6 +37,7 @@ def extract_document_payload(
         "parser": str(payload["parser"]),
         "ocr_profile": str(payload["ocr_profile"]),
         "source_spans": list(payload.get("source_spans") or []),
+        "preview_pages": list(payload.get("preview_pages") or []),
     }
 
 

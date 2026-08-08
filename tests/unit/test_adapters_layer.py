@@ -77,7 +77,7 @@ def test_create_project_evidence_retriever_routes_single_or_multi(monkeypatch):
 def test_extract_document_payload_delegates_to_local_paddle_ocr(monkeypatch):
     monkeypatch.setattr(
         "agent.adapters.document.extract_document_with_paddle_ocr",
-        lambda _path, progress_callback: {
+            lambda _path, preview_dir, progress_callback: {
             "text": "识别后的正文",
             "parser": "paddleocr-v6",
             "ocr_profile": "balanced",
