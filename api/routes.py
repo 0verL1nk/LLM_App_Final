@@ -64,12 +64,12 @@ def _not_found(exc: LookupError) -> HTTPException:
     return HTTPException(status_code=404, detail=str(exc))
 
 
-def _preview_page_path(*, file_path: Path, doc_uid: str, page_no: int) -> Path:
-    """Build an OCR preview path without allowing route parameters to escape its document root."""
-    if Path(doc_uid).name != doc_uid:
+def _preview_page_path(*, file_path: Path, stored_doc_uid: str, page_no: int) -> Path:
+    """Build an OCR preview path from the owned document record."""
+    if Path(stored_doc_uid).name != stored_doc_uid:
         raise HTTPException(status_code=404, detail="Preview page not found")
     preview_root = (file_path.parent / "previews").resolve()
-    document_preview_root = (preview_root / doc_uid).resolve()
+    document_preview_root = (preview_root / stored_doc_uid).resolve()
     preview_path = (document_preview_root / f"page-{page_no:05d}.png").resolve()
     if not document_preview_root.is_relative_to(preview_root) or not preview_path.is_relative_to(document_preview_root):
         raise HTTPException(status_code=404, detail="Preview page not found")
@@ -191,7 +191,12 @@ def document_preview_page(project_uid: str, doc_uid: str, page_no: int, user_uui
     if document is None:
         raise HTTPException(status_code=404, detail="Document not found")
     file_path = Path(str(document.get("file_path") or "")).resolve()
-    preview_path = _preview_page_path(file_path=file_path, doc_uid=doc_uid, page_no=page_no)
+    stored_doc_uid = str(document.get("uid") or "")
+    preview_path = _preview_page_path(
+        file_path=file_path,
+        stored_doc_uid=stored_doc_uid,
+        page_no=page_no,
+    )
     if not preview_path.is_file():
         raise HTTPException(status_code=404, detail="Preview is not ready; retry document processing")
     return FileResponse(preview_path, media_type="image/png")
