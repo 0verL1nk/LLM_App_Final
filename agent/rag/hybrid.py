@@ -25,7 +25,7 @@ from .evidence import EvidenceItem, EvidencePayload
 from .vector_store import build_vectorstore, stable_vectorstore_key
 
 logger = logging.getLogger(__name__)
-PROJECT_INDEX_SCHEMA_VERSION = 1
+PROJECT_INDEX_SCHEMA_VERSION = 2
 IngestionProgressCallback = Callable[[str, int | None, int | None], None]
 
 
@@ -186,6 +186,7 @@ def _build_project_doc_index_artifact(
     doc_uid: str,
     doc_name: str,
     normalized_text: str,
+    source_spans: list[dict[str, Any]] | None = None,
     settings_signature: str,
     text_hash: str,
     splitter: RecursiveCharacterTextSplitter,
@@ -206,6 +207,24 @@ def _build_project_doc_index_artifact(
     if progress_callback is not None:
         progress_callback("chunking", len(chunks), len(chunks))
     metadatas = [dict(doc.metadata) if isinstance(doc.metadata, dict) else {} for doc in doc_docs]
+    for doc, metadata in zip(doc_docs, metadatas, strict=True):
+        start_index = metadata.get("start_index")
+        if not isinstance(start_index, int):
+            continue
+        end_index = start_index + len(doc.page_content)
+        locations = [
+            span
+            for span in source_spans or []
+            if isinstance(span.get("start"), int)
+            and isinstance(span.get("end"), int)
+            and int(span["start"]) < end_index
+            and int(span["end"]) > start_index
+        ]
+        if locations:
+            metadata["ocr_locations"] = locations
+            first_page = locations[0].get("page_no")
+            if isinstance(first_page, int):
+                metadata["page_no"] = first_page
     embedding_vectors: list[list[float]] = []
     batch_size = max(1, int(os.getenv("RAG_INDEX_BATCH_SIZE", "256")))
     total_chunks = len(chunks)
@@ -328,6 +347,7 @@ def build_project_document_index_with_settings(
     doc_uid: str,
     doc_name: str,
     document_text: str,
+    source_spans: list[dict[str, Any]] | None = None,
     progress_callback: IngestionProgressCallback | None = None,
 ) -> dict[str, Any]:
     """Build one complete document index payload for an external store."""
@@ -354,6 +374,7 @@ def build_project_document_index_with_settings(
         doc_uid=doc_uid,
         doc_name=doc_name,
         normalized_text=normalized_text,
+        source_spans=list(source_spans or []),
         settings_signature=settings_signature,
         text_hash=text_hash,
         splitter=splitter,

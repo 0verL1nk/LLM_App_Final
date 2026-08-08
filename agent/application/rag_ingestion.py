@@ -84,6 +84,7 @@ def process_document_ingestion(
         if stored_text and str(stored_text.get("file_path") or "") == file_path:
             normalized_text = str(stored_text.get("text_content") or "").strip()
             extraction: dict[str, Any] = {"parser": "stored_text"}
+            source_spans: list[dict[str, Any]] = []
         else:
             extraction = extract_document_payload(
                 file_path,
@@ -94,6 +95,11 @@ def process_document_ingestion(
             if not isinstance(text, str):
                 raise TypeError("Document adapter returned a non-text payload")
             normalized_text = text.strip()
+            source_spans = [
+                item
+                for item in extraction.get("source_spans", [])
+                if isinstance(item, dict)
+            ]
         if not normalized_text:
             raise ValueError("Document extraction returned empty text")
         text_hash = hashlib.sha256(normalized_text.encode("utf-8")).hexdigest()
@@ -112,6 +118,7 @@ def process_document_ingestion(
             doc_uid=doc_uid,
             doc_name=doc_name,
             document_text=normalized_text,
+            source_spans=source_spans,
             progress_callback=_report,
         )
         chunk_count = int(index_payload.get("chunk_count", 0) or 0)

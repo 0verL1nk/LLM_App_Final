@@ -1,6 +1,6 @@
 [project]
 name = "paper-sage"
-version = "1.1.12"
+version = "1.1.13"
 description = "AI-powered literature reading assistant with multi-agent orchestration and hybrid RAG"
 readme = "README.md"
 license = "MIT"
@@ -45,9 +45,12 @@ dependencies = [
     "redis>=5.0.0",
     "rq>=1.15.0",
     "argon2-cffi==25.1.0",
-    "onnxruntime>=1.24.3",
     "striprtf>=0.0.32",
     "lancedb>=0.34.0",
+    "paddleocr>=3.7.0,<4.0.0",
+    "paddlepaddle>=3.3.1,<4.0.0",
+    "paddlex[ocr]>=3.7.0,<3.8.0",
+    "onnxruntime>=1.24.3,<2.0.0",
 ]
 
 [project.urls]

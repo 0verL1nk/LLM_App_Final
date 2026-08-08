@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ArrowLeft, CheckCircle2, Database, Download, LockKeyhole, Save, ServerCog } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Database, Download, FileWarning, FolderOpen, LockKeyhole, Save, ServerCog } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -70,6 +70,16 @@ function DesktopUpdatesCard() {
   return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Download className="size-4 text-primary" />应用更新</CardTitle><CardDescription>有新版本时，你可以选择下载；下载完成后再重启即可。</CardDescription></CardHeader><CardContent><Button type="button" variant="outline" onClick={() => void checkForUpdates()} disabled={checking}><Download />{checking ? "正在检查…" : "检查新版本"}</Button></CardContent></Card>
 }
 
+function DesktopDiagnosticsCard() {
+  const desktop = desktopWindowControls()
+  if (!desktop) return null
+  const openLogs = async (): Promise<void> => {
+    const error = await desktop.openLogs()
+    if (error) toast.error("无法打开日志文件夹", { description: error })
+  }
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><FileWarning className="size-4 text-primary" />诊断日志</CardTitle><CardDescription>异常发生后，可在这里打开日志文件夹。日志可能包含操作和文档处理的技术信息，请勿公开分享。</CardDescription></CardHeader><CardContent><Button type="button" variant="outline" onClick={() => void openLogs()}><FolderOpen />打开日志文件夹</Button></CardContent></Card>
+}
+
 export function SettingsPage() {
   const currentProjectId = useUiStore((state) => state.currentProjectId)
   const query = useSettings()
@@ -133,6 +143,7 @@ export function SettingsPage() {
       </Card>
 
       <DesktopUpdatesCard />
+      <DesktopDiagnosticsCard />
 
       <div className="sticky bottom-0 z-20 -mx-5 border-t bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:-mx-8 lg:px-8"><div className="mx-auto flex max-w-3xl items-center justify-between gap-4"><p className="hidden text-xs text-muted-foreground sm:block">配置变更不会中断已经开始的研究。</p><Button type="submit" className="ml-auto" disabled={save.isPending || !form.formState.isDirty}><Save className="size-4" />{save.isPending ? "保存中…" : "保存设置"}</Button></div></div>
     </form>

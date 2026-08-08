@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("papersageDesktop", {
   toggleMaximize: () => ipcRenderer.invoke("window:toggle-maximize"),
   close: () => ipcRenderer.invoke("window:close"),
   checkForUpdates: () => ipcRenderer.invoke("updates:check"),
+  openLogs: () => ipcRenderer.invoke("logs:open"),
   onUpdateStatus: (listener) => {
     const handler = (_event, status) => listener(status)
     ipcRenderer.on("updates:status", handler)

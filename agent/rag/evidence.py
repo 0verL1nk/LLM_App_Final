@@ -14,6 +14,7 @@ class EvidenceItem(BaseModel):
     page_no: int | None = None
     offset_start: int | None = None
     offset_end: int | None = None
+    ocr_locations: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class EvidencePayload(BaseModel):
