@@ -85,6 +85,10 @@ make desktop-package-linux  # 仅 Linux 上执行，生成 AppImage 与 deb
 
 发布 `vX.Y.Z` tag 时，GitHub Actions 会在 Windows、macOS、Linux 原生 runner 上构建安装包、构建 Python wheel/sdist，并在所有桌面构建成功后由单一工作流一次性创建 GitHub Release 与 SHA-256 清单。版本号必须同时匹配 `pyproject.toml` 与 `web/package.json`。具体的签名、公证和验证操作见[桌面发布运维说明](docs/architecture/desktop-release.md)。
 
+版本由 `Prepare Release` 自动生成发布 PR：`feat:` 升 minor，`fix:` 与安全修复升 patch，`feat!:`、`fix!:` 或 `BREAKING CHANGE:` 升 major。合并该 PR 后，确认版本内容并推送对应 `vX.Y.Z` tag；只有 Desktop Release 会创建 GitHub Release。
+
+PyPI 的 `paper-sage` wheel 包含已构建的 Web 前端。安装后运行 `paper-sage`（或 `papersage`）会启动本机 FastAPI 服务，并在 `http://127.0.0.1:8000` 提供完整 Web 界面；开发时仍使用 `make run` 启动 API 与 Vite 热更新服务。
+
 ## 项目结构
 
 ```text

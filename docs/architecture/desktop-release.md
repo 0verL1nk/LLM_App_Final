@@ -12,6 +12,10 @@ All packages use `web/build/icon.svg` as their source icon. Electron Builder con
 
 The `Desktop Release` workflow validates that a `vX.Y.Z` tag matches both `pyproject.toml` and `web/package.json`, packages the FastAPI service natively on each runner, builds the Python wheel and sdist, then attaches all assets to the GitHub Release. It is the only workflow allowed to create a GitHub Release, and it runs only after every native package job succeeds. Release tags must point to a reviewed commit.
 
+`Prepare Release` creates or updates a release PR from Conventional Commits. `feat:` selects a minor release, `fix:` selects a patch release, and `!` or a `BREAKING CHANGE:` footer selects a major release. The PR synchronizes the Python and web versions; after it is reviewed and merged, tag that exact commit as `vX.Y.Z` to start the canonical release workflow.
+
+The canonical release workflow also builds the Vite application before producing the Python wheel and sdist. As a result, `pip install paper-sage` followed by `paper-sage` serves the same production web bundle at `http://127.0.0.1:8000`; it does not launch Vite. Electron packages reuse that bundle and add the desktop shell, updater, and native installation behavior.
+
 Unsigned builds remain useful for internal testing but will trigger platform trust warnings. Every public GitHub Release additionally receives a free GitHub OIDC/Sigstore provenance attestation and a `SHA256SUMS.txt` manifest. Consumers can verify a downloaded installer with:
 
 ```bash

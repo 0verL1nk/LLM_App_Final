@@ -29,6 +29,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -41,6 +49,11 @@ jobs:
             echo "ERROR: Tag v$TAG_VERSION does not match package version $PKG_VERSION"
             exit 1
           fi
+
+      - name: Build bundled web application
+        run: |
+          pnpm --dir web install --frozen-lockfile
+          pnpm --dir web run build
 
       - name: Build package
         run: uv build
