@@ -5,6 +5,80 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0](https://github.com/0verL1nk/PaperSage/compare/paper-sage-v1.1.13...paper-sage-v1.2.0) (2026-08-08)
+
+
+### Features
+
+* add async policy routing with configurable router model ([575d8f8](https://github.com/0verL1nk/PaperSage/commit/575d8f86e13e812aa52159fd9806d9569d528bdb))
+* add emit_tool_load_event flag to control tool load event emissions ([83a745c](https://github.com/0verL1nk/PaperSage/commit/83a745cce4d8f6bd1d55f47d9c99dce8aaa2837c))
+* add environment variables for Claude Code and PR Review workflows ([ca4f709](https://github.com/0verL1nk/PaperSage/commit/ca4f70957675aade15f977ceb48353e655767a26))
+* add GitHub desktop updates ([a13e3b6](https://github.com/0verL1nk/PaperSage/commit/a13e3b6f05e5db917cf70c9025f58c1198d11ac1))
+* add GitHub desktop updates ([795f580](https://github.com/0verL1nk/PaperSage/commit/795f580d5df7667c5e21ff8efa47b985f680be7e))
+* add list_document tool to agent capabilities ([76e1d57](https://github.com/0verL1nk/PaperSage/commit/76e1d57d26c03fa54b3e03d1be8a7fd608f3bdac))
+* add localized document evidence previews ([#61](https://github.com/0verL1nk/PaperSage/issues/61)) ([6b61cec](https://github.com/0verL1nk/PaperSage/commit/6b61cec6f532abc7bf8211b8287037f653298d54))
+* add MinerU document parsing integration ([#5](https://github.com/0verL1nk/PaperSage/issues/5)) ([1b77b77](https://github.com/0verL1nk/PaperSage/commit/1b77b7732b010f880d9725d292c8d748db951e05))
+* Add support for fetching PR head branch in cross-repository scenarios ([7472ad5](https://github.com/0verL1nk/PaperSage/commit/7472ad5c19a5151d7a55b5093231a85f08af0a7b))
+* add tool search ([#15](https://github.com/0verL1nk/PaperSage/issues/15)) ([d4a6be1](https://github.com/0verL1nk/PaperSage/commit/d4a6be106a613691bb2454fb6b2e9fdc7640b857))
+* agent centric orchestration ([#20](https://github.com/0verL1nk/PaperSage/issues/20)) ([a4a8416](https://github.com/0verL1nk/PaperSage/commit/a4a84167580ca91181297b482590bd81c95a6932))
+* automate release version selection ([835afca](https://github.com/0verL1nk/PaperSage/commit/835afca2c11a3296821728c4f7a4584e9d2a40d6))
+* complete checkpointer-based summarization migration ([#18](https://github.com/0verL1nk/PaperSage/issues/18)) ([673bba7](https://github.com/0verL1nk/PaperSage/commit/673bba7e55b4dc67fea3cf9cf0b5ff63ef364ee8))
+* Enhance document handling and retrieval capabilities ([5491042](https://github.com/0verL1nk/PaperSage/commit/54910423f01cf5dac7760da8a0a60259d4a12060))
+* Enhance project with new cleanup and revision policies ([51688f2](https://github.com/0verL1nk/PaperSage/commit/51688f21faf69ae65f7d22fae7e3d7df12eba3ef))
+* enhance prompt handling and memory management in agent center ([924e012](https://github.com/0verL1nk/PaperSage/commit/924e012672674e14dd49c72b09fde4a5f86a3825))
+* enhance team runtime output with native report rendering ([50de246](https://github.com/0verL1nk/PaperSage/commit/50de246f49a22b5c9f4ce59e4624c887e63ff22f))
+* extract vector store builder into dedicated module ([#8](https://github.com/0verL1nk/PaperSage/issues/8)) ([b06edba](https://github.com/0verL1nk/PaperSage/commit/b06edba662817df85f3d0dd20430a1686c7ecc6a))
+* implement lazy tool activation and usage with structured arguments ([b403576](https://github.com/0verL1nk/PaperSage/commit/b40357653d77b4e564da0eab6fdc0e1db744f528))
+* implement session selector UID override logic and corresponding tests ([754e99c](https://github.com/0verL1nk/PaperSage/commit/754e99c7d435a84f4bdec09db573a5f3e216f304))
+* Improve orchestration and planning modes with enhanced documentation and structured prompts ([872695e](https://github.com/0verL1nk/PaperSage/commit/872695e93c58bc6ca0b1fc2ebf9dee05b8a3eb10))
+* log final answer in execute_turn_core and add corresponding test ([985a8c3](https://github.com/0verL1nk/PaperSage/commit/985a8c3c5be42cf3548603fab157734e50ea1a52))
+* plan mode cleanup ([#12](https://github.com/0verL1nk/PaperSage/issues/12)) ([bef6dd8](https://github.com/0verL1nk/PaperSage/commit/bef6dd8b292372c01a73cc06950df643fa99253d))
+* progressive tool disclosure and relevance-based document retrieval ([#9](https://github.com/0verL1nk/PaperSage/issues/9)) ([77a2e84](https://github.com/0verL1nk/PaperSage/commit/77a2e84659a89556249ac20e004db6500a6417a0))
+* refactor agent center workspace and context observability ([0da84a1](https://github.com/0verL1nk/PaperSage/commit/0da84a1bdb8f009209c44a8d761ba187c6f10800))
+* replace ANTHROPIC_AUTH_TOKEN with ANTHROPIC_API_KEY in workflow files ([a941db3](https://github.com/0verL1nk/PaperSage/commit/a941db3cac2e8c06778ab7733ffb8a718c77c92d))
+* replace CLAUDE_CODE_OAUTH_TOKEN with ANTHROPIC_API_KEY in workflow files ([91b2fbb](https://github.com/0verL1nk/PaperSage/commit/91b2fbbf506af7e6e2a8e08586739f912b6537d6))
+* team architecture upgrade ([#28](https://github.com/0verL1nk/PaperSage/issues/28)) ([ade3cf8](https://github.com/0verL1nk/PaperSage/commit/ade3cf8f828333520d50aa068934b452e74ffe07))
+* tool manifest lazy schema ([#6](https://github.com/0verL1nk/PaperSage/issues/6)) ([63621d2](https://github.com/0verL1nk/PaperSage/commit/63621d21cab1c0d1f606b0a1f1e112a7a7e98404))
+* 更新发布工作流，启用自动生成发布说明并简化版本处理 ([41f08b4](https://github.com/0verL1nk/PaperSage/commit/41f08b4ae65d6d57e9a98d6c4307f8ee5895640f))
+* 更新版本到1.0.0，添加新功能和修复，更新项目链接 ([6e9a649](https://github.com/0verL1nk/PaperSage/commit/6e9a6492b1c110461ead2cc431a04219d9588cf3))
+
+
+### Bug Fixes
+
+* align PyPI package version ([6a47549](https://github.com/0verL1nk/PaperSage/commit/6a475494a6ec4ffff777caaeaf8621028889c542))
+* align runtime package version ([a30b082](https://github.com/0verL1nk/PaperSage/commit/a30b082e343fde7a00ae132a5ba4262bdb2d4913))
+* allow bot-triggered claude review workflow ([10d5e45](https://github.com/0verL1nk/PaperSage/commit/10d5e45f3dfd4568a864b204779c4202436e3bce))
+* bind updater asset upload to repository ([4159f5a](https://github.com/0verL1nk/PaperSage/commit/4159f5ab0223d6e7671a18d87572e1a2f47ac44c))
+* centralize GitHub release asset publishing ([b827ace](https://github.com/0verL1nk/PaperSage/commit/b827aced1c1029326b232eae5bb5935707a41fc7))
+* consolidate release assets ([#45](https://github.com/0verL1nk/PaperSage/issues/45)) ([f5bf5bf](https://github.com/0verL1nk/PaperSage/commit/f5bf5bfc3d61efe1ca978989df7f10db8d23f98f))
+* declare Electron package entry ([#41](https://github.com/0verL1nk/PaperSage/issues/41)) ([30bcd4b](https://github.com/0verL1nk/PaperSage/commit/30bcd4bc1c1a48fac5a305bb6a18477a8d119207))
+* derive preview paths from owned documents ([#63](https://github.com/0verL1nk/PaperSage/issues/63)) ([1069635](https://github.com/0verL1nk/PaperSage/commit/10696352e5f39241f5e78a916c8da41da8bcb55f))
+* enforce mindmap tag contract for parsing ([842a913](https://github.com/0verL1nk/PaperSage/commit/842a913c14428bb04123ba731035a077407e64fa))
+* improve desktop update and installation flow ([22c8736](https://github.com/0verL1nk/PaperSage/commit/22c8736e33e39bc9b7e4a186eac36f8f78d7bcc3))
+* improve desktop update experience ([17411d1](https://github.com/0verL1nk/PaperSage/commit/17411d1183b29ddae3ed1f94073b5cd4d9727d75))
+* improve desktop update experience ([481f029](https://github.com/0verL1nk/PaperSage/commit/481f0298205835f82d88946b5c378c3b00440b7c))
+* improve desktop update feedback ([863e80f](https://github.com/0verL1nk/PaperSage/commit/863e80fca5698fbbf5da2ffd16a71822a8321c7f))
+* lint issue ([39f8620](https://github.com/0verL1nk/PaperSage/commit/39f8620e039c210d7fb7bb8f29f5712f9dc9b03f))
+* normalize Windows install directory ([f1a0658](https://github.com/0verL1nk/PaperSage/commit/f1a06584f224deb1247224528e9da862fe9177c3))
+* publish Linux deb package ([#44](https://github.com/0verL1nk/PaperSage/issues/44)) ([1551915](https://github.com/0verL1nk/PaperSage/commit/1551915ae41ce085b666fd3c4b47bb9c8619fed5))
+* refine desktop workspace navigation ([f69ab3b](https://github.com/0verL1nk/PaperSage/commit/f69ab3b0aa18c8fde98961378bf0180a085eb9da))
+* refine desktop workspace navigation ([65d5f21](https://github.com/0verL1nk/PaperSage/commit/65d5f21d83bcc333c411e84d407e4d6e694c6018))
+* rename pages to ASCII, fix PyPI packaging and Windows CLI ([#7](https://github.com/0verL1nk/PaperSage/issues/7)) ([e46d0a1](https://github.com/0verL1nk/PaperSage/commit/e46d0a1629119b1287e930b70f3fd1948f28996e))
+* repair cross-platform desktop release ([#43](https://github.com/0verL1nk/PaperSage/issues/43)) ([803b5ec](https://github.com/0verL1nk/PaperSage/commit/803b5ec7808f1402c357a8cadf5d37129d63c3d9))
+* resolve type hints and improve code clarity across multiple files ([de78edd](https://github.com/0verL1nk/PaperSage/commit/de78eddfdcf780bfd35e5374fa6f51ee55f4cf86))
+* show summary text and enhance mindmap fullscreen theme ([27c6ba3](https://github.com/0verL1nk/PaperSage/commit/27c6ba3ac8060e9f0d0e4775d09f5dda5f8b9e26))
+* trigger Claude workflow on PR commits ([#33](https://github.com/0verL1nk/PaperSage/issues/33)) ([3231082](https://github.com/0verL1nk/PaperSage/commit/3231082b93a941438abdf66b1a3122e0e98e259a))
+* **ui:** remove mindmap iframe scrollbar via adaptive height ([#4](https://github.com/0verL1nk/PaperSage/issues/4)) ([052dabf](https://github.com/0verL1nk/PaperSage/commit/052dabf064c94a2c51a506902db24dc2bace9072))
+* update Chroma import and clarify agent settings for max staleness ([18d3527](https://github.com/0verL1nk/PaperSage/commit/18d3527cf29044a83fb8a9c1c16488fe2af8634e))
+* Update orchestration middleware to include team mode in complexity result ([5b52aa6](https://github.com/0verL1nk/PaperSage/commit/5b52aa6f438db832e6e8e5fc54a9987b2cef98be))
+* 一些修复 ([6652d82](https://github.com/0verL1nk/PaperSage/commit/6652d82d1a7a732f4a24ff4cc8e53d22fded9652))
+
+
+### Documentation
+
+* refresh brand and project overview ([7a3f46e](https://github.com/0verL1nk/PaperSage/commit/7a3f46e1913084a8b97df2c9dc89c2c77d2680e7))
+* restore and update project README ([#42](https://github.com/0verL1nk/PaperSage/issues/42)) ([b6a2f17](https://github.com/0verL1nk/PaperSage/commit/b6a2f173fac58230b3745b9a20a654e16c1fed72))
+
 ## [Unreleased]
 
 ## [1.1.12] - 2026-08-08
