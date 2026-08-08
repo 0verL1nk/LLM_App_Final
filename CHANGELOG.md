@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.12] - 2026-08-08
+
+### Fixed
+- Regenerated Python dependency exports from the canonical uv lockfile and upgraded `idna` to 3.18, ensuring packaged and exported installations use the same patched dependency set.
+
 ## [1.1.11] - 2026-08-08
 
 ### Fixed
