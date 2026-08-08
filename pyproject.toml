@@ -90,12 +90,16 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["agent", "api", "utils"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"web/dist" = "web/dist"
+
 [tool.hatch.build.targets.sdist]
 include = [
     "agent/",
     "api/",
     "utils/",
     "web/src/",
+    "web/dist/",
     "web/package.json",
     "README.md",
     "LICENSE",
@@ -107,6 +111,7 @@ include = [
 [tool.hatch.build]
 artifacts = [
     "agent/skills/*/SKILL.md",
+    "web/dist/**",
 ]
 
 [tool.ruff]

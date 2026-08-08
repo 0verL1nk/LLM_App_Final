@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "python",
+  "include-v-in-tag": true,
+  "skip-github-release": true,
+  "packages": {
+    ".": {
+      "package-name": "paper-sage",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "web/package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  }
+}

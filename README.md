@@ -1,155 +1,105 @@
-# PaperSage
+<p align="center">
+  <img src="web/public/papersage-mark.svg" width="72" alt="PaperSage logo" />
+</p>
 
-> 面向科研阅读、可追溯证据与多 Agent 协作的项目式研究工作台。
+<h1 align="center">PaperSage</h1>
+
+<p align="center">一个面向文献阅读、可追溯证据与研究协作的 AI 工作台。</p>
+
+<p align="center">
+  <a href="https://github.com/0verL1nk/PaperSage/actions/workflows/quality.yml"><img src="https://github.com/0verL1nk/PaperSage/actions/workflows/quality.yml/badge.svg" alt="Quality Gate" /></a>
+  <a href="https://pypi.org/project/paper-sage/"><img src="https://img.shields.io/pypi/v/paper-sage.svg" alt="PyPI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
+</p>
 
 ![PaperSage 系统能力总览](images/main.jpg)
 
-PaperSage 将文献、会话、检索证据、长期记忆与 Agent 活动统一放进研究项目。上传资料后，解析、OCR 与索引在后台进行；用户可以立即开始对话，资料就绪后自动进入后续检索范围。
+PaperSage 把资料库、研究会话、证据、长期记忆和多 Agent 协作收敛到同一个研究项目。资料可在后台完成 OCR 与索引，研究者无需等待，就能开始提问、比较方法、整理观点，并回到原文验证结论。
 
-资料在本地后台按统一流程处理：PDF、图片、TXT 直接渲染为页面；Word、PowerPoint、Excel 先由本机 Microsoft Office 或 LibreOffice 转为 PDF。随后使用 PaddleOCR 逐页识别并保存页面、坐标与置信度，因此回答中的引用可以打开对应原文页并高亮。模型首次使用时下载到本地缓存，不会预置进桌面安装包。
+## 为什么使用 PaperSage
 
-## 核心能力
-
-- **项目式研究空间**：项目拥有资料库、主会话与分支会话、证据、记忆和研究活动，避免跨任务混杂上下文。
-- **可追溯问答**：项目级 RAG 使用 LanceDB、Dense 向量、全文检索与 RRF 混合召回；回答中的证据可打开原文页并按 OCR 坐标高亮。
-- **异步资料处理**：多文件上传后依次经历提取、OCR、分块、Embedding 与发布，前端显示真实进度且不阻塞会话。
-- **多 Agent 协作**：Leader 可委派 researcher、reviewer、writer 等子 Agent；委派和工具调用由持久事件流驱动，而非模拟进度。
-- **持久化研究过程**：SQLite 保存项目、消息、运行事件和摄取状态，LangGraph checkpoint 保存 Agent 状态；中途离开后可恢复运行与流式答案。
-- **研究产物**：支持证据引用、Markdown/KaTeX 渲染、上下文检查器，以及受限 A2UI 协议生成的思维导图。
-
-## 使用方式
-
-1. 新建或选择一个研究项目。
-2. 在“资料库”中一次上传多份 PDF、DOCX、PPTX、XLSX、图片或文本资料；不必等待索引完成。
-3. 进入主会话提问，或在需要探索不同方向时创建分支会话。
-4. 在回答侧边检查器中查看引用证据、资料状态与实际执行活动。
-
-## 架构概览
-
-```mermaid
-flowchart LR
-  UI[React 工作台] --> API[FastAPI /api/v1]
-  API --> APP[Application 用例]
-  APP --> AGENT[Leader 与 Subagents]
-  APP --> RAG[LanceDB 混合检索]
-  APP --> DB[(SQLite)]
-  RAG --> DOC[解析 / OCR / 分块 / Embedding]
-  AGENT --> SSE[持久 Run 事件流]
-  SSE --> UI
-```
-
-前端是独立的 Vite + React 应用：TanStack Router 管理可导航状态，TanStack Query 管理服务端缓存与轮询，Zustand 仅保存 UI 状态，shadcn/ui 与 Radix UI 提供无障碍组件基础。后端使用 FastAPI 作为传输边界，`agent/domain`、`agent/application` 和 `agent/adapters` 保持分层；UI 不直接调用模型或数据库。
-
-更多设计细节见：[Web 应用架构](docs/architecture/web-application.md)、[Agent 运行时](docs/architecture/agent-runtime.md)、[桌面应用](docs/architecture/desktop-application.md)。
+| 你需要的能力 | PaperSage 的实现 |
+| --- | --- |
+| 读得快，也能核对 | LanceDB 混合检索、重排与可点击证据；OCR 坐标可定位并高亮原文页。 |
+| 上传资料不打断思路 | PDF、Office、图片与文本异步提取、OCR、分块和 Embedding；会话可立即开始。 |
+| 把复杂研究做成过程 | 主会话与探索分支、可恢复运行事件、研究记忆和受控 A2UI 思维导图。 |
+| 协作不变成黑盒 | Leader 按任务委派 researcher、reviewer、writer；界面只展示用户需要的真实进度与证据。 |
 
 ## 快速开始
 
-### 环境要求
+### 桌面版（推荐）
 
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/)
-- Node.js 22+
-- pnpm 11（建议通过 Corepack 使用）
+从 [Releases](https://github.com/0verL1nk/PaperSage/releases) 下载适合 Windows、macOS 或 Linux 的安装包。桌面版内置前端与本地 FastAPI 服务，并提供自动更新、诊断日志和原生文件能力。
+
+### 从源码运行
+
+需要 Python 3.11+、[uv](https://docs.astral.sh/uv/)、Node.js 22+ 与 pnpm 11：
 
 ```bash
 corepack enable
-make install-dev      # 安装 Python 开发依赖
-make web-install      # 按 pnpm-lock.yaml 安装前端依赖
-make run              # 同时启动 API :8000 和 Vite :5173
+make install-dev
+make web-install
+make run
 ```
 
-浏览器打开 `http://127.0.0.1:5173`。也可以分别启动：
-
-```bash
-make api-dev          # FastAPI，支持 reload
-make web-dev          # Vite 开发服务器
-```
-
-生产构建由 FastAPI 托管前端静态文件：
+打开 `http://127.0.0.1:5173`。生产模式使用：
 
 ```bash
 make web-build
-make serve            # http://127.0.0.1:8000
+make serve
 ```
 
-## 桌面端
+### PyPI
 
-桌面版将 React 前端与 FastAPI 服务一起打包为 Electron 应用，并使用应用内自定义标题栏。
+发布工作流会把生产 Web bundle 纳入 `paper-sage` wheel。自下一次发布起，可通过：
 
 ```bash
-make desktop-dev
-make desktop-package-win    # Windows NSIS
-make desktop-package-mac    # 仅 macOS 上执行，生成 DMG
-make desktop-package-linux  # 仅 Linux 上执行，生成 AppImage 与 deb
+pip install paper-sage
+paper-sage
 ```
 
-发布 `vX.Y.Z` tag 时，GitHub Actions 会在 Windows、macOS、Linux 原生 runner 上构建安装包、生成 SHA-256 清单，并为公开 Release 生成 GitHub/Sigstore 构建证明。版本号必须同时匹配 `pyproject.toml` 与 `web/package.json`。具体的签名、公证和验证操作见[桌面发布运维说明](docs/architecture/desktop-release.md)。
+在 `http://127.0.0.1:8000` 启动完整 Web 应用；这不会启动 Vite。
 
-## 项目结构
+## 系统概览
 
-```text
-api/                    # FastAPI 路由、schema 与 HTTP transport
-web/
-  src/components/       # 应用壳、领域组件与 shadcn/ui 组件
-  src/pages/            # 项目、研究、资料库、设置页面
-  src/lib/              # API client、Zod schema、Query hooks、平台边界
-  src/stores/           # Zustand UI 状态
-  electron/             # Electron main / preload / 开发启动器
-agent/
-  domain/               # 领域模型与契约
-  application/          # 用例编排
-  adapters/             # SQLite、LanceDB、文件、模型等外部适配
-  subagent/             # 子 Agent 定义与协作能力
-tests/                  # 单元、集成与评测
-docs/architecture/      # 架构与运维文档
+```mermaid
+flowchart LR
+  UI[React 工作台] --> API[FastAPI]
+  API --> APP[应用用例]
+  APP --> AGENT[Leader / Subagents]
+  APP --> RAG[LanceDB 混合检索]
+  APP --> DB[(SQLite)]
+  RAG --> DOC[解析、OCR、分块、Embedding]
+  AGENT --> SSE[持久运行事件]
+  SSE --> UI
 ```
 
-## 配置
+- Web：Vite、React、TypeScript、Tailwind、shadcn/ui、Radix、TanStack Query/Router、Zustand。
+- Backend：FastAPI；代码保持 `UI → application → domain` 分层。
+- Data：SQLite 保存项目与会话，LanceDB 保存向量索引，LangGraph checkpoint 保存 Agent 状态。
 
-复制 `.env.example` 为 `.env`，或在应用“设置”中保存用户级模型配置。密钥仅由后端读取，API 不会返回完整密钥。
+更多细节见：[Web 架构](docs/architecture/web-application.md)、[Agent 运行时](docs/architecture/agent-runtime.md)、[桌面端](docs/architecture/desktop-application.md)。
+
+## 文档与文件处理
+
+Office 文档会通过本机 Microsoft Office 或 LibreOffice 转为 PDF；随后由 PaddleOCR 保留页面、坐标和置信度。缺少转换器时，应用会在设置中给出安装指引。模型首次使用时下载到本地缓存，不塞进安装包。
+
+配置可放在 `.env`，也可在设置中保存用户级模型配置。请从 [.env.example](.env.example) 开始，绝不提交 API Key、签名证书或公证凭据。
+
+## 开发与贡献
 
 ```bash
-# OpenAI-compatible 模型服务
-OPENAI_COMPATIBLE_BASE_URL=https://your-provider.example/v1
-OPENAI_MODEL_NAME=your-model
-OPENAI_API_KEY=your-secret
-
-# 项目级 RAG：0 表示不限制资料规模
-AGENT_LANCEDB_DIR=./.cache/lancedb
-LOCAL_RAG_PROJECT_MAX_CHARS=0
-LOCAL_RAG_PROJECT_MAX_CHUNKS=0
-RAG_INDEX_BATCH_SIZE=256
-
-# 可选：PaddleOCR 模型缓存与 Office 转换器路径
-AGENT_OCR_CACHE_DIR=./.cache/paddleocr
-LIBREOFFICE_BIN=
-
-# 可选：Web 搜索与 Redis 队列
-BRAVE_SEARCH_API_KEY=
-REDIS_HOST=localhost
+make check          # 快速门禁
+make ci             # 完整离线 CI
+make test-unit      # Python 单测
+make web-test       # 前端测试
+make quality-full   # Python 与前端静态检查
 ```
 
-不要提交 `.env`、API Key、签名证书或 Apple notarization 凭据。完整配置项见 [.env.example](.env.example)。
+提交请使用 Conventional Commits：`feat:` 触发 minor，`fix:`（含安全修复）触发 patch，`!` 或 `BREAKING CHANGE:` 触发 major。`Prepare Release` 会自动生成并同步版本发布 PR；合并后在该提交打 `vX.Y.Z` tag，唯一的 Desktop Release 工作流会在所有三端构建通过后发布完整资产。
 
-Office 文档预览依赖本机 Microsoft Office 桌面版或 LibreOffice；缺少时，设置页会说明如何安装。历史资料需要在资料库中点击“重试”后才会生成可定位的页面预览。
-
-## 开发与质量门禁
-
-```bash
-make check             # 快速本地门禁：核心 lint/typecheck、Web 检查、单测
-make ci                # 完整离线 CI：锁文件、质量、前端测试/构建、全量测试
-make test-unit         # Python 单元测试
-make web-test          # Vitest 前端组件测试
-make quality-full      # Python + 前端 lint/typecheck
-make test-evals        # 离线 Agent 评测
-```
-
-变更请遵守 [AGENTS.md](AGENTS.md)：保持 `UI → application → domain` 的依赖方向，业务改动附带测试和文档，并避免把运行时编排或数据访问写入 UI。
-
-## 贡献
-
-提交前至少运行与改动范围对应的测试。Pull Request 请说明问题背景、变更范围、风险与回滚方式，并附上执行过的验证命令。详细工程约束与评审清单见 [AGENTS.md](AGENTS.md)。
+贡献前请阅读 [AGENTS.md](AGENTS.md)。PR 需要说明问题、改动范围、风险、回滚方式和验证命令。安全问题请遵循 [SECURITY.md](SECURITY.md) 进行私密报告。
 
 ## License
 
-本项目采用 [MIT License](LICENSE)。
+[MIT](LICENSE)
