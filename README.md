@@ -139,7 +139,7 @@ make web-test       # 前端测试
 make desktop-dev    # Electron 开发壳
 ```
 
-目录边界与质量要求见 [AGENTS.md](AGENTS.md)。提交使用 Conventional Commits：`feat:` 触发 minor，`fix:` 触发 patch，`!` 或 `BREAKING CHANGE:` 触发 major。Release Please 负责版本 PR；在仓库启用 Auto-merge 后，该版本 PR 会按规则自动合并，随后由 `vX.Y.Z` tag 触发统一的桌面端与 PyPI 发布流程。
+目录边界与质量要求见 [AGENTS.md](AGENTS.md)。提交使用 Conventional Commits：`feat:` 触发 minor，`fix:` 触发 patch，`!` 或 `BREAKING CHANGE:` 触发 major。Release Please 会持续汇总同一份版本 PR；发布列车在工作日北京时间 09:00 自动合并通过门禁的版本 PR、创建 `vX.Y.Z` tag，并启动统一的桌面端与 PyPI 发布流程。
 
 ## 贡献与安全
 

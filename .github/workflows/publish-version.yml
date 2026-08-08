@@ -1,0 +1,81 @@
+name: Publish Merged Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Optional existing or new vX.Y.Z tag; defaults to the target version
+        required: false
+        type: string
+      target_sha:
+        description: Commit the tag must identify; leave empty to use the tag target
+        required: false
+        type: string
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  tag-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target_sha || inputs.release_tag || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve and verify release identity
+        id: release
+        shell: bash
+        env:
+          REQUESTED_TAG: ${{ inputs.release_tag }}
+          REQUESTED_SHA: ${{ inputs.target_sha }}
+        run: |
+          python_version="$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")"
+          web_version="$(node -p "require('./web/package.json').version")"
+          tag="${REQUESTED_TAG:-v$python_version}"
+          target_sha="${REQUESTED_SHA:-$(git rev-parse HEAD)}"
+
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "release_tag must use vX.Y.Z: $tag" >&2
+            exit 1
+          fi
+          if [[ "$tag" != "v$python_version" || "$tag" != "v$web_version" ]]; then
+            echo "Tag $tag must match Python ($python_version) and web ($web_version) versions." >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "target_sha=$target_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Create or verify version tag
+        shell: bash
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          TARGET_SHA: ${{ steps.release.outputs.target_sha }}
+        run: |
+          existing_sha="$(git rev-parse -q --verify "refs/tags/$TAG^{}" || true)"
+          if [[ -n "$existing_sha" && "$existing_sha" != "$TARGET_SHA" ]]; then
+            echo "Existing tag $TAG points to $existing_sha, expected $TARGET_SHA." >&2
+            exit 1
+          fi
+          if [[ -z "$existing_sha" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" "$TARGET_SHA" -m "Release $TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Start canonical release workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          gh workflow run desktop-release.yml --ref "$TAG"
+          gh workflow run publish.yml --ref "$TAG"

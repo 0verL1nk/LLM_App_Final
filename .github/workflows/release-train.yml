@@ -1,0 +1,62 @@
+name: Release Train
+
+on:
+  schedule:
+    # 09:00 Asia/Shanghai on weekdays. Release Please batches changes between runs.
+    - cron: "0 1 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge-ready-version-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Find a ready Release Please PR
+        id: release-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          pr_json="$(gh pr list --base main --state open --label 'autorelease: pending' --json number,headRefName,mergeStateStatus --jq '.[0] // empty')"
+          if [[ -z "$pr_json" ]]; then
+            echo "No pending release PR."
+            exit 0
+          fi
+
+          branch="$(jq -r '.headRefName' <<< "$pr_json")"
+          state="$(jq -r '.mergeStateStatus' <<< "$pr_json")"
+          if [[ ! "$branch" =~ ^release-please--branches--main-- ]]; then
+            echo "Refusing non-Release-Please PR branch: $branch" >&2
+            exit 1
+          fi
+          if [[ "$state" != "CLEAN" ]]; then
+            echo "Release PR is not ready to merge: $state"
+            exit 0
+          fi
+
+          echo "number=$(jq -r '.number' <<< "$pr_json")" >> "$GITHUB_OUTPUT"
+
+      - name: Merge the ready version PR
+        id: merge
+        if: steps.release-pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.release-pr.outputs.number }}
+        shell: bash
+        run: |
+          gh pr merge "$PR_NUMBER" --merge
+          merge_sha="$(gh pr view "$PR_NUMBER" --json mergeCommit --jq '.mergeCommit.oid')"
+          echo "merge_sha=$merge_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Start the canonical publication flow
+        if: steps.merge.outputs.merge_sha != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
+        run: gh workflow run publish-version.yml --ref main -f target_sha="$MERGE_SHA"
