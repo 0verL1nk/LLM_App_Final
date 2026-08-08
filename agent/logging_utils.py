@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 LOG_CONTEXT_FIELDS = ("run_id", "uid", "project_uid", "doc_uid", "workflow", "session_id")
-APP_LOG_PREFIXES = ("llm_app", "agent", "main", "utils")
+APP_LOG_PREFIXES = ("llm_app", "agent", "api", "main", "utils")
 _LOG_CONTEXT: ContextVar[dict[str, str]] = ContextVar("agent_log_context", default={})
 _HANDLER_MARKER = "_llm_app_logging_handler"
 

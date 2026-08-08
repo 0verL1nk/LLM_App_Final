@@ -1,3 +1,4 @@
+import json
 import threading
 from collections.abc import Callable
 from typing import Any
@@ -143,6 +144,16 @@ class DynamicProjectEvidenceService:
             offset_end = (
                 start_index + len(text) if isinstance(start_index, int) else None
             )
+            page_no = row.get("page_no") if isinstance(row.get("page_no"), int) else None
+            locations: list[dict[str, Any]] = []
+            raw_locations = row.get("ocr_locations_json")
+            if isinstance(raw_locations, str):
+                try:
+                    decoded = json.loads(raw_locations)
+                except json.JSONDecodeError:
+                    decoded = []
+                if isinstance(decoded, list):
+                    locations = [item for item in decoded if isinstance(item, dict)]
             evidences.append(
                 {
                     "project_uid": self.project_uid,
@@ -152,13 +163,14 @@ class DynamicProjectEvidenceService:
                     "text": text,
                     "score": float(row.get("_relevance_score", 0.0) or 0.0),
                     "rank": rank + 1,
-                    "page_no": None,
+                    "page_no": page_no,
+                    "ocr_locations": locations,
                     "offset_start": offset_start,
                     "offset_end": offset_end,
                     "citation": (
-                        f"{chunk_id}|pnull|o{offset_start}-{offset_end}"
+                        f"{chunk_id}|p{page_no}|o{offset_start}-{offset_end}"
                         if offset_start is not None and offset_end is not None
-                        else f"{chunk_id}|pnull|onull-null"
+                        else f"{chunk_id}|p{page_no}|onull-null"
                     ),
                 }
             )

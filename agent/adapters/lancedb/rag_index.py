@@ -1,6 +1,7 @@
 """Versioned LanceDB storage for project RAG chunks."""
 
 import hashlib
+import json
 import os
 import threading
 from collections import defaultdict
@@ -36,6 +37,8 @@ def _schema(vector_size: int) -> pa.Schema:
             pa.field("index_version", pa.string(), nullable=False),
             pa.field("chunk_index", pa.int64(), nullable=False),
             pa.field("start_index", pa.int64()),
+            pa.field("page_no", pa.int64()),
+            pa.field("ocr_locations_json", pa.string()),
             pa.field("text", pa.string(), nullable=False),
             pa.field("vector", pa.list_(pa.float32(), vector_size), nullable=False),
         ]
@@ -137,6 +140,16 @@ def publish_document_index(
                     metadata.get("start_index")
                     if isinstance(metadata.get("start_index"), int)
                     else None
+                ),
+                "page_no": (
+                    metadata.get("page_no")
+                    if isinstance(metadata.get("page_no"), int)
+                    else None
+                ),
+                "ocr_locations_json": json.dumps(
+                    metadata.get("ocr_locations", []),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
                 ),
                 "text": text,
                 "vector": [float(value) for value in vector],

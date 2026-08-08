@@ -132,7 +132,7 @@ def test_enqueue_ingestion_keeps_ready_state_if_local_job_finishes_immediately(
     _init_project_binding(db_name)
     monkeypatch.setattr(
         "agent.application.rag_ingestion.extract_document_payload",
-        lambda _path, user_uuid=None, progress_callback=None: {
+        lambda _path, user_uuid=None, preview_dir=None, progress_callback=None: {
             "result": 1,
             "text": "extracted paper",
         },
@@ -226,6 +226,57 @@ def test_reindex_reuses_durable_extracted_text(monkeypatch, tmp_path) -> None:
     stored = get_document_text(doc_uid="d1", uuid="u1", db_name=db_name)
     assert status is not None and status["status"] == "ready"
     assert stored is not None and stored["text_content"] == "durable extracted text"
+
+
+def test_forced_reprocessing_refreshes_saved_text_and_locations(monkeypatch, tmp_path) -> None:
+    db_name = str(tmp_path / "rag.sqlite")
+    _init_project_binding(db_name)
+    save_document_text(
+        doc_uid="d1",
+        uuid="u1",
+        file_path="paper.pdf",
+        text_content="legacy text",
+        text_hash="legacy-hash",
+        db_name=db_name,
+    )
+    queue_ingestion(
+        project_uid="p1",
+        doc_uid="d1",
+        uuid="u1",
+        doc_name="paper.pdf",
+        file_path="paper.pdf",
+        db_name=db_name,
+    )
+    monkeypatch.setattr(
+        "agent.application.rag_ingestion.extract_document_payload",
+        lambda *_args, **_kwargs: {
+            "text": "fresh text",
+            "parser": "paddleocr-v6",
+            "source_spans": [{"start": 0, "end": 5, "page_no": 1, "polygon": []}],
+        },
+    )
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(
+        "agent.application.rag_ingestion.build_project_document_index_with_settings",
+        lambda **kwargs: captured.update(kwargs) or {
+            "index_version": "settings:fresh",
+            "chunk_count": 1,
+            "chunks": ["fresh text"],
+            "metadatas": [{}],
+            "embeddings": [[1.0]],
+        },
+    )
+    monkeypatch.setattr("agent.application.rag_ingestion.publish_document_index", lambda **_kwargs: 1)
+
+    from agent.application.rag_ingestion import process_document_ingestion
+
+    process_document_ingestion(
+        "p1", "d1", "u1", "paper.pdf", "paper.pdf", db_name, force_extraction=True
+    )
+
+    stored = get_document_text(doc_uid="d1", uuid="u1", db_name=db_name)
+    assert stored is not None and stored["text_content"] == "fresh text"
+    assert captured["source_spans"] == [{"start": 0, "end": 5, "page_no": 1, "polygon": []}]
 
 
 def test_dynamic_project_service_hot_reloads_published_manifest() -> None:

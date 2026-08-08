@@ -14,7 +14,10 @@ from ..adapters.sqlite.rag_ingestion_repository import get_ingestion
 from .rag_ingestion import enqueue_document_ingestion
 from .workspace import require_project
 
-ALLOWED_DOCUMENT_EXTENSIONS = {".txt", ".doc", ".docx", ".pdf"}
+ALLOWED_DOCUMENT_EXTENSIONS = {
+    ".txt", ".doc", ".docx", ".pdf", ".ppt", ".pptx", ".xls", ".xlsx",
+    ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff",
+}
 
 
 def upload_project_document(

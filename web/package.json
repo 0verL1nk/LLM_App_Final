@@ -1,7 +1,7 @@
 {
   "name": "papersage-web",
   "private": true,
-  "version": "1.1.12",
+  "version": "1.1.13",
   "description": "AI research workspace for scholarly reading and writing.",
   "author": "PaperSage Contributors",
   "homepage": "https://github.com/0verL1nk/PaperSage",
@@ -79,7 +79,7 @@
     "jsdom": "latest",
     "shadcn": "^4.13.1",
     "tailwindcss": "latest",
-    "typescript": "latest",
+    "typescript": "6.0.3",
     "typescript-eslint": "latest",
     "vite": "latest",
     "vitest": "latest"

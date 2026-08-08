@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from agent.application.research_workspace import research_workspace_service
+from agent.logging_utils import configure_application_logging
 
 from .routes import router
 
@@ -55,6 +56,10 @@ def spa_fallback(path: str) -> FileResponse:
 
 
 def run() -> None:
+    configure_application_logging(
+        debug_mode=os.getenv("PAPERSAGE_DESKTOP") == "1",
+        logger_name="api",
+    )
     uvicorn.run("api.main:app", host="127.0.0.1", port=int(os.getenv("PAPERSAGE_PORT", "8000")), reload=False)
 
 

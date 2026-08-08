@@ -5,6 +5,7 @@ import { api, consumeEventStream, upload } from "@/lib/api"
 import {
   agentEventSchema,
   documentSchema,
+  documentConversionSchema,
   messageSchema,
   projectSchema,
   runCreatedSchema,
@@ -66,6 +67,10 @@ export function useResumableRuns(projectId: string, sessionId: string) {
 
 export function useSettings() {
   return useQuery({ queryKey: keys.settings, queryFn: () => api("/settings", settingsSchema) })
+}
+
+export function useDocumentConversion() {
+  return useQuery({ queryKey: ["document-conversion"], queryFn: () => api("/document-conversion", documentConversionSchema) })
 }
 
 export function useCreateProject() {

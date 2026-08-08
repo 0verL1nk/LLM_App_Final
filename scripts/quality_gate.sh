@@ -2,8 +2,25 @@
 set -euo pipefail
 
 MODE="${1:-core}"
-UV="${UV_BIN:-uv}"
-UVX="${UVX_BIN:-uvx}"
+UV="${UV_BIN:-}"
+UVX="${UVX_BIN:-}"
+
+if [[ -z "${UV}" ]]; then
+  UV="$(command -v uv || true)"
+  if [[ -z "${UV}" && "$(uname -s)" =~ ^(MINGW|MSYS|CYGWIN) ]]; then
+    UV="$(command -v uv.exe || true)"
+  fi
+fi
+if [[ -z "${UVX}" ]]; then
+  UVX="$(command -v uvx || true)"
+  if [[ -z "${UVX}" && "$(uname -s)" =~ ^(MINGW|MSYS|CYGWIN) ]]; then
+    UVX="$(command -v uvx.exe || true)"
+  fi
+fi
+if [[ -z "${UV}" || -z "${UVX}" ]]; then
+  echo "uv and uvx must be available on PATH (or set UV_BIN and UVX_BIN)." >&2
+  exit 127
+fi
 
 case "${MODE}" in
   core)

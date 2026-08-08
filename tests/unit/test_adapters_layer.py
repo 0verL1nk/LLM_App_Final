@@ -74,47 +74,23 @@ def test_create_project_evidence_retriever_routes_single_or_multi(monkeypatch):
     )
 
 
-def test_extract_document_payload_delegates(monkeypatch):
-    monkeypatch.setattr("agent.adapters.document._extract_rtf_text", lambda _path: None)
+def test_extract_document_payload_delegates_to_local_paddle_ocr(monkeypatch):
     monkeypatch.setattr(
-        "agent.adapters.document.extract_files", lambda _path: {"result": 1, "text": "x"}
-    )
-    assert extract_document_payload("/tmp/a.pdf")["text"] == "x"
-
-
-def test_extract_document_payload_parses_rtf_disguised_as_doc(tmp_path):
-    document = tmp_path / "legacy.doc"
-    document.write_bytes(b"{\\rtf1\\ansi Hello \\b PaperSage\\b0\\par Second line}")
-
-    payload = extract_document_payload(str(document))
-
-    assert payload["parser"] == "striprtf"
-    assert "Hello PaperSage" in payload["text"]
-    assert "Second line" in payload["text"]
-
-
-def test_extract_document_payload_uses_vision_ocr_for_scanned_pdf(monkeypatch):
-    monkeypatch.setattr("agent.adapters.document._extract_rtf_text", lambda _path: None)
-    monkeypatch.setattr(
-        "agent.adapters.document.extract_files",
-        lambda _path: {"result": 1, "text": ""},
+        "agent.adapters.document.extract_document_with_paddle_ocr",
+            lambda _path, preview_dir, progress_callback: {
+            "text": "识别后的正文",
+            "parser": "paddleocr-v6",
+            "ocr_profile": "balanced",
+            "source_spans": [{"page_no": 1, "start": 0, "end": 6}],
+        },
     )
 
-    progress = []
-    monkeypatch.setattr(
-        "agent.adapters.document._extract_scanned_pdf_with_vision_model",
-        lambda _path, user_uuid, progress_callback: (progress_callback("ocr", 1, 1) or "识别后的正文"),
-    )
-
-    payload = extract_document_payload(
-        "/tmp/scanned.pdf",
-        user_uuid="u1",
-        progress_callback=lambda *items: progress.append(items),
-    )
+    payload = extract_document_payload("/tmp/paper.pdf", user_uuid="u1")
 
     assert payload["text"] == "识别后的正文"
-    assert payload["parser"] == "vision-ocr"
-    assert progress == [("ocr", 1, 1)]
+    assert payload["parser"] == "paddleocr-v6"
+    assert payload["ocr_profile"] == "balanced"
+    assert payload["source_spans"] == [{"page_no": 1, "start": 0, "end": 6}]
 
 
 def test_save_output_delegates(monkeypatch):

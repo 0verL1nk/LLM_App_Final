@@ -1,12 +1,14 @@
 import asyncio
 import json
 import logging
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
+from agent.adapters.paddle_ocr import document_conversion_capability
 from agent.adapters.sqlite.rag_ingestion_repository import (
     get_ingestion,
     list_project_ingestions,
@@ -65,6 +67,12 @@ def _not_found(exc: LookupError) -> HTTPException:
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@router.get("/document-conversion")
+def document_conversion(_user_uuid: UserId) -> dict[str, Any]:
+    """Expose local Office preview readiness without disclosing host paths."""
+    return {"data": document_conversion_capability()}
 
 
 @router.get("/projects")
@@ -159,6 +167,22 @@ def retry_document(project_uid: str, doc_uid: str, user_uuid: UserId) -> dict[st
         force=True,
     )
     return {"data": queued}
+
+
+@router.get("/projects/{project_uid}/documents/{doc_uid}/preview/{page_no}")
+def document_preview_page(project_uid: str, doc_uid: str, page_no: int, user_uuid: UserId) -> FileResponse:
+    """Serve only an owned document's OCR-rendered page image."""
+    if page_no < 1:
+        raise HTTPException(status_code=404, detail="Preview page not found")
+    documents = list_project_documents(project_uid=project_uid, user_uuid=user_uuid)
+    document = next((item for item in documents if str(item.get("uid")) == doc_uid), None)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    file_path = Path(str(document.get("file_path") or "")).resolve()
+    preview_path = file_path.parent / "previews" / doc_uid / f"page-{page_no:05d}.png"
+    if not preview_path.is_file():
+        raise HTTPException(status_code=404, detail="Preview is not ready; retry document processing")
+    return FileResponse(preview_path, media_type="image/png")
 
 
 @router.get("/projects/{project_uid}/sessions")
