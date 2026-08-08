@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.11] - 2026-08-08
+
+### Fixed
+- Updated Python and frontend dependencies to address reported security advisories and regenerated Python requirements from the canonical uv lockfile.
+- Made optional Claude-based PR review skip cleanly when repository credentials are unavailable, so Dependabot and forked PRs retain reliable quality gates.
+
 ## [1.1.10] - 2026-08-02
 
 ### Fixed
