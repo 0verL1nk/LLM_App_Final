@@ -15,7 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: googleapis/release-please-action@v4
+      - id: release
+        uses: googleapis/release-please-action@v4
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      - name: Queue version PR for automatic merge
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
+        run: |
+          pr_number="$(jq -r '.number' <<< "$RELEASE_PR")"
+          gh pr merge "$pr_number" --auto --merge
