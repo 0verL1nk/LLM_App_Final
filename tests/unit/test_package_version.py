@@ -5,6 +5,7 @@ import tomllib
 from pathlib import Path
 
 from agent import __version__
+from api.main import app
 
 
 def test_runtime_version_matches_package_metadata() -> None:
@@ -20,3 +21,7 @@ def test_runtime_version_matches_desktop_metadata() -> None:
     desktop_metadata = json.loads((project_root / "web/package.json").read_text(encoding="utf-8"))
 
     assert __version__ == desktop_metadata["version"]
+
+
+def test_api_version_matches_runtime_version() -> None:
+    assert app.version == __version__

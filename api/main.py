@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from agent import __version__
 from agent.application.research_workspace import research_workspace_service
 from agent.logging_utils import configure_application_logging
 
@@ -22,7 +23,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     research_workspace_service.close()
 
 
-app = FastAPI(title="PaperSage API", version="1.2.0", lifespan=lifespan)
+app = FastAPI(title="PaperSage API", version=__version__, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],

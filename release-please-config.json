@@ -11,6 +11,14 @@
           "type": "json",
           "path": "web/package.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "generic",
+          "path": "agent/__init__.py"
+        },
+        {
+          "type": "generic",
+          "path": "uv.lock"
         }
       ]
     }
