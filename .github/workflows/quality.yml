@@ -6,16 +6,19 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   quality-core:
     name: Lint & Typecheck (Core)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -26,20 +29,19 @@ jobs:
         run: bash scripts/quality_gate.sh core
 
   quality-full:
-    name: Lint & Typecheck (Full, Progressive)
+    name: Lint & Typecheck (Full)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
       - name: Install dependencies
         run: uv sync --extra dev --no-install-project
 
-      - name: Run full quality gate (non-blocking for now)
+      - name: Run full quality gate
         run: bash scripts/quality_gate.sh full

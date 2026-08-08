@@ -41,3 +41,17 @@ def test_document_preview_requires_a_positive_page(monkeypatch) -> None:
         document_preview_page("project-1", "doc-1", 0, "user-1")
 
     assert error.value.status_code == 404
+
+
+def test_document_preview_rejects_a_path_like_document_identifier(monkeypatch, tmp_path: Path) -> None:
+    source = tmp_path / "paper.pdf"
+    source.write_bytes(b"pdf")
+    monkeypatch.setattr(
+        "api.routes.list_project_documents",
+        lambda **_kwargs: [{"uid": "../other", "file_path": str(source)}],
+    )
+
+    with pytest.raises(HTTPException, match="Preview page not found") as error:
+        document_preview_page("project-1", "../other", 1, "user-1")
+
+    assert error.value.status_code == 404

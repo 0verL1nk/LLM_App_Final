@@ -1,2 +1,5 @@
 allowBuilds:
   electron-winstaller: false
+
+overrides:
+  "electron-updater>js-yaml": 4.3.1

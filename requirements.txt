@@ -49,10 +49,13 @@ beautifulsoup4==4.14.3
     # via
     #   markdownify
     #   markitdown
+    #   paddlex
 bracex==2.6
     # via wcmatch
 build==1.4.0
     # via chromadb
+cachetools==7.1.7
+    # via premailer
 certifi==2026.2.25
     # via
     #   httpcore
@@ -64,7 +67,9 @@ cffi==2.0.0
     #   argon2-cffi-bindings
     #   cryptography
 chardet==7.5.1
-    # via paddlex
+    # via
+    #   encutils
+    #   paddlex
 charset-normalizer==3.4.5
     # via
     #   markitdown
@@ -99,6 +104,10 @@ croniter==6.0.0
     # via rq
 cryptography==50.0.0
     # via google-auth
+cssselect==1.5.0
+    # via premailer
+cssutils==2.15.0
+    # via premailer
 dataclasses-json==0.6.7
     # via langchain-community
 deepagents==0.5.9
@@ -120,6 +129,12 @@ duckduckgo-search==6.3.7
     # via paper-sage
 durationpy==0.10
     # via kubernetes
+einops==0.8.2
+    # via paddlex
+encutils==1.0.0
+    # via cssutils
+et-xmlfile==2.0.0
+    # via openpyxl
 fastapi==0.135.1
     # via
     #   chromadb
@@ -144,6 +159,8 @@ frozenlist==1.8.0
     #   aiosignal
 fsspec==2026.2.0
     # via huggingface-hub
+ftfy==6.3.1
+    # via paddlex
 future==1.0.0
     # via bce-python-sdk
 google-auth==2.48.0
@@ -177,6 +194,7 @@ httpx==0.28.1
     #   langgraph-sdk
     #   langsmith
     #   openai
+    #   paddlepaddle
     #   paper-sage
 httpx-sse==0.4.3
     # via langchain-community
@@ -198,11 +216,15 @@ importlib-metadata==8.7.1
 importlib-resources==6.5.2
     # via chromadb
 jinja2==3.1.6
-    # via pyecharts
+    # via
+    #   paddlex
+    #   pyecharts
 jiter==0.13.0
     # via
     #   anthropic
     #   openai
+joblib==1.5.3
+    # via scikit-learn
 jsonpatch==1.33
     # via langchain-core
 jsonpointer==3.0.0
@@ -274,8 +296,14 @@ langsmith==0.10.5
     #   langchain-classic
     #   langchain-community
     #   langchain-core
+latex2mathml==3.81.0
+    # via paddlex
 loguru==0.7.3
     # via fastembed
+lxml==6.1.1
+    # via
+    #   paddlex
+    #   premailer
 magika==0.6.2
     # via markitdown
 markdown-it-py==4.0.0
@@ -298,6 +326,8 @@ modelscope==1.39.1
     # via paddlex
 modelscope-hub==0.2.0
     # via modelscope
+more-itertools==11.1.0
+    # via cssutils
 mpmath==1.3.0
     # via sympy
 multidict==6.7.1
@@ -306,6 +336,10 @@ multidict==6.7.1
     #   yarl
 mypy-extensions==1.1.0
     # via typing-inspect
+narwhals==2.24.0
+    # via scikit-learn
+networkx==3.6.1
+    # via paddlepaddle
 numpy==2.3.5
     # via
     #   chroma-hnswlib
@@ -318,9 +352,13 @@ numpy==2.3.5
     #   magika
     #   onnxruntime
     #   opencv-contrib-python
+    #   opt-einsum
+    #   paddlepaddle
     #   paddlex
     #   pandas
     #   paper-sage
+    #   scikit-learn
+    #   scipy
     #   shapely
 oauthlib==3.3.1
     # via requests-oauthlib
@@ -336,6 +374,8 @@ openai==2.26.0
     #   langchain-openai
     #   paper-sage
 opencv-contrib-python==4.10.0.84
+    # via paddlex
+openpyxl==3.1.5
     # via paddlex
 opentelemetry-api==1.40.0
     # via
@@ -376,6 +416,8 @@ opentelemetry-util-http==0.61b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+opt-einsum==3.3.0
+    # via paddlepaddle
 orjson==3.11.7
     # via
     #   chromadb
@@ -402,16 +444,23 @@ packaging==24.2
     #   paddlex
 paddleocr==3.7.0
     # via paper-sage
+paddlepaddle==3.3.1
+    # via paper-sage
 paddlex==3.7.2
-    # via paddleocr
+    # via
+    #   paddleocr
+    #   paper-sage
 pandas==3.0.5
     # via paddlex
 pillow==12.3.0
     # via
     #   fastembed
+    #   paddlepaddle
     #   paddlex
 posthog==7.9.7
     # via chromadb
+premailer==3.10.0
+    # via paddlex
 prettytable==3.17.0
     # via
     #   aistudio-sdk
@@ -428,6 +477,7 @@ protobuf==6.33.5
     #   googleapis-common-protos
     #   onnxruntime
     #   opentelemetry-proto
+    #   paddlepaddle
 psutil==7.2.2
     # via aistudio-sdk
 py-cpuinfo==9.0.0
@@ -472,7 +522,7 @@ pydantic-settings==2.14.2
     # via langchain-community
 pyecharts==2.0.9
     # via paper-sage
-pygments==2.19.2
+pygments==2.20.0
     # via rich
 pymupdf==1.27.1
     # via paper-sage
@@ -516,7 +566,9 @@ redis==7.2.1
     #   paper-sage
     #   rq
 regex==2026.2.28
-    # via tiktoken
+    # via
+    #   paddlex
+    #   tiktoken
 requests==2.33.0
     # via
     #   aistudio-sdk
@@ -534,6 +586,7 @@ requests==2.33.0
     #   paddleocr
     #   paddlex
     #   posthog
+    #   premailer
     #   requests-oauthlib
     #   requests-toolbelt
     #   tiktoken
@@ -551,8 +604,26 @@ rsa==4.9.1
     # via google-auth
 ruamel-yaml==0.19.1
     # via paddlex
+safetensors==0.8.0
+    # via
+    #   paddlepaddle
+    #   paddlex
+scikit-learn==1.9.0
+    # via paddlex
+scipy==1.17.1 ; python_full_version < '3.12'
+    # via
+    #   paddlex
+    #   scikit-learn
+scipy==1.18.0 ; python_full_version >= '3.12'
+    # via
+    #   paddlex
+    #   scikit-learn
+sentencepiece==0.2.2
+    # via paddlex
 setuptools==83.0.0
-    # via modelscope
+    # via
+    #   modelscope
+    #   paddlepaddle
 shapely==2.1.2
     # via paddlex
 shellingham==1.5.4
@@ -592,13 +663,18 @@ tenacity==9.1.4
     #   google-genai
     #   langchain-community
     #   langchain-core
+threadpoolctl==3.6.0
+    # via scikit-learn
 tiktoken==0.12.0
-    # via langchain-openai
+    # via
+    #   langchain-openai
+    #   paddlex
 tokenizers==0.22.2
     # via
     #   chromadb
     #   fastembed
     #   flashrank
+    #   paddlex
 tqdm==4.67.3
     # via
     #   aistudio-sdk
@@ -636,6 +712,7 @@ typing-extensions==4.15.0
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
     #   paddleocr
+    #   paddlepaddle
     #   paddlex
     #   paper-sage
     #   posthog
@@ -679,7 +756,9 @@ watchfiles==1.1.1
 wcmatch==10.1
     # via deepagents
 wcwidth==0.6.0
-    # via prettytable
+    # via
+    #   ftfy
+    #   prettytable
 websocket-client==1.9.0
     # via kubernetes
 websockets==15.0.1

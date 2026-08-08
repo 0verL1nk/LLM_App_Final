@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
@@ -11,13 +13,19 @@ def _get_model_max_input_tokens(model_name: str) -> int:
 
 
 def _provider_supports_reasoning_effort(base_url: str) -> bool:
-    normalized = base_url.lower()
-    return "api.openai.com" in normalized
+    return _provider_host(base_url) == "api.openai.com"
 
 
 def _provider_supports_enable_thinking_flag(base_url: str) -> bool:
-    normalized = base_url.lower()
-    return "dashscope.aliyuncs.com" in normalized
+    return _provider_host(base_url) == "dashscope.aliyuncs.com"
+
+
+def _provider_host(base_url: str) -> str:
+    """Return a normalized provider hostname without trusting URL substrings."""
+    try:
+        return (urlsplit(base_url).hostname or "").lower().rstrip(".")
+    except ValueError:
+        return ""
 
 
 def build_openai_compatible_chat_model(
