@@ -30,6 +30,28 @@ PaperSage 把资料库、研究会话和引用证据放在同一个项目里。�
 | 研究可以延续 | 项目保存会话、分支、资料范围和长期记忆；运行事件与流式回复支持离开后重新进入。 |
 | 复杂任务有分工 | Leader 仅在当前请求内调用 researcher、reviewer、writer 等子代理；它们不是脱离当前会话的后台任务。 |
 
+## 核心能力
+
+- **项目式研究空间**：一个项目拥有自己的资料库、主会话、探索分支、检索范围与记忆，避免不同课题混入同一上下文。
+- **多格式资料库**：支持 PDF、DOCX、PPTX、XLSX、图片与 TXT。处理状态从排队到发布可见，失败资料可重试。
+- **混合 RAG 与证据预览**：Dense 向量、全文检索和 RRF 共同召回；回答只引用实际采用的证据，点击后可查看原文页面与 OCR 高亮位置。
+- **研究协作而非黑盒进度**：Leader 根据问题调用研究、审阅和写作角色；界面展示实际的工具、委派与资料状态，而不是虚构的“思考过程”。
+- **可恢复的研究过程**：SQLite 保存项目、消息、资料状态和运行事件；流式会话在重进页面后可恢复显示，长期记忆在对话结束后异步整理。
+- **桌面与浏览器共用界面**：Vite/React 前端同时服务 Web 和 Electron；桌面端增加本地文件、更新、窗口控制和诊断日志。
+
+## Agent 设计：让协作可验证
+
+PaperSage 的 Agent 设计重点不是堆叠角色，而是让一次研究任务的边界清楚、证据可追溯、状态可恢复：
+
+| 设计 | 对用户的意义 |
+| --- | --- |
+| **受约束的任务委派** | Leader 使用统一的 `task` 能力调用 researcher、reviewer、writer。角色定义在启动时校验；子代理不能递归委派，避免任务树失控。相同角色可以被多次调用，独立任务可在当前请求内并行。 |
+| **委派与证据绑定** | 每项委派都有开始、完成、实际耗时和关联证据。最终回答只展示真实发生的检索、工具调用和引用，不把执行日志伪装成模型思维链。 |
+| **动态资料范围** | 文档只有在 OCR、分块和索引完整发布后才进入检索；每次工具调用都会读取最新可用资料清单，既不会引用半成品，也不用重建会话。 |
+| **两层记忆** | 当前会话由 Agent 的消息压缩维持上下文；长期记忆在每轮后异步由模型进行结构化增删改，再用语义检索取回。它不依赖关键词规则或固定摘要模板。 |
+| **持久运行与重连** | 运行事件、消息和 Agent checkpoint 分别持久化。用户离开后重新进入会话，前端可以恢复已发生的过程和持续中的流式结果。 |
+| **受验证的生成式界面** | 思维导图等 A2UI 产物经过受限 schema 验证后才渲染，模型不能任意注入前端组件或执行代码。 |
+
 ## 30 秒开始
 
 ### 使用桌面版
@@ -78,7 +100,7 @@ paper-sage
 
 从 [.env.example](.env.example) 复制配置模板。不要提交 API Key、签名证书或其他凭据。
 
-## 工作方式
+## 处理链路
 
 ```mermaid
 flowchart LR
@@ -90,6 +112,22 @@ flowchart LR
 ```
 
 前端使用 Vite、React、TypeScript、Tailwind、shadcn/ui、Radix 和 TanStack；FastAPI 提供 API 边界。SQLite 保存项目与会话，LanceDB 保存项目级索引，Agent 状态和运行事件用于恢复研究过程。详见：[Web 架构](docs/architecture/web-application.md)、[Agent 运行时](docs/architecture/agent-runtime.md)、[桌面端](docs/architecture/desktop-application.md)。
+
+## 系统架构
+
+```mermaid
+flowchart LR
+  UI[React 工作台] --> API[FastAPI API]
+  API --> APP[应用用例]
+  APP --> AGENT[Leader 与子代理]
+  APP --> RAG[LanceDB 混合检索]
+  APP --> DB[(SQLite)]
+  DOC[转换、OCR、分块、Embedding] --> RAG
+  AGENT --> EVENTS[持久运行事件 / SSE]
+  EVENTS --> UI
+```
+
+依赖方向保持 `UI → application → domain`：界面只处理交互与状态展示；用例层编排研究和资料处理；adapter 层接入模型、文件、SQLite、LanceDB 与外部服务。桌面端仅在共享 Web 应用外增加受限的 Electron 桥接，不把桌面逻辑混入业务用例。
 
 ## 开发
 
