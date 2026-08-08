@@ -39,7 +39,7 @@
     "class-variance-authority": "latest",
     "clsx": "latest",
     "cmdk": "^1.1.1",
-    "electron-updater": "6.8.5",
+    "electron-updater": "6.8.9",
     "embla-carousel-react": "^8.6.0",
     "katex": "^0.18.1",
     "lucide-react": "latest",
