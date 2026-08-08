@@ -10,7 +10,7 @@ Desktop packages are produced only on their native operating systems:
 
 All packages use `web/build/icon.svg` as their source icon. Electron Builder converts it to the required native formats at build time; do not maintain separate hand-drawn copies.
 
-The `Desktop Release` workflow validates that a `vX.Y.Z` tag matches both `pyproject.toml` and `web/package.json`, packages the FastAPI service natively on each runner, then attaches artifacts to the GitHub Release. Release tags must point to a reviewed commit.
+The `Desktop Release` workflow validates that a `vX.Y.Z` tag matches both `pyproject.toml` and `web/package.json`, packages the FastAPI service natively on each runner, builds the Python wheel and sdist, then attaches all assets to the GitHub Release. It is the only workflow allowed to create a GitHub Release, and it runs only after every native package job succeeds. Release tags must point to a reviewed commit.
 
 Unsigned builds remain useful for internal testing but will trigger platform trust warnings. Every public GitHub Release additionally receives a free GitHub OIDC/Sigstore provenance attestation and a `SHA256SUMS.txt` manifest. Consumers can verify a downloaded installer with:
 

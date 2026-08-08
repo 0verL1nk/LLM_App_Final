@@ -6,15 +6,15 @@ on:
       - "v*"
 
 permissions:
-  contents: write   # Required for creating GitHub Releases
-  id-token: write   # Required for PyPI trusted publishing
+  contents: read
+  id-token: write
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -28,8 +28,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -66,24 +66,3 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         # Uses trusted publishing — no API token needed.
         # Configure at https://pypi.org/manage/project/paper-sage/settings/publishing/
-
-  release:
-    needs: [build, publish]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download dist artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "${{ github.ref_name }}"
-          files: dist/*
-          generate_release_notes: true

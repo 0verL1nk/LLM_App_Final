@@ -83,7 +83,7 @@ make desktop-package-mac    # 仅 macOS 上执行，生成 DMG
 make desktop-package-linux  # 仅 Linux 上执行，生成 AppImage 与 deb
 ```
 
-发布 `vX.Y.Z` tag 时，GitHub Actions 会在 Windows、macOS、Linux 原生 runner 上构建安装包、生成 SHA-256 清单，并为公开 Release 生成 GitHub/Sigstore 构建证明。版本号必须同时匹配 `pyproject.toml` 与 `web/package.json`。具体的签名、公证和验证操作见[桌面发布运维说明](docs/architecture/desktop-release.md)。
+发布 `vX.Y.Z` tag 时，GitHub Actions 会在 Windows、macOS、Linux 原生 runner 上构建安装包、构建 Python wheel/sdist，并在所有桌面构建成功后由单一工作流一次性创建 GitHub Release 与 SHA-256 清单。版本号必须同时匹配 `pyproject.toml` 与 `web/package.json`。具体的签名、公证和验证操作见[桌面发布运维说明](docs/architecture/desktop-release.md)。
 
 ## 项目结构
 
