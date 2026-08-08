@@ -164,7 +164,7 @@ huggingface-hub==1.6.0
     # via
     #   fastembed
     #   tokenizers
-idna==3.11
+idna==3.15
     # via
     #   anyio
     #   httpx
@@ -239,7 +239,7 @@ langgraph-checkpoint==4.1.1
     #   langgraph
     #   langgraph-checkpoint-sqlite
     #   langgraph-prebuilt
-langgraph-checkpoint-sqlite==3.0.3
+langgraph-checkpoint-sqlite==3.1.1
     # via paper-sage
 langgraph-prebuilt==1.1.0
     # via langgraph
