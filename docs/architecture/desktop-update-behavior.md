@@ -15,3 +15,8 @@ dedicated R2 bucket `overlink-papersage-desktop-updates-prod`. The Desktop
 Release workflow uploads only updater metadata, platform update packages, and
 their blockmaps to that bucket. Metadata is `no-store`; versioned packages are
 immutable and use multiple HTTP range requests for differential updates.
+
+The release workflow uses R2's S3-compatible multipart API because desktop
+installers exceed Wrangler's 300 MiB single-upload limit. It requires the
+repository secrets `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, created with
+object read/write access limited to that update bucket.
