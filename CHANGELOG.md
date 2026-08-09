@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.1](https://github.com/0verL1nk/PaperSage/compare/v1.3.0...v1.3.1) (2026-08-09)
+
+
+### Bug Fixes
+
+* grant release label permission ([3821db1](https://github.com/0verL1nk/PaperSage/commit/3821db10aa55c383240796989c5243c573ed170f))
+* grant release label permission ([26a79f4](https://github.com/0verL1nk/PaperSage/commit/26a79f4da82f2fcd6fd280506b77011d88a5c0f3))
+* preserve dependency lock versions ([bcd2095](https://github.com/0verL1nk/PaperSage/commit/bcd209540c2e1a24cb3184f4ee17e432e465fb9b))
+* refresh project lock metadata ([8f6f7b5](https://github.com/0verL1nk/PaperSage/commit/8f6f7b55ac55c0f5b0f1fbabd1d0ef40fb777df9))
+
 ## [1.3.0](https://github.com/0verL1nk/PaperSage/compare/v1.2.0...v1.3.0) (2026-08-09)
 
 
