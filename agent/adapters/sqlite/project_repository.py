@@ -4,8 +4,9 @@ import sqlite3
 import uuid as uuid_lib
 from typing import Any
 
-from .document_repository import init_document_table
 from utils.schemas import FileRecord
+
+from .document_repository import init_document_table
 
 
 def _now_str() -> str:
