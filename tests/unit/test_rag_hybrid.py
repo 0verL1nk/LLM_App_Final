@@ -19,6 +19,24 @@ from agent.rag.hybrid import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _replace_embedding_downloads(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep retrieval unit tests deterministic and independent of model hosting."""
+    from agent.rag import hybrid as hybrid_module
+
+    class _FakeEmbeddings:
+        def __init__(self, **_kwargs: object) -> None:
+            pass
+
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            return [[float(len(text))] * 384 for text in texts]
+
+        def embed_query(self, query: str) -> list[float]:
+            return [float(len(query))] * 384
+
+    monkeypatch.setattr(hybrid_module, "FastEmbedEmbeddings", _FakeEmbeddings)
+
+
 class TestReciprocalRankFusion:
     """测试 RRF 融合"""
 
@@ -125,7 +143,6 @@ class TestHybridRetriever:
         """测试邻域扩展"""
         chunks = ["chunk0", "chunk1", "chunk2", "chunk3", "chunk4"]
 
-        # 使用本地 embedding 模型进行测试（使用最小的）
         retriever = HybridRetriever(
             chunks=chunks,
             embedding_model="BAAI/bge-small-en-v1.5",

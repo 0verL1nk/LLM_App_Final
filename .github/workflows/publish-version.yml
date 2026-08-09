@@ -15,6 +15,7 @@ on:
 permissions:
   actions: write
   contents: write
+  issues: write
 
 jobs:
   tag-and-publish:
