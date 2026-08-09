@@ -59,4 +59,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
-        run: gh workflow run publish-version.yml --ref main -f target_sha="$MERGE_SHA"
+          RELEASE_PR: ${{ steps.release-pr.outputs.number }}
+        run: gh workflow run publish-version.yml --ref main -f target_sha="$MERGE_SHA" -f release_pr="$RELEASE_PR"
