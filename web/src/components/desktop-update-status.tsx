@@ -1,0 +1,46 @@
+import { useEffect } from "react"
+import { toast } from "sonner"
+
+import { desktopWindowControls } from "@/lib/platform"
+import { useUiStore } from "@/stores/ui-store"
+
+function formatBytes(value?: number): string {
+  if (!value) return ""
+  const units = ["B", "KB", "MB", "GB"]
+  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1)
+  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`
+}
+
+export function DesktopUpdateStatusListener(): null {
+  const desktop = desktopWindowControls()
+  const setDesktopUpdate = useUiStore((state) => state.setDesktopUpdate)
+
+  useEffect(() => {
+    if (!desktop) return
+    return desktop.onUpdateStatus((status) => {
+      if (status.status === "downloading") {
+        setDesktopUpdate({ phase: "downloading", version: status.version, percent: 0 })
+        toast.loading("正在下载更新", { id: "desktop-update", description: "下载期间可以继续使用 PaperSage。" })
+        return
+      }
+      if (status.status === "progress") {
+        const percent = Math.round(status.percent ?? 0)
+        const detail = status.total
+          ? `已完成 ${percent}% · ${formatBytes(status.transferred)} / ${formatBytes(status.total)}`
+          : `已完成 ${percent}%`
+        setDesktopUpdate({ phase: "downloading", ...status, percent })
+        toast.loading("正在下载更新", { id: "desktop-update", description: detail })
+        return
+      }
+      if (status.status === "ready") {
+        setDesktopUpdate({ phase: "ready" })
+        toast.success("更新已下载完成", { id: "desktop-update", description: "现在重启，或在下次退出时自动完成更新。" })
+        return
+      }
+      setDesktopUpdate({ phase: "failed" })
+      toast.error("下载未完成", { id: "desktop-update", description: "请检查网络后再试一次。" })
+    })
+  }, [desktop, setDesktopUpdate])
+
+  return null
+}

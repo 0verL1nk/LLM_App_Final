@@ -2,7 +2,7 @@ export interface DesktopWindowControls {
   minimize: () => Promise<void>
   toggleMaximize: () => Promise<boolean>
   close: () => Promise<void>
-  checkForUpdates: () => Promise<{ supported: boolean; status: "unsupported" | "up-to-date" | "available" | "failed"; version?: string }>
+  checkForUpdates: () => Promise<{ supported: boolean; status: "unsupported" | "up-to-date" | "available" | "failed"; version?: string; reason?: "development" | "system-managed" | "unavailable" }>
   openLogs: () => Promise<string>
   onUpdateStatus: (listener: (status: DesktopUpdateStatus) => void) => () => void
 }
@@ -11,6 +11,9 @@ export interface DesktopUpdateStatus {
   status: "downloading" | "progress" | "ready" | "failed"
   version?: string
   percent?: number
+  transferred?: number
+  total?: number
+  bytesPerSecond?: number
 }
 
 declare global {

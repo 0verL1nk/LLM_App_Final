@@ -4,6 +4,7 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { Toaster } from "@/components/ui/sonner"
+import { DesktopUpdateStatusListener } from "@/components/desktop-update-status"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { router } from "@/router"
 
@@ -21,6 +22,7 @@ createRoot(document.getElementById("app")!).render(
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <RouterProvider router={router} />
+        <DesktopUpdateStatusListener />
         <Toaster richColors position="bottom-right" />
       </TooltipProvider>
     </QueryClientProvider>

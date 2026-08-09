@@ -1,6 +1,6 @@
 # Desktop application boundary
 
-PaperSage has one product UI: `web/src/` is the shared Vite/React application for browsers and Electron. Pages, routes, TanStack Query hooks, schemas and the HTTP API must remain platform-neutral.
+PaperSage has one product UI: `web/src/` is the shared Vite/React application for browsers and Electron. Pages, routes, TanStack Query hooks, schemas and the HTTP API must remain platform-neutral. The desktop shell adds a system tray: closing its window keeps the local service available, while the tray menu's explicit quit action closes the application.
 
 Electron is intentionally limited to `web/electron/`:
 
@@ -12,7 +12,7 @@ Electron is intentionally limited to `web/electron/`:
 
 In Electron, the app shell owns the viewport: the document itself never scrolls, while the central content region provides the single application scroller. Native overflow inside sheets and code blocks uses the same thin themed scrollbar; persistent navigation panes continue to use Radix `ScrollArea`.
 
-Packaged desktop clients use `electron-updater` with the public GitHub Release provider. The updater reads Builder-generated `latest.yml` metadata, prompts before downloading, and asks before restart/install. NSIS on Windows and AppImage on Linux are supported; DEB is intentionally updated by the operating system package manager. macOS auto-update additionally requires a signed release; release CI emits both DMG and ZIP because the ZIP is required for macOS update metadata.
+Packaged desktop clients use `electron-updater` with the public GitHub Release provider. The updater reads Builder-generated `latest.yml` metadata, prompts before downloading, reports byte and percentage progress globally and in Settings, and asks before restart/install. NSIS on Windows and AppImage on Linux are supported; DEB is intentionally updated by the operating system package manager. Development or portable runs explicitly say that no release update channel is configured - they must never be mislabeled as a software-store installation. macOS auto-update additionally requires a signed release; release CI emits both DMG and ZIP because the ZIP is required for macOS update metadata.
 
 The desktop backend uses local PaddleOCR for document ingestion. PDF pages are rendered with PyMuPDF, images are preserved as pages, and TXT is typeset into pages. Word, Excel, and PowerPoint files are first converted to PDF with an installed Microsoft Office desktop application; LibreOffice is the portable fallback. Models are downloaded on first use into `AGENT_OCR_CACHE_DIR` (or the app cache) rather than embedded in every installer. The runtime selects PP-OCRv6 tiny, small, or medium from the available ONNX Runtime provider, RAM, and CPU capacity; every OCR span retains its page, polygon, and confidence for evidence localization.
 

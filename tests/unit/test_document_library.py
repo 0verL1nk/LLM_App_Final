@@ -56,3 +56,17 @@ def test_upload_project_document_rejects_unsupported_extension(tmp_path: Path) -
         assert "Unsupported" in str(exc)
     else:
         raise AssertionError("unsupported upload was accepted")
+
+
+def test_list_project_files_initializes_missing_document_table(tmp_path: Path) -> None:
+    """A queued turn may run before this legacy database has any documents."""
+    db_name = str(tmp_path / "legacy-projects-only.sqlite")
+    project = create_project(uuid="u1", project_name="Research", db_name=db_name)
+
+    documents = list_project_files(
+        project_uid=str(project["project_uid"]),
+        uuid="u1",
+        db_name=db_name,
+    )
+
+    assert documents == []

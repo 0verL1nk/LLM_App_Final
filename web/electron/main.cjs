@@ -1,14 +1,17 @@
-const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron")
+const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell, Tray } = require("electron")
 const { autoUpdater } = require("electron-updater")
 const { spawn } = require("node:child_process")
 const net = require("node:net")
 const path = require("node:path")
 const fs = require("node:fs")
 const { createUpdateService } = require("./updater.cjs")
+const { createTrayService } = require("./tray.cjs")
 
 const apiPort = Number(process.env.PAPERSAGE_DESKTOP_PORT || 18765)
 let backend
 let logDirectory
+let mainWindow
+let trayService
 
 function getLogDirectory() {
   if (logDirectory) return logDirectory
@@ -120,6 +123,13 @@ async function createWindow() {
     titleBarStyle: "hidden",
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false },
   })
+  mainWindow = window
+  window.on("close", (event) => {
+    if (trayService && !trayService.isQuitting()) {
+      event.preventDefault()
+      window.hide()
+    }
+  })
   window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
     if (level >= 2) writeDesktopLog("renderer.log", `${sourceId}:${line} | ${message}`)
   })
@@ -130,6 +140,13 @@ async function createWindow() {
   const frontendPort = Number(process.env.PAPERSAGE_ELECTRON_DEV ? 5173 : apiPort)
   await waitForPort(frontendPort)
   await window.loadURL(`http://127.0.0.1:${frontendPort}`)
+}
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
 }
 
 ipcMain.handle("window:minimize", (event) => BrowserWindow.fromWebContents(event.sender)?.minimize())
@@ -148,6 +165,14 @@ process.on("uncaughtException", (error) => reportMainError("桌面应用发生�
 process.on("unhandledRejection", (reason) => reportMainError("桌面应用发生未处理异常", reason))
 
 app.whenReady().then(async () => {
+  trayService = createTrayService({
+    Tray,
+    Menu,
+    nativeImage,
+    app,
+    iconPath: path.join(__dirname, "tray-icon.svg"),
+    showWindow: showMainWindow,
+  })
   await createWindow()
   updates.scheduleCheck()
 }).catch((error) => {
@@ -155,5 +180,9 @@ app.whenReady().then(async () => {
   dialog.showErrorBox("PaperSage 无法启动", "应用启动失败。请在安装目录的 logs 文件夹中查看 main.log。")
   app.quit()
 })
-app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit() })
-app.on("before-quit", () => { if (backend && !backend.killed) backend.kill() })
+app.on("window-all-closed", () => { if (process.platform !== "darwin" && (!trayService || trayService.isQuitting())) app.quit() })
+app.on("activate", showMainWindow)
+app.on("before-quit", () => {
+  trayService?.beginQuit()
+  if (backend && !backend.killed) backend.kill()
+})

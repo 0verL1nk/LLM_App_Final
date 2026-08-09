@@ -4,6 +4,7 @@ import sqlite3
 import uuid as uuid_lib
 from typing import Any
 
+from .document_repository import init_document_table
 from utils.schemas import FileRecord
 
 
@@ -25,6 +26,11 @@ def _files_table_columns(db_name: str) -> set[str]:
 
 
 def ensure_files_table_columns(db_name: str = "./database.sqlite") -> None:
+    # Project reads can be issued by a queued research run before a document
+    # upload has initialized the library schema.  Establish the owning table
+    # first so an upgraded or partially initialized local database remains
+    # readable.
+    init_document_table(db_name)
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(files)")
