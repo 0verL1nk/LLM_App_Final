@@ -356,10 +356,19 @@ def execute_research_run(
     a2ui_surface = result.get("a2ui_surface") if isinstance(result, dict) else None
     if isinstance(a2ui_surface, dict):
         messages = a2ui_surface.get("messages")
+        surface_metadata = {
+            "catalogId": a2ui_surface.get("catalogId"),
+            "surfaceId": a2ui_surface.get("surfaceId"),
+            "title": a2ui_surface.get("title"),
+        }
         if isinstance(messages, list):
             for envelope in messages:
                 if isinstance(envelope, dict):
-                    append_run_event(run_uid=run_uid, event_type="ui.a2ui", payload={"envelope": envelope})
+                    append_run_event(
+                        run_uid=run_uid,
+                        event_type="ui.a2ui",
+                        payload={"envelope": envelope, "surface": surface_metadata},
+                    )
     update_run_status(run_uid=run_uid, status="completed")
     append_run_event(
         run_uid=run_uid,

@@ -10,6 +10,12 @@ export type A2UISurface = {
   title?: string
 }
 
+export type A2UISurfaceMetadata = {
+  catalogId?: unknown
+  surfaceId?: unknown
+  title?: unknown
+}
+
 function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
 }
@@ -61,14 +67,25 @@ export function applyA2UIEnvelope(surface: A2UISurface | null, value: unknown): 
   return remove?.surfaceId === surface.surfaceId ? null : surface
 }
 
+export function applyA2UISurfaceMetadata(
+  surface: A2UISurface | null,
+  metadata: A2UISurfaceMetadata | null | undefined,
+): A2UISurface | null {
+  if (!surface || !metadata) return surface
+  const title = typeof metadata.title === "string" ? metadata.title.trim() : ""
+  return metadata.catalogId === surface.catalogId && metadata.surfaceId === surface.surfaceId && title
+    ? { ...surface, title }
+    : surface
+}
+
 export function surfaceFromPersisted(value: Record<string, unknown> | null | undefined): A2UISurface | null {
   if (!value) return null
+  const title = typeof value.title === "string" ? value.title.trim() : ""
   const messages = Array.isArray(value.messages) ? value.messages : []
   const replayed = messages.reduce<A2UISurface | null>((surface, envelope) => applyA2UIEnvelope(surface, envelope), null)
-  if (replayed?.mindmap) return replayed
+  if (replayed?.mindmap) return title ? { ...replayed, title } : replayed
   const surfaceId = typeof value.surfaceId === "string" ? value.surfaceId : ""
   const mindmap = parseNode(value.mindmap)
-  const title = typeof value.title === "string" ? value.title.trim() : ""
   return surfaceId && value.catalogId === MINDMAP_CATALOG_ID && mindmap
     ? { surfaceId, catalogId: MINDMAP_CATALOG_ID, hasMindmapComponent: true, mindmap, title }
     : null
