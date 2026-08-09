@@ -183,7 +183,10 @@ jobs:
       - name: Publish updater assets to Cloudflare R2
         shell: pwsh
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://5bf0e92040869b5b56123207a122dc6d.r2.cloudflarestorage.com
           UPDATE_BUCKET: overlink-papersage-desktop-updates-prod
         run: |
           $metadataFiles = @("latest.yml", "latest-mac.yml", "latest-linux.yml")
@@ -201,5 +204,8 @@ jobs:
             $localPath = Join-Path "release-assets" $file
             if (-not (Test-Path $localPath)) { throw "Missing updater asset: $file" }
             $cacheControl = if ($file -like "latest*.yml") { "no-store" } else { "public, max-age=31536000, immutable" }
-            pnpm dlx wrangler r2 object put "$env:UPDATE_BUCKET/$file" --file $localPath --remote --cache-control $cacheControl
+            aws s3 cp $localPath "s3://$env:UPDATE_BUCKET/$file" `
+              --endpoint-url $env:R2_ENDPOINT `
+              --cache-control $cacheControl `
+              --only-show-errors
           }
