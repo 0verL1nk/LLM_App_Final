@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0](https://github.com/0verL1nk/PaperSage/compare/v1.2.0...v1.3.0) (2026-08-09)
+
+
+### Features
+
+* make research surfaces complement answers ([#67](https://github.com/0verL1nk/PaperSage/issues/67)) ([d8dc12d](https://github.com/0verL1nk/PaperSage/commit/d8dc12d1c1e22fd771aef5017d58930814f01557))
+* replay research surfaces by identity ([#68](https://github.com/0verL1nk/PaperSage/issues/68)) ([bf304fc](https://github.com/0verL1nk/PaperSage/commit/bf304fc115523c4265c8a10dbcffc3cf27a83138))
+* stream inline research surfaces ([b6447e7](https://github.com/0verL1nk/PaperSage/commit/b6447e77f8b88dcebecc7d76383e8442cafdef04))
+* stream inline research surfaces ([4181f87](https://github.com/0verL1nk/PaperSage/commit/4181f87b233be83a139f1c449dce7760583f6e65))
+
+
+### Bug Fixes
+
+* allow manual PyPI publication ([62304a7](https://github.com/0verL1nk/PaperSage/commit/62304a7bddf3b219ae207e8c053ecfb2fe7fbe81))
+* allow manual PyPI publication ([674367c](https://github.com/0verL1nk/PaperSage/commit/674367c0e108858747b201cdbe78e4b6b7d04cd6))
+* close release train state ([0d13cee](https://github.com/0verL1nk/PaperSage/commit/0d13ceea284d1f53d30d12674703f3265400b0ee))
+* close release train state ([31bb64b](https://github.com/0verL1nk/PaperSage/commit/31bb64bbf0e1f7fdbfe44fa052881de4f09b1e3c))
+* discover unprefixed release tags ([14e33cc](https://github.com/0verL1nk/PaperSage/commit/14e33ccb18b17ee44ecc27d21b608eb93419fa89))
+* discover unprefixed release tags ([e6166b7](https://github.com/0verL1nk/PaperSage/commit/e6166b7aed76b7001e1dc10c896dd5268d9170f7))
+* synchronize runtime version during releases ([59eed79](https://github.com/0verL1nk/PaperSage/commit/59eed79cd711148c0ed946f39a9deeaaf8e44c79))
+
+
+### Documentation
+
+* clarify product workflow and local setup ([68811c7](https://github.com/0verL1nk/PaperSage/commit/68811c770eaa741934f8e00abd2902c286be2e6f))
+* explain verifiable agent design ([572c983](https://github.com/0verL1nk/PaperSage/commit/572c983638e25742003629faad7d4de101d9c03b))
+* specify natural A2UI output contract ([248ae70](https://github.com/0verL1nk/PaperSage/commit/248ae703ef5b2af9fdedda4fdfa7e4e7b1a3dc1e))
+
 ## [1.2.0](https://github.com/0verL1nk/PaperSage/compare/paper-sage-v1.1.13...paper-sage-v1.2.0) (2026-08-08)
 
 
