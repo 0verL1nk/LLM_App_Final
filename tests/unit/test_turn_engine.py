@@ -67,6 +67,47 @@ def test_execute_turn_core_streams_answer_deltas_without_reinvoking() -> None:
     assert [event["content"] for event in events] == ["流式", "回答"]
 
 
+def test_execute_turn_core_keeps_markdown_answer_with_tool_requested_surface() -> None:
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    mock_agent = Mock()
+    mock_agent.invoke.return_value = {
+        "messages": [
+            SimpleNamespace(
+                content="结论来自文档。<evidence>chunk-1|p1|o0-10</evidence>",
+                tool_calls=[
+                    {"name": "search_document", "args": {"query": "方法"}},
+                    {
+                        "name": "present_research_surface",
+                        "args": {
+                            "title": "方法结构",
+                            "root": {
+                                "label": "论文",
+                                "citation_ids": ["chunk-1"],
+                                "children": [],
+                            },
+                        },
+                    },
+                ],
+            )
+        ]
+    }
+
+    result = execute_turn_core(
+        prompt="梳理方法",
+        leader_agent=mock_agent,
+        leader_runtime_config={},
+        search_document_evidence_fn=lambda _query: {
+            "evidences": [{"chunk_id": "chunk-1", "text": "证据文本", "page_no": 1}]
+        },
+    )
+
+    assert result["answer"].startswith("结论来自文档")
+    assert result["a2ui_surface"]["title"] == "方法结构"
+    assert result["a2ui_surface"]["mindmap"]["citation_ids"] == ["chunk-1"]
+
+
 def test_execute_turn_core_without_document_rag_skips_evidence():
     from unittest.mock import Mock
 

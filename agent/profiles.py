@@ -19,6 +19,6 @@ paper_leader_profile = AgentProfile(
     name="paper_leader",
     description="Leader agent for paper reading and orchestrated collaboration.",
     prompt_builder=build_paper_system_prompt,
-    capability_ids=("document_pack", "planning_pack", "skill_pack", "web_pack", "human_pack"),
+    capability_ids=("document_pack", "planning_pack", "skill_pack", "web_pack", "human_pack", "a2ui_pack"),
     middleware_ids=("trace", "llm_logger", "subagent", "todolist", "plan"),
 )

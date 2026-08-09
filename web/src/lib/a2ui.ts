@@ -1,12 +1,13 @@
 export const MINDMAP_CATALOG_ID = "https://papersage.local/a2ui/catalogs/mindmap-v1.json"
 
-export type MindmapNode = { label: string; children: MindmapNode[] }
+export type MindmapNode = { label: string; children: MindmapNode[]; citationIds: string[] }
 
 export type A2UISurface = {
   surfaceId: string
   catalogId: typeof MINDMAP_CATALOG_ID
   hasMindmapComponent: boolean
   mindmap: MindmapNode | null
+  title?: string
 }
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -19,7 +20,12 @@ function parseNode(value: unknown, depth = 0): MindmapNode | null {
   const rawChildren = Array.isArray(node?.children) ? node.children : null
   if (!label || label.length > 120 || !rawChildren || rawChildren.length > 12 || depth > 5) return null
   const children = rawChildren.map((child) => parseNode(child, depth + 1))
-  return children.some((child) => child === null) ? null : { label, children: children as MindmapNode[] }
+  const citationIds = Array.isArray(node?.citation_ids)
+    ? node.citation_ids.filter((citation): citation is string => typeof citation === "string" && citation.trim().length > 0)
+    : []
+  return children.some((child) => child === null)
+    ? null
+    : { label, children: children as MindmapNode[], citationIds }
 }
 
 export function applyA2UIEnvelope(surface: A2UISurface | null, value: unknown): A2UISurface | null {
@@ -62,7 +68,8 @@ export function surfaceFromPersisted(value: Record<string, unknown> | null | und
   if (replayed?.mindmap) return replayed
   const surfaceId = typeof value.surfaceId === "string" ? value.surfaceId : ""
   const mindmap = parseNode(value.mindmap)
+  const title = typeof value.title === "string" ? value.title.trim() : ""
   return surfaceId && value.catalogId === MINDMAP_CATALOG_ID && mindmap
-    ? { surfaceId, catalogId: MINDMAP_CATALOG_ID, hasMindmapComponent: true, mindmap }
+    ? { surfaceId, catalogId: MINDMAP_CATALOG_ID, hasMindmapComponent: true, mindmap, title }
     : null
 }

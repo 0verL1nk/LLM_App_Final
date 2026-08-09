@@ -1,4 +1,7 @@
-from agent.application.a2ui_mindmap import parse_a2ui_mindmap_jsonl
+from agent.application.a2ui_mindmap import (
+    build_mindmap_surface_from_request,
+    parse_a2ui_mindmap_jsonl,
+)
 
 
 def test_parses_only_the_restricted_mindmap_catalog() -> None:
@@ -21,3 +24,23 @@ def test_rejects_unapproved_components_and_scripts() -> None:
 {"version":"v0.9","updateComponents":{"surfaceId":"map-1","components":[{"id":"root","component":"Html","script":"alert(1)"}]}}
 {"version":"v0.9","updateDataModel":{"surfaceId":"map-1","path":"/mindmap","value":{"label":"主题","children":[]}}}"""
     ) is None
+
+
+def test_builds_tool_requested_surface_and_keeps_only_retrieved_citations() -> None:
+    surface = build_mindmap_surface_from_request(
+        {
+            "title": "方法脉络",
+            "root": {
+                "label": "论文",
+                "citation_ids": ["chunk-1", "invented"],
+                "children": [{"label": "方法", "citation_ids": ["chunk-2"], "children": []}],
+            },
+        },
+        allowed_citation_ids={"chunk-1", "chunk-2"},
+    )
+
+    assert surface is not None
+    assert surface["title"] == "方法脉络"
+    assert surface["mindmap"]["citation_ids"] == ["chunk-1"]
+    assert surface["mindmap"]["children"][0]["citation_ids"] == ["chunk-2"]
+    assert len(surface["messages"]) == 3

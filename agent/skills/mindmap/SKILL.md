@@ -1,55 +1,30 @@
 ---
 name: mindmap
-description: Generate validated A2UI mind-map surfaces from document evidence with clear hierarchy and concise node labels.
+description: Organize document evidence into a concise, catalog-backed research map.
 ---
 
 # Mindmap Skill
 
 ## When to use this skill
 
-Use this skill when:
-- User asks for a mind map, concept map, or knowledge structure
-- User wants hierarchical decomposition of a paper
-- Output must be a machine-parseable A2UI surface for visualization
+Use this skill when the user asks for a mind map, concept map, or a hierarchy is materially easier to understand than linear prose. Do not generate a map solely because a topic has many points.
 
-## How to build the mind map
+## Build from evidence
 
-### Step 1: Ground in evidence
-- Retrieve evidence from the current document before drafting nodes
-- Use chapter names, section headers, or repeated key terms as candidates
-- Do not invent concepts not supported by the document
+1. Retrieve evidence from the current project before drafting nodes.
+2. Use section structure, claims, methods, results, and limitations as candidates.
+3. Keep the root focused and first-level branches parallel in granularity.
+4. Keep labels concise; merge duplicate or overlapping branches.
+5. Attach only chunk IDs returned by this turn's document tools as `citation_ids`. Do not invent document locations.
 
-### Step 2: Build hierarchy
-- Root node: one concise theme for the whole paper
-- First level: 3-6 major branches (problem, method, experiment, results, limitations, outlook)
-- Second level: 2-4 concrete points per branch
-- Keep depth between 2 and 4 levels
+## Present naturally
 
-### Step 3: Keep labels concise
-- Use short noun phrases for node names
-- Avoid full sentences when possible
-- Merge duplicated or overlapping branches
+Call `present_research_surface` with a concise title and rooted hierarchy only when the map improves understanding. The surface is an optional supplement, not the answer itself.
 
-### Step 4: Output format
-- Output exactly three A2UI v0.9 JSONL envelopes - NO markdown fences or wrapper tags
-- Output only the three allowed A2UI messages, with no explanation before or after
-- Never output Mermaid, HTML, JavaScript, SVG, CSS, or arbitrary component names
-
-## Output contract
-
-Emit exactly three JSON objects, one per line. Do not wrap them in any tag:
-
-{"version":"v0.9","createSurface":{"surfaceId":"mindmap-1","catalogId":"https://papersage.local/a2ui/catalogs/mindmap-v1.json"}}
-{"version":"v0.9","updateComponents":{"surfaceId":"mindmap-1","components":[{"id":"root","component":"Mindmap","data":{"path":"/mindmap"}}]}}
-{"version":"v0.9","updateDataModel":{"surfaceId":"mindmap-1","path":"/mindmap","value":{"label":"主题","children":[{"label":"子主题","children":[{"label":"要点1","children":[]}]}]}}}
-
-Invalid examples:
-- `## 标题` followed by JSON
-- ```mermaid ... ```
-- Any wrapper tag or explanation before/after the JSONL stream
+After the tool call, write a normal Markdown response that explains the main takeaway, limitations, and the relevant `<evidence>` citations. Never emit A2UI JSON, Mermaid, HTML, JavaScript, SVG, CSS, or arbitrary component names in user-facing text.
 
 ## Quality checks
 
-- Ensure branch coverage is balanced (no single branch dominates all details)
-- Ensure sibling nodes are parallel in granularity
-- If evidence is insufficient, include a minimal node such as "信息不足" instead of guessing
+- Use two to four useful levels; avoid one branch dominating all detail.
+- Omit unsupported nodes rather than guessing.
+- If a map adds no value, answer in Markdown without calling the presentation tool.

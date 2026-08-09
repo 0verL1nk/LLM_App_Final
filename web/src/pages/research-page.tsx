@@ -140,7 +140,7 @@ function MessageBubble({
             <p className="whitespace-pre-wrap">{message.content}</p>
           )}
         </MessageContent>
-        {assistant && <A2UIMindmap surface={message.a2ui} />}
+        {assistant && <A2UIMindmap surface={message.a2ui} onInspectEvidence={() => onInspect("evidence")} />}
         {assistant && (evidenceCount > 0 || traceCount > 0 || message.plan) && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {(evidenceCount > 0 || retrievedEvidenceCount > 0) && (

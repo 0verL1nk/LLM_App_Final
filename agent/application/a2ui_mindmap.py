@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 from typing import Any
 
 CATALOG_ID = "https://papersage.local/a2ui/catalogs/mindmap-v1.json"
 MAX_CHILDREN = 12
 MAX_DEPTH = 5
 MAX_LABEL_LENGTH = 120
+MAX_NODES = 120
 
 
 def parse_a2ui_mindmap_jsonl(text: str) -> dict[str, Any] | None:
@@ -46,22 +48,97 @@ def parse_a2ui_mindmap_jsonl(text: str) -> dict[str, Any] | None:
     return {"catalogId": CATALOG_ID, "surfaceId": surface_id, "messages": messages, "mindmap": mindmap}
 
 
-def _normalize_node(value: dict[str, Any], *, depth: int) -> dict[str, Any] | None:
+def build_mindmap_surface_from_request(
+    payload: dict[str, Any],
+    *,
+    allowed_citation_ids: set[str],
+) -> dict[str, Any] | None:
+    """Build a catalog surface only from a validated presentation-tool request."""
+    title = str(payload.get("title") or "").strip()
+    root = payload.get("root")
+    if not title or len(title) > 80 or not isinstance(root, dict):
+        return None
+    mindmap = _normalize_node(
+        root,
+        depth=0,
+        allowed_citation_ids=allowed_citation_ids,
+        node_count=[0],
+    )
+    if mindmap is None:
+        return None
+    fingerprint = sha256(
+        json.dumps({"title": title, "mindmap": mindmap}, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    ).hexdigest()[:16]
+    surface_id = f"research-map-{fingerprint}"
+    messages = [
+        {"version": "v0.9", "createSurface": {"surfaceId": surface_id, "catalogId": CATALOG_ID}},
+        {
+            "version": "v0.9",
+            "updateComponents": {
+                "surfaceId": surface_id,
+                "components": [{"id": "root", "component": "Mindmap", "data": {"path": "/mindmap"}}],
+            },
+        },
+        {
+            "version": "v0.9",
+            "updateDataModel": {
+                "surfaceId": surface_id,
+                "path": "/mindmap",
+                "value": mindmap,
+            },
+        },
+    ]
+    return {
+        "catalogId": CATALOG_ID,
+        "surfaceId": surface_id,
+        "title": title,
+        "messages": messages,
+        "mindmap": mindmap,
+    }
+
+
+def _normalize_node(
+    value: dict[str, Any],
+    *,
+    depth: int,
+    allowed_citation_ids: set[str] | None = None,
+    node_count: list[int] | None = None,
+) -> dict[str, Any] | None:
     label = str(value.get("label") or "").strip()
     children = value.get("children", [])
     if not label or len(label) > MAX_LABEL_LENGTH or not isinstance(children, list) or len(children) > MAX_CHILDREN:
         return None
     if depth >= MAX_DEPTH and children:
         return None
+    if node_count is not None:
+        node_count[0] += 1
+        if node_count[0] > MAX_NODES:
+            return None
     normalized_children: list[dict[str, Any]] = []
     for child in children:
         if not isinstance(child, dict):
             return None
-        normalized = _normalize_node(child, depth=depth + 1)
+        normalized = _normalize_node(
+            child,
+            depth=depth + 1,
+            allowed_citation_ids=allowed_citation_ids,
+            node_count=node_count,
+        )
         if normalized is None:
             return None
         normalized_children.append(normalized)
-    return {"label": label, "children": normalized_children}
+    normalized = {"label": label, "children": normalized_children}
+    if allowed_citation_ids is not None:
+        citations = value.get("citation_ids")
+        if isinstance(citations, list):
+            verified = [
+                citation
+                for citation in (str(item).strip() for item in citations)
+                if citation and citation in allowed_citation_ids
+            ]
+            if verified:
+                normalized["citation_ids"] = list(dict.fromkeys(verified))
+    return normalized
 
 
-__all__ = ["CATALOG_ID", "parse_a2ui_mindmap_jsonl"]
+__all__ = ["CATALOG_ID", "build_mindmap_surface_from_request", "parse_a2ui_mindmap_jsonl"]
