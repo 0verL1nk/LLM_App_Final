@@ -57,3 +57,11 @@ jobs:
 
       - name: Check packaged-server import boundary
         run: uv run --extra dev python -c "from api.main import WEB_DIST; assert WEB_DIST.name == 'dist'"
+
+      - name: Verify packaged OCR runtime
+        run: |
+          pnpm --dir web run desktop:backend
+          $metadata = Get-ChildItem web/.desktop-backend/papersage-api/_internal -Filter "*.dist-info" -Directory | Select-Object -ExpandProperty Name
+          if ($metadata -notmatch "^paddleocr-.*\.dist-info$" -or $metadata -notmatch "^pypdfium2-.*\.dist-info$") {
+            throw "PaddleX OCR dependency metadata was not included in the packaged backend."
+          }
