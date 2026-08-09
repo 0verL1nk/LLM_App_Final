@@ -1,7 +1,6 @@
 /**
  * @typedef {{ isPackaged: boolean, getVersion: () => string }} ElectronApp
- * @typedef {{ showMessageBox: (options: object) => Promise<{ response: number }> }} ElectronDialog
- * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, quitAndInstall: () => void, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean }} ElectronUpdater
+ * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean }} ElectronUpdater
  * @typedef {{ status: "downloading" | "progress" | "ready" | "failed", version?: string, percent?: number, transferred?: number, total?: number, bytesPerSecond?: number }} UpdateStatus
  */
 
@@ -24,10 +23,10 @@ function unsupportedUpdateReason({ isPackaged, platform, appImage }) {
 }
 
 /**
- * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, dialog: ElectronDialog, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, platform?: NodeJS.Platform, appImage?: string }} dependencies
+ * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, platform?: NodeJS.Platform, appImage?: string }} dependencies
  * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string, reason?: "development" | "system-managed" | "unavailable" }>, scheduleCheck: () => void }}
  */
-function createUpdateService({ app, autoUpdater, dialog, logger = console, notify = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE }) {
+function createUpdateService({ app, autoUpdater, logger = console, notify = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE }) {
   const supported = supportsAutomaticUpdates({ isPackaged: app.isPackaged, platform, appImage })
   let checking = false
   let downloading = false
@@ -53,10 +52,7 @@ function createUpdateService({ app, autoUpdater, dialog, logger = console, notif
       reportError(error)
       if (downloading) notify({ status: "failed" })
     })
-    autoUpdater.on("update-available", async (info) => {
-      const result = await dialog.showMessageBox({ type: "info", title: "发现新版本", message: `PaperSage ${info.version} 已准备好下载。`, detail: "下载期间可以继续使用 PaperSage；完成后会提醒你重启安装。", buttons: ["开始下载", "暂不更新"], defaultId: 0, cancelId: 1 })
-      if (result.response === 0) await download(info.version)
-    })
+    autoUpdater.on("update-available", async (info) => { await download(info.version) })
     autoUpdater.on("download-progress", (progress) => notify({
       status: "progress",
       percent: Number(progress.percent || 0),
@@ -64,10 +60,8 @@ function createUpdateService({ app, autoUpdater, dialog, logger = console, notif
       total: Number(progress.total || 0),
       bytesPerSecond: Number(progress.bytesPerSecond || 0),
     }))
-    autoUpdater.on("update-downloaded", async () => {
+    autoUpdater.on("update-downloaded", () => {
       notify({ status: "ready" })
-      const result = await dialog.showMessageBox({ type: "info", title: "更新已下载完成", message: "现在重启即可使用新版本。", detail: "如果暂不重启，下一次退出 PaperSage 时会自动完成更新。", buttons: ["立即重启", "退出时更新"], defaultId: 0, cancelId: 1 })
-      if (result.response === 0) autoUpdater.quitAndInstall()
     })
   }
 

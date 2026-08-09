@@ -58,7 +58,6 @@ function reportMainError(context, error) {
 const updates = createUpdateService({
   app,
   autoUpdater,
-  dialog,
   logger: { error: (message, error) => reportMainError(message, error) },
   notify: (status) => BrowserWindow.getAllWindows().forEach((window) => window.webContents.send("updates:status", status)),
 })

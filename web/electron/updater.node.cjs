@@ -24,7 +24,6 @@ test("manual checks return an explicit current or available version result", asy
   const service = createUpdateService({
     app: { isPackaged: true, getVersion: () => "1.1.8" },
     autoUpdater: updater,
-    dialog: { showMessageBox: async () => ({ response: 1 }) },
     logger: { error: () => undefined },
     platform: "win32",
   })
@@ -34,7 +33,7 @@ test("manual checks return an explicit current or available version result", asy
   assert.deepEqual(await service.checkForUpdates(), { supported: true, status: "up-to-date", version: "1.1.8" })
 })
 
-test("downloads report progress and completion to the renderer", async () => {
+test("downloads silently and schedules installation for the next app exit", async () => {
   const listeners = {}
   const statuses = []
   const updater = {
@@ -48,7 +47,6 @@ test("downloads report progress and completion to the renderer", async () => {
   createUpdateService({
     app: { isPackaged: true, getVersion: () => "1.1.8" },
     autoUpdater: updater,
-    dialog: { showMessageBox: async () => ({ response: 0 }) },
     logger: { error: () => undefined },
     notify: (status) => statuses.push(status),
     platform: "win32",
