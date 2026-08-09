@@ -8,7 +8,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { A2UIMindmap } from "@/components/a2ui-mindmap";
@@ -45,9 +45,15 @@ import {
   useResumableRuns,
   useTurn,
 } from "@/lib/queries";
-import { consumeEventStream } from "@/lib/api";
-import { applyA2UIEnvelope, applyA2UISurfaceMetadata, type A2UISurface } from "@/lib/a2ui";
 import { formatEvidenceCitations } from "@/lib/evidence";
+import { consumeEventStream } from "@/lib/api";
+import {
+  createLiveRun,
+  liveAnswer,
+  reduceLiveRun,
+  type LiveRun,
+  type RenderedMessagePart,
+} from "@/lib/live-run";
 import { agentEventSchema, turnResultSchema } from "@/lib/schemas";
 import type { AgentEvent, Message, TurnResult } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
@@ -62,10 +68,6 @@ const ResearchRunActivity = lazy(async () => {
   const module = await import("@/components/research-run-activity");
   return { default: module.ResearchRunActivity };
 });
-
-type RenderedMessagePart =
-  | { id: string; type: "markdown"; text: string }
-  | { id: string; type: "a2ui"; surfaceId?: string };
 
 function assistantParts(message: Message): RenderedMessagePart[] {
   const stored: RenderedMessagePart[] = [];
@@ -92,9 +94,11 @@ function assistantParts(message: Message): RenderedMessagePart[] {
 function MessageBubble({
   message,
   onInspect,
+  activity,
 }: {
   message: Message;
   onInspect: (tab: "evidence" | "activity" | "plan") => void;
+  activity?: ReactNode;
 }) {
   const assistant = message.role === "assistant";
   const evidenceCount = message.evidence?.length ?? 0;
@@ -145,6 +149,7 @@ function MessageBubble({
                 }
               }}
             >
+              {activity}
               {parts.map((part) => {
                 if (part.type === "markdown") {
                   const content = part.text === message.content ? renderedContent : formatEvidenceCitations(part.text, message.evidence);
@@ -228,25 +233,6 @@ function MessageBubble({
   );
 }
 
-type LiveRun = {
-  events: AgentEvent[];
-  parts: RenderedMessagePart[];
-  surfaces: Record<string, A2UISurface>;
-  processedEventIds: string[];
-};
-
-function emptyLiveRun(): LiveRun {
-  return { events: [], parts: [], surfaces: {}, processedEventIds: [] };
-}
-
-function liveAnswer(parts: RenderedMessagePart[]): string {
-  let answer = "";
-  for (const part of parts) {
-    if (part.type === "markdown") answer += part.text;
-  }
-  return answer;
-}
-
 function ResearchWorkspace({
   projectId,
   sessionId,
@@ -278,7 +264,7 @@ function ResearchWorkspace({
   const activeRuns = useMemo(() => Object.entries(liveRuns), [liveRuns]);
   const ensureLiveRun = useCallback((runId: string) => {
     setLiveRuns((current) =>
-      current[runId] ? current : { ...current, [runId]: emptyLiveRun() },
+      current[runId] ? current : { ...current, [runId]: createLiveRun() },
     );
   }, []);
   const discardLiveRun = useCallback((runId: string) => {
@@ -291,72 +277,9 @@ function ResearchWorkspace({
   }, []);
   const handleRunEvent = useCallback((event: AgentEvent) => {
     setLiveRuns((current) => {
-      const run = current[event.runId] ?? emptyLiveRun();
-      if (run.processedEventIds.includes(event.eventId)) return current;
-      const processedEventIds = [...run.processedEventIds, event.eventId];
-      if (event.eventType === "message.part.delta") {
-        const partId = String(event.payload.partId ?? "text-0");
-        const text = String(event.payload.text ?? "");
-        const existing = run.parts.find((part) => part.id === partId);
-        const parts = existing?.type === "markdown"
-          ? run.parts.map((part) => part.id === partId && part.type === "markdown" ? { ...part, text: part.text + text } : part)
-          : [...run.parts, { id: partId, type: "markdown" as const, text }];
-        return {
-          ...current,
-          [event.runId]: {
-            ...run,
-            processedEventIds,
-            parts,
-          },
-        };
-      }
-      if (event.eventType === "message.part.insert") {
-        const partId = String(event.payload.partId ?? "");
-        const parts = !partId || run.parts.some((part) => part.id === partId)
-          ? run.parts
-          : [...run.parts, { id: partId, type: "a2ui" as const }];
-        return { ...current, [event.runId]: { ...run, processedEventIds, parts } };
-      }
-      if (event.eventType === "presentation.failed") {
-        const partId = String(event.payload.partId ?? "");
-        const events = run.events.some((item) => item.eventId === event.eventId)
-          ? run.events
-          : [...run.events, event];
-        return {
-          ...current,
-          [event.runId]: {
-            ...run,
-            processedEventIds,
-            parts: run.parts.filter((part) => part.id !== partId),
-            events,
-          },
-        };
-      }
-      if (event.eventType === "ui.a2ui")
-        {
-          const surfaceMetadata = event.payload.surface && typeof event.payload.surface === "object"
-            ? event.payload.surface as Record<string, unknown>
-            : null;
-          const previousSurfaceId = typeof surfaceMetadata?.surfaceId === "string"
-            ? surfaceMetadata.surfaceId
-            : "";
-          const nextSurface = applyA2UISurfaceMetadata(
-            applyA2UIEnvelope(run.surfaces[previousSurfaceId] ?? null, event.payload.envelope),
-            surfaceMetadata,
-          );
-          const surfaces = { ...run.surfaces };
-          if (nextSurface) surfaces[nextSurface.surfaceId] = nextSurface;
-          else if (previousSurfaceId) delete surfaces[previousSurfaceId];
-          const partId = typeof surfaceMetadata?.partId === "string" ? surfaceMetadata.partId : "";
-          const parts = partId && nextSurface
-            ? run.parts.map((part) => part.id === partId && part.type === "a2ui" ? { ...part, surfaceId: nextSurface.surfaceId } : part)
-            : run.parts;
-          return { ...current, [event.runId]: { ...run, processedEventIds, surfaces, parts } };
-        }
-      return {
-        ...current,
-        [event.runId]: { ...run, processedEventIds, events: [...run.events, event] },
-      };
+      const run = current[event.runId] ?? createLiveRun();
+      const next = reduceLiveRun(run, event);
+      return next === run ? current : { ...current, [event.runId]: next };
     });
   }, []);
   useEffect(() => {
@@ -466,24 +389,24 @@ function ResearchWorkspace({
               )}
               {activeRuns.map(([runId, run]) => (
                 <div key={runId}>
-                  <Suspense fallback={<div className="ml-11 py-1 text-sm text-muted-foreground">正在准备研究…</div>}>
-                    <ResearchRunActivity events={run.events} />
-                  </Suspense>
-                  {run.parts.length > 0 && (
-                    <MessageBubble
-                      message={{
-                        role: "assistant",
-                        content: liveAnswer(run.parts),
-                        parts: run.parts,
-                        a2ui: Object.values(run.surfaces).map((surface) => ({
-                          catalogId: surface.catalogId,
-                          surfaceId: surface.surfaceId,
-                          title: surface.title,
-                          mindmap: surface.mindmap,
-                        })),
-                      }}
-                      onInspect={openInspector}
-                    />
+                  {(run.events.length > 0 || run.parts.length > 0) && (
+                    <Suspense fallback={null}>
+                      <MessageBubble
+                        message={{
+                          role: "assistant",
+                          content: liveAnswer(run.parts),
+                          parts: run.parts,
+                          a2ui: Object.values(run.surfaces).map((surface) => ({
+                            catalogId: surface.catalogId,
+                            surfaceId: surface.surfaceId,
+                            title: surface.title,
+                            mindmap: surface.mindmap,
+                          })),
+                        }}
+                        onInspect={openInspector}
+                        activity={<ResearchRunActivity events={run.events} />}
+                      />
+                    </Suspense>
                   )}
                 </div>
               ))}

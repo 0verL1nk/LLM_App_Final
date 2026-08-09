@@ -61,9 +61,12 @@ returns before model execution begins. The background worker records canonical
 events with `eventId`, a monotonic per-Run `sequence`, timestamp, type, and payload.
 The client folds `run.*`, `plan.updated`, `tool.*`, and `agent.*` events into a
 compact execution timeline and exposes the full public trace in the inspector.
+It applies events by per-Run sequence, buffers a short out-of-order arrival, and
+ignores replayed sequences. A live answer is one Assistant message made of
+Markdown, activity, citation, and A2UI parts - never a separate Agent chat room.
 
 While a Run is active, the conversation shows one low-emphasis, collapsible
-**执行轨迹** attached to the Assistant. Its data is projected on the server from
+activity summary inside the Assistant message. Its data is projected on the server from
 actual tool lifecycle hooks: queued/started/completed/failed Runs, `write_todos`
 plan updates, tool names with sanitized inputs and outputs, and task-tool based
 subagent lifecycle. It must not infer model intent from event text, present
@@ -72,8 +75,11 @@ Provider reasoning is rendered only when a provider supplies an explicit,
 user-displayable reasoning part; PaperSage currently does not request or persist
 such parts.
 
-Assistant content is rendered by AI Elements `MessageResponse`, with Streamdown
-support for GFM, code blocks, CJK, and KaTeX math. Machine-readable `<evidence>`
+Assistant content is rendered by AI Elements `MessageResponse`, with Markdown,
+code blocks, CJK, and KaTeX math. PaperSage keeps the durable Run protocol as its
+canonical transport rather than forcing it into an AI SDK provider stream; AI SDK
+and AI Elements own rendering and message-part affordances at the React boundary.
+Machine-readable `<evidence>`
 tags are converted into inline citation controls; raw protocol tags must never be
 shown to users. A turn stores cited
 evidence separately from all retrieved candidates so the inspector can distinguish
@@ -91,8 +97,8 @@ in SQLite independently of the browser connection, so a disconnected client does
 not own task execution. The older synchronous `/turns` endpoint remains only as a
 compatibility API; the React application must use the Run protocol.
 
-The Run stream also carries `answer.delta` events produced from LangGraph's
-`messages` stream mode. The client renders those deltas immediately and replays
+The Run stream also carries `message.part.delta` events produced from LangGraph's
+`messages` stream mode. The client renders those parts immediately and replays
 them from sequence zero when reopening a session with a queued or running Run.
 The final `run.completed` event remains the authoritative persisted answer; a
 stream which has begun but cannot provide a final graph state fails rather than

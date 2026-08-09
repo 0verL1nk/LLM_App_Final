@@ -6,6 +6,8 @@ from typing import Any
 
 from utils.schemas import FileRecord
 
+from .document_repository import init_document_table
+
 
 def _now_str() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -25,6 +27,11 @@ def _files_table_columns(db_name: str) -> set[str]:
 
 
 def ensure_files_table_columns(db_name: str = "./database.sqlite") -> None:
+    # Project reads can be issued by a queued research run before a document
+    # upload has initialized the library schema.  Establish the owning table
+    # first so an upgraded or partially initialized local database remains
+    # readable.
+    init_document_table(db_name)
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(files)")

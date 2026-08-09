@@ -1,6 +1,6 @@
 const test = require("node:test")
 const assert = require("node:assert/strict")
-const { createUpdateService, supportsAutomaticUpdates } = require("./updater.cjs")
+const { createUpdateService, supportsAutomaticUpdates, unsupportedUpdateReason } = require("./updater.cjs")
 
 test("automatic updates require a packaged supported target", () => {
   assert.equal(supportsAutomaticUpdates({ isPackaged: false, platform: "win32" }), false)
@@ -8,6 +8,8 @@ test("automatic updates require a packaged supported target", () => {
   assert.equal(supportsAutomaticUpdates({ isPackaged: true, platform: "darwin" }), true)
   assert.equal(supportsAutomaticUpdates({ isPackaged: true, platform: "linux" }), false)
   assert.equal(supportsAutomaticUpdates({ isPackaged: true, platform: "linux", appImage: "/tmp/PaperSage.AppImage" }), true)
+  assert.equal(unsupportedUpdateReason({ isPackaged: false, platform: "win32" }), "development")
+  assert.equal(unsupportedUpdateReason({ isPackaged: true, platform: "linux" }), "system-managed")
 })
 
 test("manual checks return an explicit current or available version result", async () => {
@@ -55,12 +57,12 @@ test("downloads report progress and completion to the renderer", async () => {
   assert.equal(updater.autoInstallOnAppQuit, true)
 
   await listeners["update-available"]({ version: "1.2.0" })
-  listeners["download-progress"]({ percent: 42.4 })
+  listeners["download-progress"]({ percent: 42.4, transferred: 424, total: 1000, bytesPerSecond: 80 })
   await listeners["update-downloaded"]()
 
   assert.deepEqual(statuses, [
     { status: "downloading", version: "1.2.0" },
-    { status: "progress", percent: 42.4 },
+    { status: "progress", percent: 42.4, transferred: 424, total: 1000, bytesPerSecond: 80 },
     { status: "ready" },
   ])
 })

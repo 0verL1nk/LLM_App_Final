@@ -2,7 +2,7 @@
  * @typedef {{ isPackaged: boolean, getVersion: () => string }} ElectronApp
  * @typedef {{ showMessageBox: (options: object) => Promise<{ response: number }> }} ElectronDialog
  * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, quitAndInstall: () => void, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean }} ElectronUpdater
- * @typedef {{ status: "downloading" | "progress" | "ready" | "failed", version?: string, percent?: number }} UpdateStatus
+ * @typedef {{ status: "downloading" | "progress" | "ready" | "failed", version?: string, percent?: number, transferred?: number, total?: number, bytesPerSecond?: number }} UpdateStatus
  */
 
 /**
@@ -16,9 +16,16 @@ function supportsAutomaticUpdates({ isPackaged, platform, appImage }) {
   return isPackaged && (platform === "win32" || platform === "darwin" || (platform === "linux" && Boolean(appImage)))
 }
 
+/** @param {{ isPackaged: boolean, platform: NodeJS.Platform, appImage?: string }} runtime */
+function unsupportedUpdateReason({ isPackaged, platform, appImage }) {
+  if (!isPackaged) return "development"
+  if (platform === "linux" && !appImage) return "system-managed"
+  return "unavailable"
+}
+
 /**
  * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, dialog: ElectronDialog, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, platform?: NodeJS.Platform, appImage?: string }} dependencies
- * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string }>, scheduleCheck: () => void }}
+ * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string, reason?: "development" | "system-managed" | "unavailable" }>, scheduleCheck: () => void }}
  */
 function createUpdateService({ app, autoUpdater, dialog, logger = console, notify = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE }) {
   const supported = supportsAutomaticUpdates({ isPackaged: app.isPackaged, platform, appImage })
@@ -50,7 +57,13 @@ function createUpdateService({ app, autoUpdater, dialog, logger = console, notif
       const result = await dialog.showMessageBox({ type: "info", title: "发现新版本", message: `PaperSage ${info.version} 已准备好下载。`, detail: "下载期间可以继续使用 PaperSage；完成后会提醒你重启安装。", buttons: ["开始下载", "暂不更新"], defaultId: 0, cancelId: 1 })
       if (result.response === 0) await download(info.version)
     })
-    autoUpdater.on("download-progress", (progress) => notify({ status: "progress", percent: Number(progress.percent || 0) }))
+    autoUpdater.on("download-progress", (progress) => notify({
+      status: "progress",
+      percent: Number(progress.percent || 0),
+      transferred: Number(progress.transferred || 0),
+      total: Number(progress.total || 0),
+      bytesPerSecond: Number(progress.bytesPerSecond || 0),
+    }))
     autoUpdater.on("update-downloaded", async () => {
       notify({ status: "ready" })
       const result = await dialog.showMessageBox({ type: "info", title: "更新已下载完成", message: "现在重启即可使用新版本。", detail: "如果暂不重启，下一次退出 PaperSage 时会自动完成更新。", buttons: ["立即重启", "退出时更新"], defaultId: 0, cancelId: 1 })
@@ -59,7 +72,11 @@ function createUpdateService({ app, autoUpdater, dialog, logger = console, notif
   }
 
   const checkForUpdates = async () => {
-    if (!supported || checking) return { supported, status: "unsupported" }
+    if (!supported || checking) return {
+      supported,
+      status: "unsupported",
+      reason: unsupportedUpdateReason({ isPackaged: app.isPackaged, platform, appImage }),
+    }
     checking = true
     try {
       const result = await autoUpdater.checkForUpdates()
@@ -74,4 +91,4 @@ function createUpdateService({ app, autoUpdater, dialog, logger = console, notif
   return { checkForUpdates, scheduleCheck: () => { if (supported) setTimeout(() => { void checkForUpdates() }, 12_000) } }
 }
 
-module.exports = { createUpdateService, supportsAutomaticUpdates }
+module.exports = { createUpdateService, supportsAutomaticUpdates, unsupportedUpdateReason }

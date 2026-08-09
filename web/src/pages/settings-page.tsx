@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 import { api } from "@/lib/api"
 import { desktopWindowControls } from "@/lib/platform"
 import { keys, useDocumentConversion, useSettings } from "@/lib/queries"
@@ -36,22 +37,8 @@ function FieldError({ message }: { message?: string }) {
 
 function DesktopUpdatesCard() {
   const desktop = desktopWindowControls()
+  const desktopUpdate = useUiStore((state) => state.desktopUpdate)
   const [checking, setChecking] = useState(false)
-  useEffect(() => {
-    if (!desktop) return
-    let downloadToast: string | number | undefined
-    return desktop.onUpdateStatus((status) => {
-      if (status.status === "downloading") downloadToast = toast.loading("正在下载更新", { description: "下载期间可以继续使用 PaperSage。" })
-      else if (status.status === "progress" && downloadToast !== undefined) toast.loading("正在下载更新", { id: downloadToast, description: `已完成 ${Math.round(status.percent ?? 0)}%` })
-      else if (status.status === "ready") {
-        if (downloadToast !== undefined) toast.dismiss(downloadToast)
-        toast.success("更新已下载完成", { description: "现在重启，或在下次退出时自动完成更新。" })
-      } else if (status.status === "failed") {
-        if (downloadToast !== undefined) toast.dismiss(downloadToast)
-        toast.error("下载未完成", { description: "请检查网络后再试一次。" })
-      }
-    })
-  }, [desktop])
   if (!desktop) return null
   const checkForUpdates = async (): Promise<void> => {
     setChecking(true)
@@ -59,7 +46,14 @@ function DesktopUpdatesCard() {
       const result = await desktop.checkForUpdates()
       if (result.status === "available") toast.success(`发现新版本 ${result.version ?? ""}`.trim(), { description: "请选择是否开始下载。" })
       else if (result.status === "up-to-date") toast.success("已是最新版本", { description: "暂时不需要更新。" })
-      else if (result.status === "unsupported") toast.message("此安装方式由系统更新", { description: "请通过你的软件商店或包管理器更新。" })
+      else if (result.status === "unsupported") {
+        const description = result.reason === "development"
+          ? "当前是开发或便携运行方式，未接入发布更新。请使用 PaperSage 桌面安装包。"
+          : result.reason === "system-managed"
+            ? "当前 Linux 安装由系统包管理器负责更新。"
+            : "当前安装方式没有可用的自动更新通道。请从原安装来源更新。"
+        toast.message("无法通过应用内更新", { description })
+      }
       else toast.error("暂时无法检查更新", { description: "请确认网络连接后再试一次。" })
     } catch {
       toast.error("暂时无法检查更新", { description: "请稍后再试一次。" })
@@ -67,7 +61,7 @@ function DesktopUpdatesCard() {
       setChecking(false)
     }
   }
-  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Download className="size-4 text-primary" />应用更新</CardTitle><CardDescription>有新版本时，你可以选择下载；下载完成后再重启即可。</CardDescription></CardHeader><CardContent><Button type="button" variant="outline" onClick={() => void checkForUpdates()} disabled={checking}><Download />{checking ? "正在检查…" : "检查新版本"}</Button></CardContent></Card>
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Download className="size-4 text-primary" />应用更新</CardTitle><CardDescription>有新版本时，你可以选择下载；下载完成后再重启即可。</CardDescription></CardHeader><CardContent className="space-y-4"><Button type="button" variant="outline" onClick={() => void checkForUpdates()} disabled={checking || desktopUpdate.phase === "downloading"}><Download />{checking ? "正在检查…" : desktopUpdate.phase === "downloading" ? "正在下载" : "检查新版本"}</Button>{desktopUpdate.phase === "downloading" && <div className="space-y-2 rounded-lg border border-border/70 bg-muted/30 p-3"><div className="flex items-center justify-between text-sm"><span>正在下载 {desktopUpdate.version ? `v${desktopUpdate.version}` : "更新"}</span><span className="tabular-nums text-muted-foreground">{Math.round(desktopUpdate.percent ?? 0)}%</span></div><Progress value={desktopUpdate.percent ?? 0} /><p className="text-xs text-muted-foreground">下载期间可以继续使用 PaperSage。</p></div>}{desktopUpdate.phase === "ready" && <p className="text-sm text-emerald-600 dark:text-emerald-400">更新已下载完成，重启后即可使用新版本。</p>}{desktopUpdate.phase === "failed" && <p className="text-sm text-destructive">下载未完成，请检查网络后重试。</p>}</CardContent></Card>
 }
 
 function DesktopDiagnosticsCard() {
