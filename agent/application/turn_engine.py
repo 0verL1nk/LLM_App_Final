@@ -8,7 +8,7 @@ from ..domain.human_request import extract_human_requests
 from ..domain.trace import TraceEvent, phase_label_from_performative, phase_summary
 from ..method_compare_parser import parse_method_compare_payload
 from ..stream import extract_stream_text
-from .a2ui_mindmap import parse_a2ui_mindmap_jsonl
+from .a2ui_mindmap import build_mindmap_surface_from_request
 from .contracts import EventCallback, SearchDocumentFn, TurnCoreResult
 from .delegation import build_delegation_execution
 from .ports import AgentInvoker, EvidenceRetriever
@@ -118,6 +118,34 @@ def _message_tool_calls(message: Any) -> list[dict[str, Any]]:
     if not isinstance(tool_calls, list):
         return []
     return [item for item in tool_calls if isinstance(item, dict)]
+
+
+def _tool_call_args(call: dict[str, Any]) -> dict[str, Any] | None:
+    args = call.get("args")
+    if isinstance(args, dict):
+        return args
+    if isinstance(args, str):
+        return _parse_tool_json_payload(args)
+    return None
+
+
+def _extract_a2ui_surface(
+    messages: list[Any],
+    *,
+    allowed_citation_ids: set[str],
+) -> dict[str, Any] | None:
+    """Derive a persisted surface from the final real presentation tool call."""
+    for message in reversed(messages):
+        for call in reversed(_message_tool_calls(message)):
+            if str(call.get("name") or "").strip() != "present_research_surface":
+                continue
+            payload = _tool_call_args(call)
+            if payload is not None:
+                return build_mindmap_surface_from_request(
+                    payload,
+                    allowed_citation_ids=allowed_citation_ids,
+                )
+    return None
 
 
 def normalize_evidence_tag_variants(answer: str) -> str:
@@ -433,7 +461,14 @@ def execute_turn_core(
             logger.warning("Evidence fallback retrieval failed: %s", exc)
             evidence_items = []
     method_compare_data = parse_method_compare_payload(answer)
-    a2ui_surface = parse_a2ui_mindmap_jsonl(answer)
+    a2ui_surface = _extract_a2ui_surface(
+        messages,
+        allowed_citation_ids={
+            str(item.get("chunk_id") or "").strip()
+            for item in retrieved_evidence_items
+            if str(item.get("chunk_id") or "").strip()
+        },
+    )
     mindmap_data = a2ui_surface["mindmap"] if a2ui_surface is not None else None
     # 从 result 中提取 middleware 添加的 state
     todos = result.get("todos", []) if isinstance(result, dict) else []
@@ -461,7 +496,7 @@ def execute_turn_core(
     phase_path = _stable_phase_path(phase_labels=phase_labels, answer=answer, messages=messages)
 
     return {
-        "answer": "已生成知识结构。" if a2ui_surface is not None else answer,
+        "answer": answer,
         "policy_decision": {
             "plan_enabled": bool(agent_plan or plan_payload),
             "delegation_enabled": delegation_execution["enabled"],

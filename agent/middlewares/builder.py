@@ -16,7 +16,6 @@ from ..capabilities import build_capability_tools
 from ..context_governance import compact_trigger_ratio, model_context_window_tokens
 from ..subagent.loader import load_subagent_definitions
 from .llm_logger import llm_logger_middleware
-from .mindmap_format import mindmap_format_middleware
 from .model_output_validation import (
     EmptyModelOutputError,
     model_output_validation_middleware,
@@ -89,9 +88,6 @@ def build_middleware_list(
     )
 
     middleware_list.append(turn_context_middleware)
-
-    # Enforce strict tagged JSON contract for mindmap outputs.
-    middleware_list.append(mindmap_format_middleware)
 
     if _is_enabled(profile, "subagent"):
         if deps is None:

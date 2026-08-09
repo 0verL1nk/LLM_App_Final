@@ -1,6 +1,7 @@
 from collections.abc import Callable, Iterable
 from typing import Any
 
+from .a2ui import build_a2ui_capability_tools
 from .document import build_document_tools
 from .human import build_human_tools
 from .planning import build_planning_tools
@@ -11,6 +12,7 @@ from .web import build_web_tools
 def build_capability_tools(capability_ids: Iterable[str], deps: Any) -> list[Any]:
     """Build a deduplicated tool set for an explicit capability manifest."""
     builders: dict[str, Callable[[Any], list[Any]]] = {
+        "a2ui_pack": build_a2ui_capability_tools,
         "document_pack": build_document_tools,
         "human_pack": build_human_tools,
         "planning_pack": build_planning_tools,

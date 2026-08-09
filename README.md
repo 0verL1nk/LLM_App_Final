@@ -113,6 +113,8 @@ flowchart LR
 
 前端使用 Vite、React、TypeScript、Tailwind、shadcn/ui、Radix 和 TanStack；FastAPI 提供 API 边界。SQLite 保存项目与会话，LanceDB 保存项目级索引，Agent 状态和运行事件用于恢复研究过程。详见：[Web 架构](docs/architecture/web-application.md)、[Agent 运行时](docs/architecture/agent-runtime.md)、[桌面端](docs/architecture/desktop-application.md)。
 
+思维导图等生成式界面只是回答内的补充：模型先提交受限的 surface 请求，再继续输出正常 Markdown 与证据。服务端验证 catalog、规模和证据 ID，前端不会执行模型生成的代码。详见 [A2UI 表现层](docs/architecture/a2ui.md)。
+
 ## 系统架构
 
 ```mermaid
