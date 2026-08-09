@@ -20,6 +20,7 @@ permissions:
   actions: write
   contents: write
   issues: write
+  pull-requests: write
 
 jobs:
   tag-and-publish:
