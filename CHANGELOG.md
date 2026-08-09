@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.3](https://github.com/0verL1nk/PaperSage/compare/v1.3.2...v1.3.3) (2026-08-09)
+
+
+### Bug Fixes
+
+* **desktop:** keep updater metadata aligned with installer ([#80](https://github.com/0verL1nk/PaperSage/issues/80)) ([406acf1](https://github.com/0verL1nk/PaperSage/commit/406acf1825e84c98d812f3f6f23e58c01cd823e2))
+* grant release workflow PR permissions ([#79](https://github.com/0verL1nk/PaperSage/issues/79)) ([c6c2c97](https://github.com/0verL1nk/PaperSage/commit/c6c2c97a56da81df5c4ba3ec429b3c28e16ab889))
+
 ## [1.3.2](https://github.com/0verL1nk/PaperSage/compare/v1.3.1...v1.3.2) (2026-08-09)
 
 
