@@ -180,14 +180,26 @@ jobs:
           generate_release_notes: true
           files: release-assets/*
 
-      - name: Publish updater metadata
+      - name: Publish updater assets to Cloudflare R2
         shell: pwsh
         env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          UPDATE_BUCKET: overlink-papersage-desktop-updates-prod
         run: |
-          gh release upload "${{ github.ref_name }}" `
-            release-assets/latest.yml `
-            release-assets/latest-mac.yml `
-            release-assets/latest-linux.yml `
-            --clobber
+          $metadataFiles = @("latest.yml", "latest-mac.yml", "latest-linux.yml")
+          $updateFiles = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+          foreach ($metadataFile in $metadataFiles) {
+            $metadataPath = Join-Path "release-assets" $metadataFile
+            $path = (Select-String -LiteralPath $metadataPath -Pattern '^path:\s*["'']?([^"''\r\n]+)' | Select-Object -First 1).Matches.Groups[1].Value.Trim()
+            if (-not $path) { throw "Updater metadata does not declare a path: $metadataFile" }
+            $updateFiles.Add($metadataFile) | Out-Null
+            $updateFiles.Add($path) | Out-Null
+            $blockmapPath = Join-Path "release-assets" "$path.blockmap"
+            if (Test-Path $blockmapPath) { $updateFiles.Add("$path.blockmap") | Out-Null }
+          }
+          foreach ($file in $updateFiles) {
+            $localPath = Join-Path "release-assets" $file
+            if (-not (Test-Path $localPath)) { throw "Missing updater asset: $file" }
+            $cacheControl = if ($file -like "latest*.yml") { "no-store" } else { "public, max-age=31536000, immutable" }
+            pnpm dlx wrangler r2 object put "$env:UPDATE_BUCKET/$file" --file $localPath --remote --cache-control $cacheControl
+          }

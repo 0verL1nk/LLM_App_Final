@@ -34,7 +34,7 @@ export function DesktopUpdateStatusListener(): null {
       }
       if (status.status === "ready") {
         setDesktopUpdate({ phase: "ready" })
-        toast.success("更新已下载完成", { id: "desktop-update", description: "现在重启，或在下次退出时自动完成更新。" })
+        toast.success("更新已下载完成", { id: "desktop-update", description: "将在下次退出 PaperSage 时自动安装。" })
         return
       }
       setDesktopUpdate({ phase: "failed" })

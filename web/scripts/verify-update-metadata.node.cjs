@@ -5,6 +5,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const { verifyUpdateMetadata } = require("./verify-update-metadata.cjs");
+const packageJson = require("../package.json");
 
 function withReleaseDirectory(callback) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "papersage-update-metadata-"));
@@ -32,5 +33,15 @@ test("rejects metadata whose installer is absent from the release bundle", () =>
       () => verifyUpdateMetadata(directory),
       /latest\.yml references missing artifact: PaperSage-Setup-1\.3\.2\.exe/,
     );
+  });
+});
+
+test("uses the R2 update endpoint with multiple range requests", () => {
+  const [provider] = packageJson.build.publish;
+
+  assert.deepEqual(provider, {
+    provider: "generic",
+    url: "https://papersage-updates.overlink.top",
+    useMultipleRangeRequest: true,
   });
 });
