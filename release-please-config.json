@@ -16,10 +16,6 @@
         {
           "type": "generic",
           "path": "agent/__init__.py"
-        },
-        {
-          "type": "generic",
-          "path": "uv.lock"
         }
       ]
     }
