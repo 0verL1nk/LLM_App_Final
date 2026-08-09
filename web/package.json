@@ -17,7 +17,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "node --test electron/updater.node.cjs electron/tray.node.cjs && vitest run",
+    "test": "node --test electron/updater.node.cjs electron/tray.node.cjs scripts/verify-update-metadata.node.cjs && vitest run",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview",
     "desktop:dev": "node electron/dev.cjs",
@@ -26,7 +26,8 @@
     "desktop:package:win": "pnpm run build && pnpm run desktop:backend && electron-builder --win nsis --publish never",
     "desktop:package:mac": "pnpm run build && pnpm run desktop:backend && electron-builder --mac dmg --publish never",
     "desktop:package:linux": "pnpm run build && pnpm run desktop:backend && electron-builder --linux AppImage deb --publish never",
-    "desktop:checksums": "node scripts/write-checksums.cjs"
+    "desktop:checksums": "node scripts/write-checksums.cjs",
+    "desktop:verify-update-metadata": "node scripts/verify-update-metadata.cjs"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.40",
@@ -131,6 +132,7 @@
       "maintainer": "PaperSage Contributors <0verL1nk@users.noreply.github.com>"
     },
     "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "include": "build/installer.nsh"

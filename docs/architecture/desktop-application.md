@@ -20,4 +20,4 @@ OCR output is indexed as normal text while the LanceDB chunk metadata preserves 
 
 Desktop diagnostics are written as rotating files. PaperSage first uses `<installation directory>/logs` and falls back to Electron's application log directory if the installation location is not writable; the Settings page opens that folder. `main.log`, `backend.log`, `backend-process.log`, and `renderer.log` separate desktop, API, child-process, and renderer failures without exposing them in the normal product UI.
 
-GitHub Actions uses the same native package commands for tagged releases. It builds Windows, macOS, and Linux artifacts on their respective runners, then attaches the generated packages and update metadata to the GitHub Release.
+GitHub Actions uses the same native package commands for tagged releases. It builds Windows, macOS, and Linux artifacts on their respective runners, verifies that every generated `latest*.yml` references an attached artifact, then publishes the packages and metadata to the GitHub Release. Windows NSIS artifact names are explicitly configured so the installer and `latest.yml` cannot diverge.

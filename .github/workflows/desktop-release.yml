@@ -91,6 +91,7 @@ jobs:
             }
           }
           pnpm --dir web run ${{ matrix.command }}
+          pnpm --dir web run desktop:verify-update-metadata
           pnpm --dir web run desktop:checksums
         env:
           MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
