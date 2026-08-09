@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.2](https://github.com/0verL1nk/PaperSage/compare/v1.3.1...v1.3.2) (2026-08-09)
+
+
+### Bug Fixes
+
+* dispatch canonical release inputs ([1635a9d](https://github.com/0verL1nk/PaperSage/commit/1635a9d98b1a5e44ec3071e75a73c56575652134))
+* dispatch canonical release inputs ([5c23a2d](https://github.com/0verL1nk/PaperSage/commit/5c23a2d4ddcdc4a5bfd12c0e1cb3062d389f648d))
+* improve desktop update and chat recovery ([#77](https://github.com/0verL1nk/PaperSage/issues/77)) ([fa23b76](https://github.com/0verL1nk/PaperSage/commit/fa23b7663325071fb013310e369aa1459f0fef62))
+
 ## [1.3.1](https://github.com/0verL1nk/PaperSage/compare/v1.3.0...v1.3.1) (2026-08-09)
 
 
