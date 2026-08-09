@@ -11,6 +11,10 @@ on:
         description: Commit the tag must identify; leave empty to use the tag target
         required: false
         type: string
+      release_pr:
+        description: Merged Release Please PR whose pending state should be closed
+        required: false
+        type: string
 
 permissions:
   actions: write
@@ -76,20 +80,22 @@ jobs:
       - name: Close the matching Release Please state
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_PR: ${{ inputs.release_pr }}
           TARGET_SHA: ${{ steps.release.outputs.target_sha }}
         shell: bash
         run: |
-          release_pr="$(gh pr list --base main --state merged --label 'autorelease: pending' --limit 100 \
-            --json number,mergeCommit \
-            --jq ".[] | select(.mergeCommit.oid == \"$TARGET_SHA\") | .number" \
-            | head -n 1)"
-
-          if [[ -z "$release_pr" ]]; then
-            echo "No matching pending Release Please PR for $TARGET_SHA."
+          if [[ -z "$RELEASE_PR" ]]; then
+            echo "No Release Please PR was supplied."
             exit 0
           fi
 
-          gh pr edit "$release_pr" --remove-label 'autorelease: pending'
+          pr_sha="$(gh pr view "$RELEASE_PR" --json mergeCommit --jq '.mergeCommit.oid')"
+          if [[ "$pr_sha" != "$TARGET_SHA" ]]; then
+            echo "Release PR #$RELEASE_PR points to $pr_sha, expected $TARGET_SHA." >&2
+            exit 1
+          fi
+
+          gh pr edit "$RELEASE_PR" --remove-label 'autorelease: pending'
 
       - name: Start canonical release workflows
         env:
@@ -97,4 +103,4 @@ jobs:
           TAG: ${{ steps.release.outputs.tag }}
         run: |
           gh workflow run desktop-release.yml --ref "$TAG"
-          gh workflow run publish.yml --ref "$TAG"
+          gh workflow run publish.yml --ref "$TAG" -f release_tag="$TAG"
