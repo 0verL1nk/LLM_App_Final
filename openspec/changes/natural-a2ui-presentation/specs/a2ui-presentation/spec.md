@@ -54,7 +54,7 @@
 #### Scenario: 层级信息适合地图
 - **WHEN** 模型输出有效 `type="research-map"` XML subtree
 - **THEN** 服务端仅使用注册 catalog 编译并发送 A2UI envelope
-- **AND THEN** 正常回答保持不变，导图作为其下方补充显示
+- **AND THEN** 正常回答保持不变，导图在 `<ui>` 所在的消息位置显示
 
 ### Requirement: surface 必须可追溯且安全
 

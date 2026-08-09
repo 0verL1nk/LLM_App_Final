@@ -1,3 +1,4 @@
+from .application.a2ui_output_contract import build_a2ui_output_contract
 from .prompts import (
     build_base_agent_prompt,
     build_leader_role_prompt,
@@ -23,6 +24,7 @@ def build_paper_system_prompt(
             project_name=project_name,
             scope_summary=scope_summary,
         ),
+        build_a2ui_output_contract(),
         build_leader_role_prompt(),
     )
 

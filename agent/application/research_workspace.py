@@ -257,7 +257,8 @@ class ResearchWorkspaceService:
                     "delegation": result["delegation_execution"],
                     "plan": result.get("agent_plan") or result.get("plan"),
                     "todos": result.get("todos", []),
-                    "a2ui": result.get("a2ui_surface"),
+                    "a2ui": result.get("a2ui_surfaces", []),
+                    "parts": result.get("response_parts", []),
                     "context_snapshot": public_result["context_snapshot"],
                 }
             )
@@ -324,6 +325,15 @@ def execute_research_run(
     append_run_event(run_uid=run_uid, event_type="run.started", payload={"status": "running"})
 
     def record_event(event: dict[str, Any]) -> None:
+        if str(event.get("performative") or "") == "a2ui_surface_ready":
+            metadata: dict[str, Any] = (
+                dict(event["metadata"]) if isinstance(event.get("metadata"), dict) else {}
+            )
+            surface = metadata.get("surface") if isinstance(metadata.get("surface"), dict) else None
+            part_id = str(metadata.get("part_id") or "")
+            if surface is not None:
+                _append_surface_events(run_uid=run_uid, surface=surface, part_id=part_id)
+            return
         event_type, payload = project_runtime_event(event)
         append_run_event(
             run_uid=run_uid,
@@ -353,22 +363,19 @@ def execute_research_run(
             payload={"message": public_message},
         )
         raise
-    a2ui_surface = result.get("a2ui_surface") if isinstance(result, dict) else None
-    if isinstance(a2ui_surface, dict):
-        messages = a2ui_surface.get("messages")
-        surface_metadata = {
-            "catalogId": a2ui_surface.get("catalogId"),
-            "surfaceId": a2ui_surface.get("surfaceId"),
-            "title": a2ui_surface.get("title"),
-        }
-        if isinstance(messages, list):
-            for envelope in messages:
-                if isinstance(envelope, dict):
-                    append_run_event(
-                        run_uid=run_uid,
-                        event_type="ui.a2ui",
-                        payload={"envelope": envelope, "surface": surface_metadata},
-                    )
+    a2ui_surfaces = result.get("a2ui_surfaces") if isinstance(result, dict) else None
+    if not isinstance(a2ui_surfaces, list) and isinstance(result, dict):
+        legacy_surface = result.get("a2ui_surface")
+        a2ui_surfaces = [legacy_surface] if isinstance(legacy_surface, dict) else []
+    if isinstance(a2ui_surfaces, list):
+        for surface in a2ui_surfaces:
+            if isinstance(surface, dict):
+                _append_surface_events(
+                    run_uid=run_uid,
+                    surface=surface,
+                    part_id=str(surface.get("partId") or ""),
+                    data_only=True,
+                )
     update_run_status(run_uid=run_uid, status="completed")
     append_run_event(
         run_uid=run_uid,
@@ -378,3 +385,31 @@ def execute_research_run(
 
 
 __all__ = ["ResearchWorkspaceService", "execute_research_run", "research_workspace_service"]
+
+
+def _append_surface_events(
+    *,
+    run_uid: str,
+    surface: dict[str, Any],
+    part_id: str,
+    data_only: bool = False,
+) -> None:
+    """Persist catalog messages for one anchored UI surface in stream order."""
+    messages = surface.get("messages")
+    if not isinstance(messages, list):
+        return
+    metadata: dict[str, Any] = {
+        "catalogId": surface.get("catalogId"),
+        "surfaceId": surface.get("surfaceId"),
+        "title": surface.get("title"),
+    }
+    if part_id:
+        metadata["partId"] = part_id
+    selected_messages = messages[-1:] if data_only else messages
+    for envelope in selected_messages:
+        if isinstance(envelope, dict):
+            append_run_event(
+                run_uid=run_uid,
+                event_type="ui.a2ui",
+                payload={"envelope": envelope, "surface": metadata},
+            )

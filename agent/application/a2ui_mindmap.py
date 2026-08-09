@@ -53,7 +53,7 @@ def build_mindmap_surface_from_request(
     *,
     allowed_citation_ids: set[str],
 ) -> dict[str, Any] | None:
-    """Build a catalog surface only from a validated presentation-tool request."""
+    """Compile a validated research-map DTO into the restricted catalog."""
     title = str(payload.get("title") or "").strip()
     root = payload.get("root")
     if not title or len(title) > 80 or not isinstance(root, dict):
@@ -66,8 +66,14 @@ def build_mindmap_surface_from_request(
     )
     if mindmap is None:
         return None
+    # Evidence is resolved after the model stream has completed. Keep the UI
+    # instance stable so a later data-model update enriches the same surface.
     fingerprint = sha256(
-        json.dumps({"title": title, "mindmap": mindmap}, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        json.dumps(
+            {"title": title, "mindmap": _surface_identity_node(mindmap)},
+            ensure_ascii=False,
+            sort_keys=True,
+        ).encode("utf-8")
     ).hexdigest()[:16]
     surface_id = f"research-map-{fingerprint}"
     messages = [
@@ -94,6 +100,30 @@ def build_mindmap_surface_from_request(
         "title": title,
         "messages": messages,
         "mindmap": mindmap,
+    }
+
+
+def build_mindmap_data_update(surface: dict[str, Any]) -> dict[str, Any] | None:
+    """Return the one envelope needed to enrich an already-created surface."""
+    surface_id = str(surface.get("surfaceId") or "").strip()
+    mindmap = surface.get("mindmap")
+    if not surface_id or not isinstance(mindmap, dict):
+        return None
+    return {
+        "version": "v0.9",
+        "updateDataModel": {
+            "surfaceId": surface_id,
+            "path": "/mindmap",
+            "value": mindmap,
+        },
+    }
+
+
+def _surface_identity_node(node: dict[str, Any]) -> dict[str, Any]:
+    """Remove late-bound evidence references from a stable surface identity."""
+    return {
+        "label": node["label"],
+        "children": [_surface_identity_node(child) for child in node["children"]],
     }
 
 
@@ -141,4 +171,9 @@ def _normalize_node(
     return normalized
 
 
-__all__ = ["CATALOG_ID", "build_mindmap_surface_from_request", "parse_a2ui_mindmap_jsonl"]
+__all__ = [
+    "CATALOG_ID",
+    "build_mindmap_data_update",
+    "build_mindmap_surface_from_request",
+    "parse_a2ui_mindmap_jsonl",
+]
