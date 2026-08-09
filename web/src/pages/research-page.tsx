@@ -75,7 +75,7 @@ import {
   useTurn,
 } from "@/lib/queries";
 import { consumeEventStream } from "@/lib/api";
-import { applyA2UIEnvelope, type A2UISurface } from "@/lib/a2ui";
+import { applyA2UIEnvelope, applyA2UISurfaceMetadata, type A2UISurface } from "@/lib/a2ui";
 import { formatEvidenceCitations } from "@/lib/evidence";
 import { summarizeRunActivity } from "@/lib/run-activity";
 import { agentEventSchema, turnResultSchema } from "@/lib/schemas";
@@ -140,7 +140,9 @@ function MessageBubble({
             <p className="whitespace-pre-wrap">{message.content}</p>
           )}
         </MessageContent>
-        {assistant && <A2UIMindmap surface={message.a2ui} onInspectEvidence={() => onInspect("evidence")} />}
+        {assistant && (Array.isArray(message.a2ui) ? message.a2ui : [message.a2ui]).map((surface, index) => (
+          <A2UIMindmap key={typeof surface?.surfaceId === "string" ? surface.surfaceId : index} surface={surface} onInspectEvidence={() => onInspect("evidence")} />
+        ))}
         {assistant && (evidenceCount > 0 || traceCount > 0 || message.plan) && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {(evidenceCount > 0 || retrievedEvidenceCount > 0) && (
@@ -312,11 +314,11 @@ function RunActivity({ events }: { events: AgentEvent[] }) {
 type LiveRun = {
   events: AgentEvent[];
   answer: string;
-  surface: A2UISurface | null;
+  surfaces: Record<string, A2UISurface>;
 };
 
 function emptyLiveRun(): LiveRun {
-  return { events: [], answer: "", surface: null };
+  return { events: [], answer: "", surfaces: {} };
 }
 
 function ResearchWorkspace({
@@ -372,13 +374,22 @@ function ResearchWorkspace({
           },
         };
       if (event.eventType === "ui.a2ui")
-        return {
-          ...current,
-          [event.runId]: {
-            ...run,
-            surface: applyA2UIEnvelope(run.surface, event.payload.envelope),
-          },
-        };
+        {
+          const surfaceMetadata = event.payload.surface && typeof event.payload.surface === "object"
+            ? event.payload.surface as Record<string, unknown>
+            : null;
+          const previousSurfaceId = typeof surfaceMetadata?.surfaceId === "string"
+            ? surfaceMetadata.surfaceId
+            : "";
+          const nextSurface = applyA2UISurfaceMetadata(
+            applyA2UIEnvelope(run.surfaces[previousSurfaceId] ?? null, event.payload.envelope),
+            surfaceMetadata,
+          );
+          const surfaces = { ...run.surfaces };
+          if (nextSurface) surfaces[nextSurface.surfaceId] = nextSurface;
+          else if (previousSurfaceId) delete surfaces[previousSurfaceId];
+          return { ...current, [event.runId]: { ...run, surfaces } };
+        }
       if (run.events.some((item) => item.eventId === event.eventId))
         return current;
       return {
@@ -500,13 +511,12 @@ function ResearchWorkspace({
                       message={{
                         role: "assistant",
                         content: run.answer,
-                        a2ui: run.surface
-                          ? {
-                              catalogId: run.surface.catalogId,
-                              surfaceId: run.surface.surfaceId,
-                              mindmap: run.surface.mindmap,
-                            }
-                          : null,
+                        a2ui: Object.values(run.surfaces).map((surface) => ({
+                          catalogId: surface.catalogId,
+                          surfaceId: surface.surfaceId,
+                          title: surface.title,
+                          mindmap: surface.mindmap,
+                        })),
                       }}
                       onInspect={openInspector}
                     />

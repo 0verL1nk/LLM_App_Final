@@ -48,7 +48,7 @@ export const messageSchema = z.object({
   delegation: z.record(z.string(), z.unknown()).optional(),
   plan: z.record(z.string(), z.unknown()).nullable().optional(),
   todos: z.array(z.record(z.string(), z.unknown())).optional(),
-  a2ui: z.record(z.string(), z.unknown()).nullable().optional(),
+  a2ui: z.union([z.record(z.string(), z.unknown()), z.array(z.record(z.string(), z.unknown()))]).nullable().optional(),
   context_snapshot: z.record(z.string(), z.unknown()).optional(),
 })
 
