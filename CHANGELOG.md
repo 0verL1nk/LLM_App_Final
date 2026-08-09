@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.4](https://github.com/0verL1nk/PaperSage/compare/v1.3.3...v1.3.4) (2026-08-09)
+
+
+### Bug Fixes
+
+* release desktop OCR packaging metadata ([27e3111](https://github.com/0verL1nk/PaperSage/commit/27e31119ad452d9786415efeac347df9113ccba1))
+* release desktop OCR packaging metadata ([6b22a40](https://github.com/0verL1nk/PaperSage/commit/6b22a4022e18d968584c6848892029412124da85))
+
 ## [1.3.3](https://github.com/0verL1nk/PaperSage/compare/v1.3.2...v1.3.3) (2026-08-09)
 
 
