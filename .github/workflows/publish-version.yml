@@ -72,6 +72,24 @@ jobs:
             git push origin "$TAG"
           fi
 
+      - name: Close the matching Release Please state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ steps.release.outputs.target_sha }}
+        shell: bash
+        run: |
+          release_pr="$(gh pr list --base main --state merged --label 'autorelease: pending' --limit 100 \
+            --json number,mergeCommit \
+            --jq ".[] | select(.mergeCommit.oid == \"$TARGET_SHA\") | .number" \
+            | head -n 1)"
+
+          if [[ -z "$release_pr" ]]; then
+            echo "No matching pending Release Please PR for $TARGET_SHA."
+            exit 0
+          fi
+
+          gh pr edit "$release_pr" --remove-label 'autorelease: pending'
+
       - name: Start canonical release workflows
         env:
           GH_TOKEN: ${{ github.token }}
