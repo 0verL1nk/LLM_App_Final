@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing vX.Y.Z tag to publish
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -14,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -29,6 +37,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
       - uses: pnpm/action-setup@v4
         with:
           version: 11.18.0
@@ -42,8 +52,10 @@ jobs:
           enable-cache: true
 
       - name: Verify tag matches package version
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
-          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          TAG_VERSION="${RELEASE_TAG#v}"
           PKG_VERSION=$(uv run python -c "import agent; print(agent.__version__)")
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
             echo "ERROR: Tag v$TAG_VERSION does not match package version $PKG_VERSION"
