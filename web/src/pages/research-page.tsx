@@ -7,14 +7,12 @@ import {
   PanelRightOpen,
   Sparkles,
   User,
-  Wrench,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { A2UIMindmap } from "@/components/a2ui-mindmap";
 import { PageError } from "@/components/page-state";
-import { ResearchInspector } from "@/components/research-inspector";
 import {
   Message as AiMessage,
   MessageContent,
@@ -27,39 +25,12 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import {
-  ChainOfThought,
-  ChainOfThoughtContent,
-  ChainOfThoughtHeader,
-  ChainOfThoughtStep,
-} from "@/components/ai-elements/chain-of-thought";
-import {
   PromptInput,
   PromptInputBody,
   PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
-import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
-} from "@/components/ai-elements/tool";
-import {
-  Plan,
-  PlanContent,
-  PlanDescription,
-  PlanHeader,
-  PlanTitle,
-  PlanTrigger,
-} from "@/components/ai-elements/plan";
-import {
-  Task,
-  TaskContent,
-  TaskItem,
-  TaskTrigger,
-} from "@/components/ai-elements/task";
 import {
   Source,
   Sources,
@@ -77,11 +48,46 @@ import {
 import { consumeEventStream } from "@/lib/api";
 import { applyA2UIEnvelope, applyA2UISurfaceMetadata, type A2UISurface } from "@/lib/a2ui";
 import { formatEvidenceCitations } from "@/lib/evidence";
-import { summarizeRunActivity } from "@/lib/run-activity";
 import { agentEventSchema, turnResultSchema } from "@/lib/schemas";
 import type { AgentEvent, Message, TurnResult } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
+
+const ResearchInspector = lazy(async () => {
+  const module = await import("@/components/research-inspector");
+  return { default: module.ResearchInspector };
+});
+
+const ResearchRunActivity = lazy(async () => {
+  const module = await import("@/components/research-run-activity");
+  return { default: module.ResearchRunActivity };
+});
+
+type RenderedMessagePart =
+  | { id: string; type: "markdown"; text: string }
+  | { id: string; type: "a2ui"; surfaceId?: string };
+
+function assistantParts(message: Message): RenderedMessagePart[] {
+  const stored: RenderedMessagePart[] = [];
+  message.parts?.forEach((part, index) => {
+    const type = part.type;
+    if (type === "markdown" && typeof part.text === "string") {
+      stored.push({ id: typeof part.id === "string" ? part.id : `text-${index}`, type, text: part.text });
+      return;
+    }
+    if (type === "a2ui") {
+      stored.push({ id: typeof part.id === "string" ? part.id : `surface-${index}`, type, surfaceId: typeof part.surfaceId === "string" ? part.surfaceId : undefined });
+    }
+  });
+  if (stored.length) return stored;
+  const legacySurfaces = Array.isArray(message.a2ui) ? message.a2ui : [message.a2ui];
+  return [
+    ...(message.content ? [{ id: "text-0", type: "markdown" as const, text: message.content }] : []),
+    ...legacySurfaces.flatMap((surface, index) => typeof surface?.surfaceId === "string"
+      ? [{ id: `surface-${index}`, type: "a2ui" as const, surfaceId: surface.surfaceId }]
+      : []),
+  ];
+}
 
 function MessageBubble({
   message,
@@ -98,6 +104,13 @@ function MessageBubble({
   const renderedContent = assistant
     ? formatEvidenceCitations(message.content, message.evidence)
     : message.content;
+  const surfaces = (Array.isArray(message.a2ui) ? message.a2ui : [message.a2ui])
+    .filter((surface): surface is Record<string, unknown> => Boolean(surface && typeof surface === "object"))
+    .reduce<Record<string, Record<string, unknown>>>((items, surface, index) => {
+      items[typeof surface.surfaceId === "string" ? surface.surfaceId : `surface-${index}`] = surface;
+      return items;
+    }, {});
+  const parts = assistant ? assistantParts(message) : [];
   return (
     <div className={cn("flex gap-3", !assistant && "justify-end")}>
       {assistant && (
@@ -132,17 +145,23 @@ function MessageBubble({
                 }
               }}
             >
-              <MessageResponse className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-pre:bg-background">
-                {renderedContent}
-              </MessageResponse>
+              {parts.map((part) => {
+                if (part.type === "markdown") {
+                  const content = part.text === message.content ? renderedContent : formatEvidenceCitations(part.text, message.evidence);
+                  return <MessageResponse key={part.id} className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-pre:bg-background">{content}</MessageResponse>;
+                }
+                const surface = part.surfaceId ? surfaces[part.surfaceId] : undefined;
+                return surface ? (
+                  <A2UIMindmap key={part.id} surface={surface} onInspectEvidence={() => onInspect("evidence")} />
+                ) : (
+                  <div key={part.id} className="my-3 h-20 animate-pulse rounded-xl border bg-background/60" aria-label="正在生成可视化梳理" />
+                );
+              })}
             </div>
           ) : (
             <p className="whitespace-pre-wrap">{message.content}</p>
           )}
         </MessageContent>
-        {assistant && (Array.isArray(message.a2ui) ? message.a2ui : [message.a2ui]).map((surface, index) => (
-          <A2UIMindmap key={typeof surface?.surfaceId === "string" ? surface.surfaceId : index} surface={surface} onInspectEvidence={() => onInspect("evidence")} />
-        ))}
         {assistant && (evidenceCount > 0 || traceCount > 0 || message.plan) && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {(evidenceCount > 0 || retrievedEvidenceCount > 0) && (
@@ -209,116 +228,23 @@ function MessageBubble({
   );
 }
 
-function RunActivity({ events }: { events: AgentEvent[] }) {
-  const steps = summarizeRunActivity(events);
-  const activeStep = [...steps]
-    .reverse()
-    .find((step) => step.status === "active");
-  const currentLabel = activeStep
-    ? activeStep.label
-    : steps.length
-      ? "正在整理研究结果"
-      : "正在准备研究";
-  const planEvent = [...events]
-    .reverse()
-    .find((event) => event.eventType === "plan.updated");
-  const todos = Array.isArray(planEvent?.payload.todos)
-    ? (planEvent.payload.todos as Record<string, unknown>[])
-    : [];
-  return (
-    <div
-      className="ml-11 max-w-[86%] space-y-3 py-1"
-      role="status"
-      aria-live="polite"
-    >
-      <ChainOfThought>
-        <ChainOfThoughtHeader>
-          {currentLabel}
-          {activeStep && (
-            <span className="ml-2 inline-block size-1.5 animate-pulse rounded-full bg-current align-middle" />
-          )}
-        </ChainOfThoughtHeader>
-        <ChainOfThoughtContent>
-          {steps.map((step) => (
-            <ChainOfThoughtStep
-              key={step.eventIds[0]}
-              icon={step.toolName ? Wrench : undefined}
-              label={step.label}
-              status={
-                step.status === "failed"
-                  ? "pending"
-                  : step.status === "active"
-                    ? "active"
-                    : "complete"
-              }
-            >
-              {step.toolName && (
-                <Tool>
-                  <ToolHeader
-                    type="dynamic-tool"
-                    toolName={step.toolName}
-                    state={
-                      step.status === "complete" || step.status === "failed"
-                        ? "output-available"
-                        : "input-available"
-                    }
-                  />
-                  <ToolContent>
-                    <ToolInput input={step.event.payload.arguments ?? {}} />
-                    {step.status !== "active" && (
-                      <ToolOutput
-                        output={String(step.event.payload.summary ?? "")}
-                        errorText={
-                          step.status === "failed"
-                            ? String(step.event.payload.summary ?? "处理失败")
-                            : undefined
-                        }
-                      />
-                    )}
-                  </ToolContent>
-                </Tool>
-              )}
-            </ChainOfThoughtStep>
-          ))}
-        </ChainOfThoughtContent>
-      </ChainOfThought>
-      {todos.length > 0 && (
-        <Plan isStreaming>
-          <PlanHeader>
-            <div>
-              <PlanTitle>研究步骤</PlanTitle>
-              <PlanDescription>本次问题正在按这些步骤推进。</PlanDescription>
-            </div>
-            <PlanTrigger />
-          </PlanHeader>
-          <PlanContent>
-            {todos.map((todo, index) => (
-              <Task key={String(todo.id ?? index)}>
-                <TaskTrigger
-                  title={String(
-                    todo.content ?? todo.title ?? todo.id ?? "未命名步骤",
-                  )}
-                />
-                <TaskContent>
-                  <TaskItem>{String(todo.status ?? "待处理")}</TaskItem>
-                </TaskContent>
-              </Task>
-            ))}
-          </PlanContent>
-        </Plan>
-      )}
-    </div>
-  );
-}
-
 type LiveRun = {
   events: AgentEvent[];
-  answer: string;
+  parts: RenderedMessagePart[];
   surfaces: Record<string, A2UISurface>;
+  processedEventIds: string[];
 };
 
 function emptyLiveRun(): LiveRun {
-  return { events: [], answer: "", surfaces: {} };
+  return { events: [], parts: [], surfaces: {}, processedEventIds: [] };
+}
+
+function liveAnswer(parts: RenderedMessagePart[]): string {
+  let answer = "";
+  for (const part of parts) {
+    if (part.type === "markdown") answer += part.text;
+  }
+  return answer;
 }
 
 function ResearchWorkspace({
@@ -343,6 +269,7 @@ function ResearchWorkspace({
         .find((item) => item.role === "assistant"),
     [messages.data],
   );
+  const inspectorOpen = useUiStore((state) => state.inspectorOpen);
   const openInspector = useUiStore((state) => state.openInspector);
   const liveEvents = useMemo(
     () => Object.values(liveRuns).flatMap((run) => run.events),
@@ -365,14 +292,46 @@ function ResearchWorkspace({
   const handleRunEvent = useCallback((event: AgentEvent) => {
     setLiveRuns((current) => {
       const run = current[event.runId] ?? emptyLiveRun();
-      if (event.eventType === "answer.delta")
+      if (run.processedEventIds.includes(event.eventId)) return current;
+      const processedEventIds = [...run.processedEventIds, event.eventId];
+      if (event.eventType === "message.part.delta") {
+        const partId = String(event.payload.partId ?? "text-0");
+        const text = String(event.payload.text ?? "");
+        const existing = run.parts.find((part) => part.id === partId);
+        const parts = existing?.type === "markdown"
+          ? run.parts.map((part) => part.id === partId && part.type === "markdown" ? { ...part, text: part.text + text } : part)
+          : [...run.parts, { id: partId, type: "markdown" as const, text }];
         return {
           ...current,
           [event.runId]: {
             ...run,
-            answer: run.answer + String(event.payload.text ?? ""),
+            processedEventIds,
+            parts,
           },
         };
+      }
+      if (event.eventType === "message.part.insert") {
+        const partId = String(event.payload.partId ?? "");
+        const parts = !partId || run.parts.some((part) => part.id === partId)
+          ? run.parts
+          : [...run.parts, { id: partId, type: "a2ui" as const }];
+        return { ...current, [event.runId]: { ...run, processedEventIds, parts } };
+      }
+      if (event.eventType === "presentation.failed") {
+        const partId = String(event.payload.partId ?? "");
+        const events = run.events.some((item) => item.eventId === event.eventId)
+          ? run.events
+          : [...run.events, event];
+        return {
+          ...current,
+          [event.runId]: {
+            ...run,
+            processedEventIds,
+            parts: run.parts.filter((part) => part.id !== partId),
+            events,
+          },
+        };
+      }
       if (event.eventType === "ui.a2ui")
         {
           const surfaceMetadata = event.payload.surface && typeof event.payload.surface === "object"
@@ -388,13 +347,15 @@ function ResearchWorkspace({
           const surfaces = { ...run.surfaces };
           if (nextSurface) surfaces[nextSurface.surfaceId] = nextSurface;
           else if (previousSurfaceId) delete surfaces[previousSurfaceId];
-          return { ...current, [event.runId]: { ...run, surfaces } };
+          const partId = typeof surfaceMetadata?.partId === "string" ? surfaceMetadata.partId : "";
+          const parts = partId && nextSurface
+            ? run.parts.map((part) => part.id === partId && part.type === "a2ui" ? { ...part, surfaceId: nextSurface.surfaceId } : part)
+            : run.parts;
+          return { ...current, [event.runId]: { ...run, processedEventIds, surfaces, parts } };
         }
-      if (run.events.some((item) => item.eventId === event.eventId))
-        return current;
       return {
         ...current,
-        [event.runId]: { ...run, events: [...run.events, event] },
+        [event.runId]: { ...run, processedEventIds, events: [...run.events, event] },
       };
     });
   }, []);
@@ -505,12 +466,15 @@ function ResearchWorkspace({
               )}
               {activeRuns.map(([runId, run]) => (
                 <div key={runId}>
-                  <RunActivity events={run.events} />
-                  {run.answer && (
+                  <Suspense fallback={<div className="ml-11 py-1 text-sm text-muted-foreground">正在准备研究…</div>}>
+                    <ResearchRunActivity events={run.events} />
+                  </Suspense>
+                  {run.parts.length > 0 && (
                     <MessageBubble
                       message={{
                         role: "assistant",
-                        content: run.answer,
+                        content: liveAnswer(run.parts),
+                        parts: run.parts,
                         a2ui: Object.values(run.surfaces).map((surface) => ({
                           catalogId: surface.catalogId,
                           surfaceId: surface.surfaceId,
@@ -555,12 +519,16 @@ function ResearchWorkspace({
           </div>
         </main>
       </div>
-      <ResearchInspector
-        projectId={projectId}
-        turn={lastTurn}
-        latest={latestAssistant}
-        liveEvents={liveEvents}
-      />
+      {inspectorOpen && (
+        <Suspense fallback={null}>
+          <ResearchInspector
+            projectId={projectId}
+            turn={lastTurn}
+            latest={latestAssistant}
+            liveEvents={liveEvents}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

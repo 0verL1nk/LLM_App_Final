@@ -2,12 +2,13 @@ import json
 import logging
 import re
 import time
-from typing import Any
+from typing import Any, cast
 
 from ..domain.human_request import extract_human_requests
 from ..domain.trace import TraceEvent, phase_label_from_performative, phase_summary
 from ..method_compare_parser import parse_method_compare_payload
 from ..stream import extract_stream_text
+from .a2ui_fragments import A2UIFragmentStreamParser, PresentationDecision
 from .a2ui_mindmap import build_mindmap_surface_from_request
 from .contracts import EventCallback, SearchDocumentFn, TurnCoreResult
 from .delegation import build_delegation_execution
@@ -118,34 +119,6 @@ def _message_tool_calls(message: Any) -> list[dict[str, Any]]:
     if not isinstance(tool_calls, list):
         return []
     return [item for item in tool_calls if isinstance(item, dict)]
-
-
-def _tool_call_args(call: dict[str, Any]) -> dict[str, Any] | None:
-    args = call.get("args")
-    if isinstance(args, dict):
-        return args
-    if isinstance(args, str):
-        return _parse_tool_json_payload(args)
-    return None
-
-
-def _extract_a2ui_surface(
-    messages: list[Any],
-    *,
-    allowed_citation_ids: set[str],
-) -> dict[str, Any] | None:
-    """Derive a persisted surface from the final real presentation tool call."""
-    for message in reversed(messages):
-        for call in reversed(_message_tool_calls(message)):
-            if str(call.get("name") or "").strip() != "present_research_surface":
-                continue
-            payload = _tool_call_args(call)
-            if payload is not None:
-                return build_mindmap_surface_from_request(
-                    payload,
-                    allowed_citation_ids=allowed_citation_ids,
-                )
-    return None
 
 
 def normalize_evidence_tag_variants(answer: str) -> str:
@@ -327,7 +300,11 @@ def execute_turn_core(
     phase_labels: list[str] = []
 
     def _collect_event(item: TraceEvent) -> None:
-        if str(item.get("performative") or "") == "answer_delta":
+        if str(item.get("performative") or "") in {
+            "answer_part_delta",
+            "answer_part_insert",
+            "a2ui_surface_ready",
+        }:
             if on_event is not None:
                 on_event(item)
             return
@@ -369,11 +346,87 @@ def execute_turn_core(
     if "thread_id" not in configurable:
         configurable["thread_id"] = "default"
 
+    visible_deltas: list[str] = []
+    fragments: list[tuple[str, PresentationDecision]] = []
+    response_parts: list[dict[str, str]] = []
+    streamed_text_seen = False
+    text_part_id = "text-0"
+    pending_surface_part_id = ""
+
+    def emit_visible_text(text: str) -> None:
+        if not text:
+            return
+        visible_deltas.append(text)
+        if response_parts and response_parts[-1].get("id") == text_part_id:
+            response_parts[-1]["text"] += text
+        else:
+            response_parts.append({"id": text_part_id, "type": "markdown", "text": text})
+        _collect_event(
+            {
+                "performative": "answer_part_delta",
+                "content": text,
+                "metadata": {"part_id": text_part_id},
+            }
+        )
+
+    def insert_surface_part(_fragment_type: str) -> None:
+        nonlocal pending_surface_part_id, text_part_id
+        pending_surface_part_id = f"surface-{len(fragments)}"
+        response_parts.append({"id": pending_surface_part_id, "type": "a2ui"})
+        _collect_event(
+            {
+                "performative": "answer_part_insert",
+                "metadata": {"part_id": pending_surface_part_id, "part_type": "a2ui"},
+            }
+        )
+        text_part_id = f"text-{len(fragments) + 1}"
+
+    def emit_surface(fragment: PresentationDecision) -> None:
+        if not pending_surface_part_id:
+            logger.warning("Discarded inline UI fragment without an insertion anchor")
+            return
+        surface = build_mindmap_surface_from_request(
+            fragment.payload,
+            allowed_citation_ids=set(),
+        )
+        if surface is None:
+            report_surface_failure("可视化内容未通过安全校验，已保留正文。")
+            return
+        fragments.append((pending_surface_part_id, fragment))
+        _collect_event(
+            {
+                "performative": "a2ui_surface_ready",
+                "metadata": {"part_id": pending_surface_part_id, "surface": surface},
+            }
+        )
+
+    def report_surface_failure(message: str) -> None:
+        if not pending_surface_part_id:
+            logger.warning("Discarded inline UI fragment: %s", message)
+            return
+        _collect_event(
+            {
+                "performative": "presentation_failed",
+                "metadata": {"part_id": pending_surface_part_id, "message": message},
+            }
+        )
+
+    parser = A2UIFragmentStreamParser(
+        on_text=emit_visible_text,
+        on_fragment_start=insert_surface_part,
+        on_fragment=emit_surface,
+        on_error=report_surface_failure,
+    )
+    def ingest_delta(event: TraceEvent) -> None:
+        nonlocal streamed_text_seen
+        streamed_text_seen = True
+        parser.feed(str(event.get("content") or ""))
+
     result = _execute_agent_with_streaming(
         leader_agent=leader_agent,
         prompt=prompt,
         config=config,
-        on_delta=_collect_event,
+        on_delta=ingest_delta,
     )
 
     # 提取 answer
@@ -389,6 +442,10 @@ def execute_turn_core(
             elif isinstance(last_msg, dict):
                 answer = str(last_msg.get("content", ""))
 
+    if not streamed_text_seen and answer:
+        parser.feed(answer)
+    parser.finish()
+    answer = "".join(visible_deltas)
     if not answer:
         raise RuntimeError("Agent execution completed without a final answer")
     answer = normalize_evidence_tag_variants(answer)
@@ -461,15 +518,39 @@ def execute_turn_core(
             logger.warning("Evidence fallback retrieval failed: %s", exc)
             evidence_items = []
     method_compare_data = parse_method_compare_payload(answer)
-    a2ui_surface = _extract_a2ui_surface(
-        messages,
-        allowed_citation_ids={
+    allowed_citation_ids = {
             str(item.get("chunk_id") or "").strip()
             for item in retrieved_evidence_items
             if str(item.get("chunk_id") or "").strip()
-        },
+    }
+    a2ui_surfaces = [
+        {
+            **surface,
+            "partId": part_id,
+        }
+        for part_id, fragment in fragments
+        if fragment.type == "research-map"
+        for surface in [
+            build_mindmap_surface_from_request(
+                fragment.payload,
+                allowed_citation_ids=allowed_citation_ids,
+            )
+        ]
+        if surface is not None
+    ]
+    a2ui_surface = a2ui_surfaces[-1] if a2ui_surfaces else None
+    surface_ids_by_part = {
+        str(surface["partId"]): str(surface["surfaceId"])
+        for surface in a2ui_surfaces
+    }
+    for part in response_parts:
+        if part.get("type") == "a2ui" and part.get("id") in surface_ids_by_part:
+            part["surfaceId"] = surface_ids_by_part[part["id"]]
+    mindmap_data = (
+        cast(dict[str, Any], a2ui_surface["mindmap"])
+        if isinstance(a2ui_surface, dict) and isinstance(a2ui_surface.get("mindmap"), dict)
+        else None
     )
-    mindmap_data = a2ui_surface["mindmap"] if a2ui_surface is not None else None
     # 从 result 中提取 middleware 添加的 state
     todos = result.get("todos", []) if isinstance(result, dict) else []
     agent_plan = result.get("agent_plan") if isinstance(result, dict) else None
@@ -511,6 +592,8 @@ def execute_turn_core(
         "retrieved_evidence_items": retrieved_evidence_items,
         "mindmap_data": mindmap_data,
         "a2ui_surface": a2ui_surface,
+        "a2ui_surfaces": a2ui_surfaces,
+        "response_parts": response_parts,
         "method_compare_data": method_compare_data,
         "run_latency_ms": run_latency_ms,
         "delegation_rounds": delegation_execution["rounds"],

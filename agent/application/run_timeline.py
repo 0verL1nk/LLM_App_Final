@@ -15,9 +15,26 @@ def project_runtime_event(event: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     private prompts. The persisted result is the contract consumed by the web UI.
     """
     performative = str(event.get("performative") or "")
+    metadata: dict[str, Any] = (
+        dict(event["metadata"]) if isinstance(event.get("metadata"), dict) else {}
+    )
     if performative == "answer_delta":
         return "answer.delta", {"text": _safe_text(event.get("content") or "")}
-    metadata = event.get("metadata") if isinstance(event.get("metadata"), dict) else {}
+    if performative == "answer_part_delta":
+        return "message.part.delta", {
+            "partId": _safe_text(metadata.get("part_id") or ""),
+            "text": _safe_text(event.get("content") or ""),
+        }
+    if performative == "answer_part_insert":
+        return "message.part.insert", {
+            "partId": _safe_text(metadata.get("part_id") or ""),
+            "type": _safe_text(metadata.get("part_type") or ""),
+        }
+    if performative == "presentation_failed":
+        return "presentation.failed", {
+            "partId": _safe_text(metadata.get("part_id") or ""),
+            "message": _safe_text(metadata.get("message") or "未能生成可视化梳理，已保留正文。"),
+        }
     tool_name = str(metadata.get("tool_name") or event.get("receiver") or "unknown")
     payload = {
         "actionId": str(metadata.get("tool_call_id") or ""),
@@ -48,7 +65,9 @@ def project_runtime_event(event: dict[str, Any]) -> tuple[str, dict[str, Any]]:
 
 
 def _delegation_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    arguments = payload.get("arguments") if isinstance(payload.get("arguments"), dict) else {}
+    arguments: dict[str, Any] = (
+        dict(payload["arguments"]) if isinstance(payload.get("arguments"), dict) else {}
+    )
     return {
         "actionId": payload["actionId"],
         "agent": str(arguments.get("subagent_type") or "unknown"),
@@ -59,7 +78,9 @@ def _delegation_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _plan_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    arguments = payload.get("arguments") if isinstance(payload.get("arguments"), dict) else {}
+    arguments: dict[str, Any] = (
+        dict(payload["arguments"]) if isinstance(payload.get("arguments"), dict) else {}
+    )
     todos = arguments.get("todos") if isinstance(arguments.get("todos"), list) else []
     return {
         "actionId": payload["actionId"],

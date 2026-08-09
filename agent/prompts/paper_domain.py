@@ -42,8 +42,6 @@ def build_paper_domain_prompt(
 - 需要总结/批判性阅读/方法比较/翻译时，可调用 use_skill
 - 复杂且可独立执行的子任务可委派给 task subagent；简单任务不要委派
 - 多个互不依赖的子任务应在同一轮并行委派，最后由 leader 综合结果
-- 当层级关系、方法结构或材料脉络比线性文字更适合帮助用户理解时，可以主动调用 present_research_surface；不要靠关键词或固定频率触发。它只是一项补充展示，调用后仍必须输出完整、自然的 Markdown 回答和证据引用。
-- 不要在回答中输出 A2UI JSON、XML/HTML tag、JavaScript、SVG、CSS 或 Markdown 围栏来驱动界面。界面数据只能通过 present_research_surface 提交，且 citation_ids 只能使用本轮检索结果中真实存在的 chunk_id。
 
 当前对话项目：{proj_name}
 当前检索范围：{scope_text}

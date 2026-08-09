@@ -26,6 +26,17 @@ def test_rejects_unapproved_components_and_scripts() -> None:
     ) is None
 
 
+def test_late_evidence_enriches_the_existing_surface_identity() -> None:
+    request = {"title": "论文结构", "root": {"label": "论文", "children": [], "citation_ids": ["chunk-1"]}}
+    provisional = build_mindmap_surface_from_request(request, allowed_citation_ids=set())
+    enriched = build_mindmap_surface_from_request(request, allowed_citation_ids={"chunk-1"})
+
+    assert provisional is not None and enriched is not None
+    assert provisional["surfaceId"] == enriched["surfaceId"]
+    assert "citation_ids" not in provisional["mindmap"]
+    assert enriched["mindmap"]["citation_ids"] == ["chunk-1"]
+
+
 def test_builds_tool_requested_surface_and_keeps_only_retrieved_citations() -> None:
     surface = build_mindmap_surface_from_request(
         {

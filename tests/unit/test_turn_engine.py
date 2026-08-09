@@ -67,7 +67,7 @@ def test_execute_turn_core_streams_answer_deltas_without_reinvoking() -> None:
     assert [event["content"] for event in events] == ["流式", "回答"]
 
 
-def test_execute_turn_core_keeps_markdown_answer_with_tool_requested_surface() -> None:
+def test_execute_turn_core_keeps_markdown_answer_with_inline_ui_surface() -> None:
     from types import SimpleNamespace
     from unittest.mock import Mock
 
@@ -75,20 +75,9 @@ def test_execute_turn_core_keeps_markdown_answer_with_tool_requested_surface() -
     mock_agent.invoke.return_value = {
         "messages": [
             SimpleNamespace(
-                content="结论来自文档。<evidence>chunk-1|p1|o0-10</evidence>",
+                content='结论来自文档。<evidence>chunk-1|p1|o0-10</evidence>\n<ui type="research-map"><map title="方法结构"><node label="论文"><evidence ref="chunk-1" /></node></map></ui>',
                 tool_calls=[
                     {"name": "search_document", "args": {"query": "方法"}},
-                    {
-                        "name": "present_research_surface",
-                        "args": {
-                            "title": "方法结构",
-                            "root": {
-                                "label": "论文",
-                                "citation_ids": ["chunk-1"],
-                                "children": [],
-                            },
-                        },
-                    },
                 ],
             )
         ]

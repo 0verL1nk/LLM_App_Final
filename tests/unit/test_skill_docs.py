@@ -24,10 +24,3 @@ def test_agentic_search_skill_documents_canonical_document_citations() -> None:
     assert expected in skill_content
     assert expected in blueprint_content
     assert expected in schema_content
-
-
-def test_mindmap_skill_uses_catalog_tool_and_forbids_protocol_text() -> None:
-    content = (ROOT / "agent/skills/mindmap/SKILL.md").read_text(encoding="utf-8")
-    assert "present_research_surface" in content
-    assert "Never emit A2UI JSON" in content
-    assert "normal Markdown response" in content
