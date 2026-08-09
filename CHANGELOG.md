@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.5](https://github.com/0verL1nk/PaperSage/compare/v1.3.4...v1.3.5) (2026-08-09)
+
+
+### Bug Fixes
+
+* route desktop updates through R2 ([d00ae51](https://github.com/0verL1nk/PaperSage/commit/d00ae51c5d74dd158a5487a89825b9462c577230))
+* route desktop updates through R2 ([89c4c69](https://github.com/0verL1nk/PaperSage/commit/89c4c699660d7bf4d1f11ebd88f7fdf8bf94dca7))
+
 ## [1.3.4](https://github.com/0verL1nk/PaperSage/compare/v1.3.3...v1.3.4) (2026-08-09)
 
 
