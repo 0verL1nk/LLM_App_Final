@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.0](https://github.com/0verL1nk/PaperSage/compare/v1.3.6...v1.4.0) (2026-08-14)
+
+
+### Features
+
+* advance durable research runtime ([032aaa3](https://github.com/0verL1nk/PaperSage/commit/032aaa31dc58ba538c689bf4c72bf0b99aff51c2))
+* advance durable research runtime ([7e46967](https://github.com/0verL1nk/PaperSage/commit/7e4696720fd7e78039126f0a35f3ffdba848b5d1))
+
+
+### Bug Fixes
+
+* keep memory changes out of runtime release ([c8db72e](https://github.com/0verL1nk/PaperSage/commit/c8db72eb0d6da3726d4debd1b2e8996ea6bccabc))
+* keep workspace within debt baseline ([08eb4ad](https://github.com/0verL1nk/PaperSage/commit/08eb4adc8b75d8319c94f4397fbbe4fdc2a62eca))
+* restore runtime migration compatibility ([7a0c757](https://github.com/0verL1nk/PaperSage/commit/7a0c7578f17b65fded3650700f904dffc81aa796))
+* sort runtime migration imports ([cc58e80](https://github.com/0verL1nk/PaperSage/commit/cc58e80556959b38a21e23ed6d203071a83e7a36))
+
 ## [1.3.6](https://github.com/0verL1nk/PaperSage/compare/v1.3.5...v1.3.6) (2026-08-09)
 
 
