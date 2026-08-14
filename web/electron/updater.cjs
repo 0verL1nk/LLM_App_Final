@@ -1,6 +1,6 @@
 /**
  * @typedef {{ isPackaged: boolean, getVersion: () => string }} ElectronApp
- * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean }} ElectronUpdater
+ * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, quitAndInstall: (isSilent: boolean, isForceRunAfter: boolean) => void, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean }} ElectronUpdater
  * @typedef {{ status: "downloading" | "progress" | "ready" | "failed", version?: string, percent?: number, transferred?: number, total?: number, bytesPerSecond?: number }} UpdateStatus
  */
 
@@ -23,17 +23,19 @@ function unsupportedUpdateReason({ isPackaged, platform, appImage }) {
 }
 
 /**
- * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, platform?: NodeJS.Platform, appImage?: string }} dependencies
- * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string, reason?: "development" | "system-managed" | "unavailable" }>, scheduleCheck: () => void }}
+ * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, platform?: NodeJS.Platform, appImage?: string, checkIntervalMs?: number }} dependencies
+ * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string, reason?: "development" | "system-managed" | "unavailable" }>, installUpdate: () => { supported: boolean, status: "unsupported" | "not-ready" | "installing", reason?: "development" | "system-managed" | "unavailable" }, scheduleCheck: () => void }}
  */
-function createUpdateService({ app, autoUpdater, logger = console, notify = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE }) {
+function createUpdateService({ app, autoUpdater, logger = console, notify = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE, checkIntervalMs = 6 * 60 * 60 * 1000 }) {
   const supported = supportsAutomaticUpdates({ isPackaged: app.isPackaged, platform, appImage })
   let checking = false
   let downloading = false
+  let readyToInstall = false
   const reportError = (error) => logger.error("PaperSage update check failed", error)
   const download = async (version) => {
     if (downloading) return
     downloading = true
+    readyToInstall = false
     notify({ status: "downloading", version })
     try {
       await autoUpdater.downloadUpdate()
@@ -43,6 +45,15 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
     } finally {
       downloading = false
     }
+  }
+
+  const installUpdate = () => {
+    if (!supported) return { supported: false, status: "unsupported", reason: unsupportedUpdateReason({ isPackaged: app.isPackaged, platform, appImage }) }
+    if (!readyToInstall) return { supported: true, status: "not-ready" }
+    // Silent install plus relaunch: the app comes back on the new version,
+    // so the user never waits in the dark after quitting.
+    autoUpdater.quitAndInstall(true, true)
+    return { supported: true, status: "installing" }
   }
 
   if (supported) {
@@ -61,6 +72,7 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
       bytesPerSecond: Number(progress.bytesPerSecond || 0),
     }))
     autoUpdater.on("update-downloaded", () => {
+      readyToInstall = true
       notify({ status: "ready" })
     })
   }
@@ -82,7 +94,16 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
     } finally { checking = false }
   }
 
-  return { checkForUpdates, scheduleCheck: () => { if (supported) setTimeout(() => { void checkForUpdates() }, 12_000) } }
+  return {
+    checkForUpdates,
+    installUpdate,
+    scheduleCheck: () => {
+      if (!supported) return
+      setTimeout(() => { void checkForUpdates() }, 12_000)
+      // Sessions that stay open for days would otherwise never see a release.
+      setInterval(() => { void checkForUpdates() }, checkIntervalMs)
+    },
+  }
 }
 
 module.exports = { createUpdateService, supportsAutomaticUpdates, unsupportedUpdateReason }

@@ -33,6 +33,80 @@ test("manual checks return an explicit current or available version result", asy
   assert.deepEqual(await service.checkForUpdates(), { supported: true, status: "up-to-date", version: "1.1.8" })
 })
 
+test("installUpdate restarts into a downloaded update and refuses anything else", async () => {
+  const listeners = {}
+  const updater = {
+    autoDownload: true,
+    autoInstallOnAppQuit: true,
+    checkForUpdates: async () => ({ updateInfo: { version: "1.2.0" } }),
+    downloadUpdate: async () => undefined,
+    quitAndInstall: () => undefined,
+    on: (event, listener) => { listeners[event] = listener },
+  }
+  const service = createUpdateService({
+    app: { isPackaged: true, getVersion: () => "1.1.8" },
+    autoUpdater: updater,
+    logger: { error: () => undefined },
+    platform: "win32",
+  })
+
+  assert.deepEqual(service.installUpdate(), { supported: true, status: "not-ready" })
+
+  await listeners["update-available"]({ version: "1.2.0" })
+  await listeners["update-downloaded"]()
+
+  let installed = null
+  updater.quitAndInstall = (isSilent, isForceRunAfter) => { installed = { isSilent, isForceRunAfter } }
+  assert.deepEqual(service.installUpdate(), { supported: true, status: "installing" })
+  assert.deepEqual(installed, { isSilent: true, isForceRunAfter: true })
+})
+
+test("installUpdate is unsupported where automatic updates are unavailable", async () => {
+  const updater = {
+    autoDownload: true,
+    autoInstallOnAppQuit: true,
+    checkForUpdates: async () => ({ updateInfo: {} }),
+    downloadUpdate: async () => undefined,
+    quitAndInstall: () => { throw new Error("must not install") },
+    on: () => undefined,
+  }
+  const service = createUpdateService({
+    app: { isPackaged: false, getVersion: () => "1.1.8" },
+    autoUpdater: updater,
+    logger: { error: () => undefined },
+    platform: "win32",
+  })
+
+  assert.deepEqual(service.installUpdate(), { supported: false, status: "unsupported", reason: "development" })
+})
+
+test("scheduleCheck rechecks periodically so long-running sessions still see releases", async (t) => {
+  const calls = []
+  const updater = {
+    autoDownload: true,
+    autoInstallOnAppQuit: true,
+    checkForUpdates: async () => { calls.push(calls.length); return { updateInfo: { version: "1.1.8" } } },
+    downloadUpdate: async () => undefined,
+    quitAndInstall: () => undefined,
+    on: () => undefined,
+  }
+  const service = createUpdateService({
+    app: { isPackaged: true, getVersion: () => "1.1.8" },
+    autoUpdater: updater,
+    logger: { error: () => undefined },
+    platform: "win32",
+  })
+
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] })
+  service.scheduleCheck()
+  await t.mock.timers.tick(12_000)
+  assert.equal(calls.length, 1)
+  await t.mock.timers.tick(6 * 60 * 60 * 1000)
+  assert.equal(calls.length, 2)
+  await t.mock.timers.tick(6 * 60 * 60 * 1000)
+  assert.equal(calls.length, 3)
+})
+
 test("downloads silently and schedules installation for the next app exit", async () => {
   const listeners = {}
   const statuses = []

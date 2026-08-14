@@ -158,6 +158,8 @@ ipcMain.handle("window:toggle-maximize", (event) => {
 })
 ipcMain.handle("window:close", (event) => BrowserWindow.fromWebContents(event.sender)?.close())
 ipcMain.handle("updates:check", () => updates.checkForUpdates())
+ipcMain.handle("updates:install", () => updates.installUpdate())
+ipcMain.handle("app:version", () => (app.isPackaged ? app.getVersion() : require("../package.json").version))
 ipcMain.handle("logs:open", async () => shell.openPath(getLogDirectory()))
 
 process.on("uncaughtException", (error) => reportMainError("桌面应用发生未捕获错误", error))
@@ -169,8 +171,9 @@ app.whenReady().then(async () => {
     Menu,
     nativeImage,
     app,
-    iconPath: path.join(__dirname, "tray-icon.svg"),
+    iconPath: path.join(__dirname, "tray-icon.png"),
     showWindow: showMainWindow,
+    reportError: (message) => writeDesktopLog("main.log", message),
   })
   await createWindow()
   updates.scheduleCheck()

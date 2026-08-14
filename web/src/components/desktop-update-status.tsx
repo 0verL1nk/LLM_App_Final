@@ -14,9 +14,11 @@ function formatBytes(value?: number): string {
 export function DesktopUpdateStatusListener(): null {
   const desktop = desktopWindowControls()
   const setDesktopUpdate = useUiStore((state) => state.setDesktopUpdate)
+  const setDesktopVersion = useUiStore((state) => state.setDesktopVersion)
 
   useEffect(() => {
     if (!desktop) return
+    desktop.appVersion().then((value) => setDesktopVersion(value)).catch(() => undefined)
     return desktop.onUpdateStatus((status) => {
       if (status.status === "downloading") {
         setDesktopUpdate({ phase: "downloading", version: status.version, percent: 0 })
@@ -34,13 +36,17 @@ export function DesktopUpdateStatusListener(): null {
       }
       if (status.status === "ready") {
         setDesktopUpdate({ phase: "ready" })
-        toast.success("更新已下载完成", { id: "desktop-update", description: "将在下次退出 PaperSage 时自动安装。" })
+        toast.success("更新已下载完成", {
+          id: "desktop-update",
+          description: "重启 PaperSage 即可完成安装，也可以下次退出时自动安装。",
+          action: { label: "重启并更新", onClick: () => void desktop.installUpdate() },
+        })
         return
       }
       setDesktopUpdate({ phase: "failed" })
       toast.error("下载未完成", { id: "desktop-update", description: "请检查网络后再试一次。" })
     })
-  }, [desktop, setDesktopUpdate])
+  }, [desktop, setDesktopUpdate, setDesktopVersion])
 
   return null
 }

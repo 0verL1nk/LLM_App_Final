@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ArrowLeft, CheckCircle2, Database, Download, FileWarning, FolderOpen, LockKeyhole, Save, ServerCog } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Database, Download, FileWarning, FolderOpen, LockKeyhole, RotateCw, Save, ServerCog } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -38,8 +38,20 @@ function FieldError({ message }: { message?: string }) {
 function DesktopUpdatesCard() {
   const desktop = desktopWindowControls()
   const desktopUpdate = useUiStore((state) => state.desktopUpdate)
+  const version = useUiStore((state) => state.desktopVersion)
   const [checking, setChecking] = useState(false)
+  const [installing, setInstalling] = useState(false)
   if (!desktop) return null
+  const installUpdate = async (): Promise<void> => {
+    setInstalling(true)
+    try {
+      await desktop.installUpdate()
+    } catch {
+      toast.error("无法启动更新安装", { description: "请稍后重试，或下次退出应用时自动安装。" })
+    } finally {
+      setInstalling(false)
+    }
+  }
   const checkForUpdates = async (): Promise<void> => {
     setChecking(true)
     try {
@@ -61,7 +73,7 @@ function DesktopUpdatesCard() {
       setChecking(false)
     }
   }
-  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Download className="size-4 text-primary" />应用更新</CardTitle><CardDescription>发现新版本后会在后台下载，并在下次退出应用时自动安装。</CardDescription></CardHeader><CardContent className="space-y-4"><Button type="button" variant="outline" onClick={() => void checkForUpdates()} disabled={checking || desktopUpdate.phase === "downloading"}><Download />{checking ? "正在检查…" : desktopUpdate.phase === "downloading" ? "正在下载" : "检查新版本"}</Button>{desktopUpdate.phase === "downloading" && <div className="space-y-2 rounded-lg border border-border/70 bg-muted/30 p-3"><div className="flex items-center justify-between text-sm"><span>正在下载 {desktopUpdate.version ? `v${desktopUpdate.version}` : "更新"}</span><span className="tabular-nums text-muted-foreground">{Math.round(desktopUpdate.percent ?? 0)}%</span></div><Progress value={desktopUpdate.percent ?? 0} /><p className="text-xs text-muted-foreground">下载期间可以继续使用 PaperSage。</p></div>}{desktopUpdate.phase === "ready" && <p className="text-sm text-emerald-600 dark:text-emerald-400">更新已下载完成，将在下次退出 PaperSage 时自动安装。</p>}{desktopUpdate.phase === "failed" && <p className="text-sm text-destructive">下载未完成，请检查网络后重试。</p>}</CardContent></Card>
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Download className="size-4 text-primary" />应用更新</CardTitle><CardDescription>{version ? `当前版本 v${version}。` : ""}发现新版本后会在后台下载，可立即重启安装，或在下次退出应用时自动安装。</CardDescription></CardHeader><CardContent className="space-y-4"><Button type="button" variant="outline" onClick={() => void checkForUpdates()} disabled={checking || desktopUpdate.phase === "downloading"}><Download />{checking ? "正在检查…" : desktopUpdate.phase === "downloading" ? "正在下载" : "检查新版本"}</Button>{desktopUpdate.phase === "downloading" && <div className="space-y-2 rounded-lg border border-border/70 bg-muted/30 p-3"><div className="flex items-center justify-between text-sm"><span>正在下载 {desktopUpdate.version ? `v${desktopUpdate.version}` : "更新"}</span><span className="tabular-nums text-muted-foreground">{Math.round(desktopUpdate.percent ?? 0)}%</span></div><Progress value={desktopUpdate.percent ?? 0} /><p className="text-xs text-muted-foreground">下载期间可以继续使用 PaperSage。</p></div>}{desktopUpdate.phase === "ready" && <div className="space-y-3 rounded-lg border border-border/70 bg-muted/30 p-3"><p className="text-sm text-emerald-600 dark:text-emerald-400">新版本已下载完成，重启 PaperSage 即可完成安装。</p><Button type="button" onClick={() => void installUpdate()} disabled={installing}><RotateCw />{installing ? "正在重启…" : "重启并更新"}</Button></div>}{desktopUpdate.phase === "failed" && <p className="text-sm text-destructive">下载未完成，请检查网络后重试。</p>}</CardContent></Card>
 }
 
 function DesktopDiagnosticsCard() {

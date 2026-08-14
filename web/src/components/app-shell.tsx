@@ -191,6 +191,7 @@ function WorkspaceSidebar({
 
 export function AppShell() {
   const { mobileNavOpen, setMobileNavOpen, setCurrentProjectId } = useUiStore();
+  const desktopVersion = useUiStore((state) => state.desktopVersion);
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -222,7 +223,7 @@ export function AppShell() {
         )}
       >
         <WorkspaceSidebar includeBrand={!desktop} />
-        <div className="border-t pt-3"><Navigation /></div>
+        <div className="border-t pt-3"><Navigation />{desktop && desktopVersion && <p className="mt-1 px-3 text-[11px] text-muted-foreground/70">v{desktopVersion}</p>}</div>
       </aside>
       <header className="sticky top-0 z-30 flex h-14 items-center border-b bg-background/90 px-4 backdrop-blur md:hidden">
         <Button
