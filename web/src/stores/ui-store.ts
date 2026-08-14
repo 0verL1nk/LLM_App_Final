@@ -18,11 +18,13 @@ interface UiState {
   inspectorOpen: boolean
   inspectorTab: InspectorTab
   desktopUpdate: DesktopUpdateState
+  desktopVersion: string
   setMobileNavOpen: (open: boolean) => void
   setCurrentProjectId: (projectId: string) => void
   openInspector: (tab: InspectorTab) => void
   setInspectorOpen: (open: boolean) => void
   setDesktopUpdate: (update: DesktopUpdateState) => void
+  setDesktopVersion: (version: string) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -31,9 +33,11 @@ export const useUiStore = create<UiState>((set) => ({
   inspectorOpen: false,
   inspectorTab: "evidence",
   desktopUpdate: { phase: "idle" },
+  desktopVersion: "",
   setMobileNavOpen: (mobileNavOpen) => set({ mobileNavOpen }),
   setCurrentProjectId: (currentProjectId) => set({ currentProjectId }),
   openInspector: (inspectorTab) => set({ inspectorOpen: true, inspectorTab }),
   setInspectorOpen: (inspectorOpen) => set({ inspectorOpen }),
   setDesktopUpdate: (desktopUpdate) => set({ desktopUpdate }),
+  setDesktopVersion: (desktopVersion) => set({ desktopVersion }),
 }))

@@ -6,12 +6,14 @@
 
 /**
  * Owns the desktop tray lifecycle and explicit quit intent.
- * @param {{ Tray: ElectronTray, Menu: ElectronMenu, nativeImage: NativeImage, app: { quit: () => void }, iconPath: string, showWindow: () => void, platform?: NodeJS.Platform }} dependencies
+ * @param {{ Tray: ElectronTray, Menu: ElectronMenu, nativeImage: NativeImage, app: { quit: () => void }, iconPath: string, showWindow: () => void, platform?: NodeJS.Platform, reportError?: (message: string) => void }} dependencies
  * @returns {{ beginQuit: () => void, isQuitting: () => boolean }}
  */
-function createTrayService({ Tray, Menu, nativeImage, app, iconPath, showWindow, platform = process.platform }) {
+function createTrayService({ Tray, Menu, nativeImage, app, iconPath, showWindow, platform = process.platform, reportError }) {
   const icon = nativeImage.createFromPath(iconPath)
-  if (platform === "darwin" && !icon.isEmpty()) icon.setTemplateImage(true)
+  // nativeImage only decodes PNG/JPEG; anything else (e.g. SVG) loads as an
+  // empty image and the tray silently goes invisible. Surface that loudly.
+  if (icon.isEmpty()) reportError?.(`托盘图标加载失败（解码为空图像，nativeImage 仅支持 PNG/JPEG）：${iconPath}`)
 
   let quitting = false
   const beginQuit = () => { quitting = true }
