@@ -12,7 +12,6 @@ from ..adapters.orm.run_repository import (
     get_run,
     update_run_status,
 )
-from ..adapters.orm.memory_repository import save_session_summary
 from ..adapters.orm.task_dispatch_repository import create_leader_run
 from ..adapters.rag import DynamicProjectEvidenceService
 from ..adapters.sqlite.project_repository import (
@@ -55,6 +54,8 @@ from .steering_inputs import (
     unconfirmed_steering_inputs,
 )
 from .workspace import require_project
+
+
 @dataclass
 class _RuntimeEntry:
     session: AgentSession
@@ -235,7 +236,6 @@ class ResearchWorkspaceService:
                 prompt=normalized_prompt,
                 user_uuid=user_uuid,
                 project_uid=project_uid,
-                session_uid=session_uid,
                 search_project_memory_items_fn=search_project_memory_items,
             )
             result = execute_agent_center_turn(
@@ -313,13 +313,6 @@ class ResearchWorkspaceService:
                 messages=messages,
             )
             if input_messages is None:
-                save_session_summary(
-                    uuid=user_uuid,
-                    project_uid=project_uid,
-                    session_uid=session_uid,
-                    summary=str(result["answer"]),
-                    source_run_uid=str(run_uid or ""),
-                )
                 enqueue_turn_memory_consolidation(
                     user_uuid=user_uuid,
                     project_uid=project_uid,
