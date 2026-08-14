@@ -9,7 +9,7 @@ from typing import Any
 
 def build_project_doc_index_artifact(
     *, project_uid: str, doc_uid: str, doc_name: str, normalized_text: str,
-    source_spans: list[dict[str, Any]] | None, settings_signature: str, text_hash: str,
+    source_spans: list[dict[str, Any]] | None = None, settings_signature: str, text_hash: str,
     splitter: Any, embeddings: Any, chunk_documents: list[Any] | None = None,
     schema_version: int = 3, normalize_vectors: Callable[[Any], list[list[float]]] | None = None,
     progress_callback: Callable[[str, int | None, int | None], None] | None = None,

@@ -73,7 +73,12 @@ class ResearchWorkspaceService:
         with self._guard:
             return self._locks.setdefault(key, threading.Lock())
     def _runtime(
-        self, *, project_uid: str, session_uid: str, user_uuid: str, resolved_mode: str
+        self,
+        *,
+        project_uid: str,
+        session_uid: str,
+        user_uuid: str,
+        resolved_mode: str = "agent_teams",
     ) -> _RuntimeEntry:
         key = (user_uuid, project_uid, session_uid, resolved_mode)
         project = require_project(project_uid=project_uid, user_uuid=user_uuid)

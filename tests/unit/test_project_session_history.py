@@ -1,6 +1,7 @@
 import datetime
 from pathlib import Path
 
+from agent.adapters.orm.database import run_migrations
 from agent.adapters.sqlite.project_repository import (
     create_project,
     create_project_session,
@@ -207,6 +208,8 @@ def test_project_memory_item_upsert_and_search(monkeypatch, tmp_path: Path) -> N
         db_name=str(db_path),
     )
     assert len(all_items) == 2
+
+    run_migrations(str(db_path))
 
     matched = search_project_memory_items(
         uuid="local-user",
