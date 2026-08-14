@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.target_sha || inputs.release_tag || github.sha }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
 
