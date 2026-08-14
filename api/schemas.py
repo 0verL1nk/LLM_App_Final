@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -30,6 +30,17 @@ class TurnCreate(BaseModel):
 
 class RunCreate(TurnCreate):
     client_request_id: str = Field(min_length=8, max_length=200)
+    execution_mode: Literal["auto", "react", "plan_execute", "agent_teams"] = "auto"
+
+
+class SteeringInputCreate(TurnCreate):
+    client_request_id: str = Field(min_length=8, max_length=200)
+
+
+class MemoryItemWrite(BaseModel):
+    title: str = Field(default="", max_length=240)
+    content: str = Field(min_length=1, max_length=4000)
+    memory_type: str = Field(default="semantic", max_length=80)
 
 
 class SettingsUpdate(BaseModel):

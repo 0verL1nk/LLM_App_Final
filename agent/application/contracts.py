@@ -5,7 +5,6 @@ from typing_extensions import NotRequired
 
 from ..domain.human_request import HumanRequest
 from ..domain.trace import TraceEvent
-from .delegation import DelegationExecution
 
 EventCallback = Callable[[TraceEvent], None]
 SearchDocumentFn = Callable[[str], str]
@@ -18,7 +17,6 @@ class EmptyModelOutputError(RuntimeError):
 class TurnCoreResult(TypedDict):
     answer: str
     policy_decision: dict[str, Any]
-    delegation_execution: DelegationExecution
     trace_payload: list[TraceEvent]
     evidence_items: list[dict[str, Any]]
     retrieved_evidence_items: NotRequired[list[dict[str, Any]]]
@@ -28,7 +26,6 @@ class TurnCoreResult(TypedDict):
     response_parts: NotRequired[list[dict[str, str]]]
     method_compare_data: dict[str, Any] | None
     run_latency_ms: float
-    delegation_rounds: int
     phase_path: str
     used_document_rag: bool
     ask_human_requests: list[HumanRequest]
@@ -36,7 +33,4 @@ class TurnCoreResult(TypedDict):
     output_messages: NotRequired[list[Any]]
     plan: NotRequired[dict[str, Any] | None]
     runtime_state: NotRequired[dict[str, Any] | None]
-    todos: NotRequired[list[dict[str, Any]]]
-    agent_plan: NotRequired[dict[str, Any] | None]
-    todo_scheduler_hint: NotRequired[dict[str, Any] | None]
     context_snapshot: NotRequired[dict[str, Any]]

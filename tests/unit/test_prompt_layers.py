@@ -24,7 +24,7 @@ def test_paper_domain_prompt_carries_paper_specific_retrieval_rules():
     assert "<evidence>" in prompt
     assert "不要再次检索" in prompt
     assert "should_stop" in prompt
-    assert "task subagent" in prompt
+    assert "delegate_task" in prompt
     assert "不能用来浏览大目录" in prompt
     assert "当前对话项目：项目A" in prompt
 

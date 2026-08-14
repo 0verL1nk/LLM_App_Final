@@ -1,92 +1,90 @@
-"""Plan management tools for agent-centric orchestration.
+"""Revisioned plan tool owned by the Leader Agent."""
 
-These tools allow the leader agent to create and manage execution plans
-based on their own understanding of the task context.
-"""
+from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
-class WritePlanInput(BaseModel):
-    """Input for write_plan tool."""
+class PlanStep(BaseModel):
+    """One explicit plan step with dependency and optional task linkage."""
 
-    goal: str | None = Field(default=None, description="The overall goal (required for new plan)")
-    description: str | None = Field(default=None, description="Plan description (empty to delete)")
+    id: str = Field(min_length=1, max_length=80)
+    title: str = Field(min_length=1, max_length=300)
+    status: Literal["pending", "in_progress", "completed", "blocked", "failed"] = "pending"
+    depends_on: list[str] = Field(default_factory=list)
+    lane: str = Field(default="main", min_length=1, max_length=80)
+    task_uid: str | None = None
 
 
-@tool("write_plan", args_schema=WritePlanInput)
-def write_plan(
-    goal: str | None,
-    description: str | None,
+class UpdatePlanInput(BaseModel):
+    """Complete replacement snapshot guarded by the caller's plan revision."""
+
+    revision: int = Field(ge=0)
+    goal: str = Field(min_length=1, max_length=1000)
+    steps: list[PlanStep] = Field(default_factory=list, max_length=64)
+
+    @model_validator(mode="after")
+    def validate_dependencies(self) -> "UpdatePlanInput":
+        ids = [step.id for step in self.steps]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Plan step IDs must be unique")
+        known = set(ids)
+        for step in self.steps:
+            if step.id in step.depends_on or any(dep not in known for dep in step.depends_on):
+                raise ValueError("Plan dependencies must reference a different declared step")
+        return self
+
+
+@tool("update_plan", args_schema=UpdatePlanInput)
+def update_plan(
+    revision: int,
+    goal: str,
+    steps: list[PlanStep],
     tool_call_id: Annotated[str, InjectedToolCallId],
     state: Annotated[dict[str, Any], InjectedState],
 ) -> Command[Any]:
-    """Write or delete execution plan.
-
-    - Empty description: delete plan
-    - With description: create/update plan (goal required for new plan)
-    """
-    # Delete if description is empty
-    if not description or not description.strip():
-        if not state.get("plan"):
-            return Command(update={"messages": [ToolMessage("No plan to delete.", tool_call_id=tool_call_id)]})
+    """Replace the plan only when the supplied revision follows the current one."""
+    current = state.get("plan") if isinstance(state.get("plan"), dict) else None
+    expected = 0 if current is None else int(current.get("revision", -1)) + 1
+    if revision != expected:
         return Command(
             update={
-                "plan": None,
-                "messages": [ToolMessage("Plan deleted.", tool_call_id=tool_call_id)]
+                "messages": [
+                    ToolMessage(
+                        f"Plan revision conflict: expected {expected}, received {revision}.",
+                        tool_call_id=tool_call_id,
+                    )
+                ]
             }
         )
-
-    # Create/update plan
-    existing_plan = state.get("plan")
-
-    # If no existing plan, goal is required
-    if not existing_plan and not goal:
-        return Command(
-            update={
-                "messages": [ToolMessage("Error: goal required for new plan.", tool_call_id=tool_call_id)]
-            }
-        )
-
-    # Use existing goal if not provided
-    final_goal = goal if goal else (existing_plan or {}).get("goal", "")
-
-    plan_data = {"goal": final_goal, "description": description.strip()}
-
-    message = "Plan created." if not existing_plan else "Plan updated."
-
+    snapshot = {
+        "revision": revision,
+        "goal": goal.strip(),
+        "steps": [step.model_dump(exclude_none=True) for step in steps],
+    }
     return Command(
         update={
-            "plan": plan_data,
-            "messages": [ToolMessage(message, tool_call_id=tool_call_id)]
+            "plan": snapshot,
+            "messages": [ToolMessage(f"Plan revision {revision} saved.", tool_call_id=tool_call_id)],
         }
     )
 
 
 @tool("read_plan")
 def read_plan(state: Annotated[dict[str, Any], InjectedState]) -> str:
-    """Read the current execution plan.
-
-    Returns the plan you previously created, including goal and description.
-
-    Returns:
-        Plan content or message if no plan exists
-    """
+    """Read the current revisioned plan snapshot."""
     plan = state.get("plan")
-    if not plan:
-        return "No active plan. Create one with write_plan if needed."
-
-    goal = plan.get("goal", "")
-    description = plan.get("description", "")
-
-    return f"**Goal:** {goal}\n\n**Strategy:**\n{description}"
+    if not isinstance(plan, dict):
+        return "No active plan. Use update_plan only when a plan is useful."
+    return str(plan)
 
 
-# Export tools
-PLAN_TOOLS = [write_plan, read_plan]
+PLAN_TOOLS = [update_plan, read_plan]
+
+__all__ = ["PLAN_TOOLS", "PlanStep", "UpdatePlanInput", "read_plan", "update_plan"]

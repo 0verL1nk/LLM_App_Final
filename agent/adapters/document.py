@@ -33,7 +33,7 @@ def extract_document_payload(
     return {
         "result": 1,
         "text": str(payload["text"]),
-        "format": "plain",
+        "format": str(payload.get("format") or "plain"),
         "parser": str(payload["parser"]),
         "ocr_profile": str(payload["ocr_profile"]),
         "source_spans": list(payload.get("source_spans") or []),

@@ -4,18 +4,13 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import {
-  BookOpen,
-  ChevronDown,
-  Menu,
-  MessageSquarePlus,
-  Settings,
-} from "lucide-react";
+import { BookOpen, ChevronDown, Menu, MessageSquarePlus, Settings } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { ResearchSessionList } from "@/components/research-session-list";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
+import { AccountConnectionMenu } from "@/components/account-connection-menu";
 import { DesktopTitlebar } from "@/components/desktop-titlebar";
 import { PaperSageBrand } from "@/components/papersage-logo";
 import { Button } from "@/components/ui/button";
@@ -187,6 +182,9 @@ function WorkspaceSidebar({
           </div>
         </>
       )}
+      <div className="mt-auto border-t pt-3">
+        <AccountConnectionMenu onOpenSettings={() => void navigate({ to: "/settings" })} />
+      </div>
     </div>
   );
 }
@@ -224,9 +222,7 @@ export function AppShell() {
         )}
       >
         <WorkspaceSidebar includeBrand={!desktop} />
-        <div className="mt-auto border-t pt-3">
-          <Navigation />
-        </div>
+        <div className="border-t pt-3"><Navigation /></div>
       </aside>
       <header className="sticky top-0 z-30 flex h-14 items-center border-b bg-background/90 px-4 backdrop-blur md:hidden">
         <Button
@@ -251,9 +247,7 @@ export function AppShell() {
           <div className="mt-5 min-h-0 flex-1">
             <WorkspaceSidebar />
           </div>
-          <div className="border-t pt-3">
-            <Navigation />
-          </div>
+          <div className="border-t pt-3"><Navigation /></div>
         </SheetContent>
       </Sheet>
       <main

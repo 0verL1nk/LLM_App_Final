@@ -1,4 +1,4 @@
-"""Project internal agent events into a safe, public execution timeline."""
+"""Projection of observable runtime facts into the V2 Run-item protocol."""
 
 from __future__ import annotations
 
@@ -8,105 +8,123 @@ _MAX_TEXT_LENGTH = 600
 _SENSITIVE_KEYS = {"api_key", "authorization", "password", "secret", "token"}
 
 
-def project_runtime_event(event: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-    """Return one user-visible, replayable event from a runtime trace event.
+def project_runtime_item_event(event: dict[str, Any]) -> dict[str, Any] | None:
+    """Convert one public runtime fact to a typed V2 item lifecycle event.
 
-    This deliberately represents observable actions, never provider reasoning or
-    private prompts. The persisted result is the contract consumed by the web UI.
+    This intentionally has no V1 fallback.  Item identity comes from a concrete
+    part ID or tool-call ID, never from role/description correlation.
     """
     performative = str(event.get("performative") or "")
-    metadata: dict[str, Any] = (
-        dict(event["metadata"]) if isinstance(event.get("metadata"), dict) else {}
-    )
-    if performative == "answer_delta":
-        return "answer.delta", {"text": _safe_text(event.get("content") or "")}
+    metadata = dict(event["metadata"]) if isinstance(event.get("metadata"), dict) else {}
     if performative == "answer_part_delta":
-        return "message.part.delta", {
-            "partId": _safe_text(metadata.get("part_id") or ""),
-            "text": _safe_text(event.get("content") or ""),
-        }
+        part_id = str(metadata.get("part_id") or "text-0")
+        item_type = "reasoning_summary" if part_id.startswith("reasoning-") else "assistant_message"
+        return _item_event(
+            item_uid=f"item_{item_type}_{part_id}",
+            item_type=item_type,
+            status="in_progress",
+            event_type="item.delta",
+            payload={"partId": part_id, "delta": _safe_text(event.get("content") or "")},
+        )
     if performative == "answer_part_insert":
-        return "message.part.insert", {
-            "partId": _safe_text(metadata.get("part_id") or ""),
-            "type": _safe_text(metadata.get("part_type") or ""),
-        }
+        part_id = str(metadata.get("part_id") or "").strip()
+        part_type = str(metadata.get("part_type") or "")
+        if not part_id or part_type not in {"reasoning", "a2ui"}:
+            return None
+        item_type = "reasoning_summary" if part_type == "reasoning" else "presentation"
+        return _item_event(
+            item_uid=f"item_{item_type}_{part_id}",
+            item_type=item_type,
+            status="in_progress",
+            event_type="item.created",
+            payload={"partId": part_id, "presentation": part_type} if part_type == "a2ui" else {"partId": part_id},
+        )
     if performative == "presentation_failed":
-        return "presentation.failed", {
-            "partId": _safe_text(metadata.get("part_id") or ""),
-            "message": _safe_text(metadata.get("message") or "未能生成可视化梳理，已保留正文。"),
-        }
+        part_id = str(metadata.get("part_id") or "").strip()
+        if not part_id:
+            return None
+        return _item_event(
+            item_uid=f"item_presentation_{part_id}",
+            item_type="presentation",
+            status="failed",
+            event_type="item.failed",
+            payload={"partId": part_id, "message": _safe_text(metadata.get("message") or "可视化内容不可用")},
+        )
+    if performative not in {"tool_call", "tool_result"}:
+        return None
     tool_name = str(metadata.get("tool_name") or event.get("receiver") or "unknown")
+    action_id = str(metadata.get("tool_call_id") or "").strip()
+    if not action_id:
+        return None
+    is_plan = tool_name == "update_plan"
+    task_uid = str(metadata.get("task_uid") or "").strip() or None
+    is_task = tool_name == "delegate_task" and task_uid is not None
+    item_type = "agent_task" if is_task else "plan" if is_plan else "tool_call"
     payload = {
-        "actionId": str(metadata.get("tool_call_id") or ""),
-        "toolName": tool_name,
-        "arguments": _safe_value(metadata.get("arguments") or {}),
         "summary": _safe_text(metadata.get("summary") or event.get("content") or ""),
+        "toolName": tool_name,
         "durationMs": _positive_number(metadata.get("duration_ms")),
-        "status": str(metadata.get("status") or ""),
     }
-
-    if performative == "tool_call":
-        if tool_name == "task":
-            return "agent.spawned", _delegation_payload(payload)
-        if tool_name in {"write_todos", "write_plan"}:
-            return "plan.updated", _plan_payload(payload)
-        return "tool.execution.started", payload
-    if performative == "tool_result":
-        if tool_name == "task":
-            return "agent.completed", _delegation_payload(payload)
-        if tool_name in {"write_todos", "write_plan"}:
-            return "plan.updated", _plan_payload(payload)
-        return "tool.execution.completed", payload
-    if performative == "delegate_task":
-        return "agent.spawned", _delegation_payload(payload)
-    if performative == "delegate_result":
-        return "agent.completed", _delegation_payload(payload)
-    return "step.progress", {"summary": _safe_text(event.get("content") or "")}
-
-
-def _delegation_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    arguments: dict[str, Any] = (
-        dict(payload["arguments"]) if isinstance(payload.get("arguments"), dict) else {}
+    arguments = metadata.get("arguments") if isinstance(metadata.get("arguments"), dict) else {}
+    if is_task:
+        payload.update({"agent": _safe_text(arguments.get("role") or "unknown"), "task": _safe_text(arguments.get("description") or payload["summary"])})
+    if is_plan:
+        payload["plan"] = _safe_value(
+            {"goal": arguments.get("goal"), "steps": arguments.get("steps") or []}
+        )
+    terminal = performative == "tool_result"
+    failed = str(metadata.get("status") or "").lower() in {"error", "failed"}
+    return _item_event(
+        item_uid=f"item_{item_type}_{task_uid or action_id}",
+        item_type=item_type,
+        task_uid=task_uid,
+        status="failed" if terminal and failed else "completed" if terminal else "in_progress",
+        event_type="item.failed" if terminal and failed else "item.completed" if terminal else "item.created",
+        payload=payload,
     )
-    return {
-        "actionId": payload["actionId"],
-        "agent": str(arguments.get("subagent_type") or "unknown"),
-        "task": _safe_text(arguments.get("description") or payload["summary"]),
-        "status": payload["status"] or "running",
-        "durationMs": payload["durationMs"],
-    }
 
 
-def _plan_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    arguments: dict[str, Any] = (
-        dict(payload["arguments"]) if isinstance(payload.get("arguments"), dict) else {}
+def project_presentation_item_event(
+    *,
+    part_id: str,
+    envelope: dict[str, Any],
+    surface: dict[str, Any],
+) -> dict[str, Any]:
+    """Create one V2 presentation delta from a validated A2UI envelope."""
+    return _item_event(
+        item_uid=f"item_presentation_{part_id or surface.get('surfaceId', 'default')}",
+        item_type="presentation",
+        status="completed",
+        event_type="item.delta",
+        payload={"partId": part_id, "envelope": envelope, "surface": _safe_value(surface)},
     )
-    todos = arguments.get("todos") if isinstance(arguments.get("todos"), list) else []
-    return {
-        "actionId": payload["actionId"],
-        "todos": _safe_value(todos),
-        "status": payload["status"] or "updated",
-        "summary": payload["summary"],
-    }
 
 
-def _safe_value(value: Any) -> Any:
-    if isinstance(value, str):
-        return _safe_text(value)
-    if isinstance(value, list):
-        return [_safe_value(item) for item in value[:50]]
-    if isinstance(value, dict):
-        return {
-            str(key): "[redacted]" if str(key).lower() in _SENSITIVE_KEYS else _safe_value(item)
-            for key, item in list(value.items())[:50]
-        }
-    if isinstance(value, (int, float, bool)) or value is None:
-        return value
-    return _safe_text(value)
+def _item_event(
+    *,
+    item_uid: str,
+    item_type: str,
+    status: str,
+    event_type: str,
+    payload: dict[str, Any],
+    task_uid: str | None = None,
+) -> dict[str, Any]:
+    return {"item_uid": item_uid, "item_type": item_type, "task_uid": task_uid, "status": status, "event_type": event_type, "payload": payload}
 
 
 def _safe_text(value: Any) -> str:
-    return str(value).replace("\x00", "")[:_MAX_TEXT_LENGTH]
+    text = " ".join(str(value or "").split())
+    return text[:_MAX_TEXT_LENGTH]
+
+
+def _safe_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _safe_value(item) for key, item in value.items() if str(key).lower() not in _SENSITIVE_KEYS}
+    if isinstance(value, list):
+        return [_safe_value(item) for item in value]
+    if isinstance(value, str):
+        return _safe_text(value)
+    return value
 
 
 def _positive_number(value: Any) -> float | None:
@@ -115,4 +133,4 @@ def _positive_number(value: Any) -> float | None:
     return None
 
 
-__all__ = ["project_runtime_event"]
+__all__ = ["project_presentation_item_event", "project_runtime_item_event"]

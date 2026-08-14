@@ -10,6 +10,8 @@ import {
   projectSchema,
   runCreatedSchema,
   runSchema,
+  researchArtifactSchema,
+  steeringInputSchema,
   sessionSchema,
   settingsSchema,
   turnResultSchema,
@@ -23,6 +25,7 @@ export const keys = {
   sessions: (id: string) => ["projects", id, "sessions"] as const,
   messages: (projectId: string, sessionId: string) => ["messages", projectId, sessionId] as const,
   resumableRuns: (projectId: string, sessionId: string) => ["runs", projectId, sessionId, "resumable"] as const,
+  researchArtifacts: (projectId: string, sessionId: string) => ["research-artifacts", projectId, sessionId] as const,
   settings: ["settings"] as const,
 }
 
@@ -67,6 +70,13 @@ export function useResumableRuns(projectId: string, sessionId: string) {
 
 export function useSettings() {
   return useQuery({ queryKey: keys.settings, queryFn: () => api("/settings", settingsSchema) })
+}
+
+export function useResearchArtifacts(projectId: string, sessionId: string) {
+  return useQuery({
+    queryKey: keys.researchArtifacts(projectId, sessionId),
+    queryFn: () => api(`/projects/${projectId}/sessions/${sessionId}/research-artifacts`, z.object({ data: z.array(researchArtifactSchema) })).then((result) => result.data),
+  })
 }
 
 export function useDocumentConversion() {
@@ -137,13 +147,13 @@ export function useRetryDocument(projectId: string) {
 export function useTurn(projectId: string, sessionId: string) {
   const client = useQueryClient()
   return useMutation({
-    mutationFn: async ({ prompt, onEvent, onRunCreated }: { prompt: string; onEvent: (event: AgentEvent) => void; onRunCreated?: (runId: string) => void }) => {
+    mutationFn: async ({ prompt, executionMode = "auto", onEvent, onRunCreated }: { prompt: string; executionMode?: "auto" | "react" | "plan_execute" | "agent_teams"; onEvent: (event: AgentEvent) => void; onRunCreated?: (runId: string) => void }) => {
       const run = await api(
         `/projects/${projectId}/sessions/${sessionId}/runs`,
         runCreatedSchema,
         {
           method: "POST",
-          body: JSON.stringify({ prompt, client_request_id: crypto.randomUUID() }),
+          body: JSON.stringify({ prompt, execution_mode: executionMode, client_request_id: crypto.randomUUID() }),
         },
       )
       onRunCreated?.(run.run_id)
@@ -179,7 +189,6 @@ export function useTurn(projectId: string, sessionId: string) {
           trace: result.trace_payload,
           evidence: result.evidence_items,
           retrieved_evidence: result.retrieved_evidence_items,
-          delegation: result.delegation_execution,
           plan: result.agent_plan ?? result.plan,
           todos: result.todos,
           a2ui: result.a2ui_surface,
@@ -192,6 +201,25 @@ export function useTurn(projectId: string, sessionId: string) {
     },
     onSettled: () => {
       void client.invalidateQueries({ queryKey: keys.sessions(projectId) })
+      void client.invalidateQueries({ queryKey: keys.researchArtifacts(projectId, sessionId) })
+    },
+  })
+}
+
+export function useSteeringInput(projectId: string, sessionId: string) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (prompt: string) => api(
+      `/projects/${projectId}/sessions/${sessionId}/steering-inputs`,
+      steeringInputSchema,
+      { method: "POST", body: JSON.stringify({ prompt, client_request_id: crypto.randomUUID() }) },
+    ),
+    onSuccess: (_input, prompt) => {
+      client.setQueryData<Message[]>(keys.messages(projectId, sessionId), (current = []) => [
+        ...current,
+        { role: "user", content: prompt },
+      ])
+      void client.invalidateQueries({ queryKey: keys.resumableRuns(projectId, sessionId) })
     },
   })
 }

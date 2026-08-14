@@ -10,6 +10,7 @@ from ..rag.hybrid import (
 )
 from ..settings import load_agent_settings
 from .lancedb.rag_index import search_published_chunks
+from .lancedb.rerank import rerank_rows
 from .sqlite.rag_ingestion_repository import list_ready_project_documents
 
 EvidenceRetriever = Callable[[str], dict[str, Any]]
@@ -59,6 +60,7 @@ class DynamicProjectEvidenceService:
         db_name: str = "./database.sqlite",
         list_ready_documents_fn: Callable[..., list[dict[str, Any]]] = list_ready_project_documents,
         search_chunks_fn: Callable[..., list[dict[str, Any]]] = search_published_chunks,
+        rerank_rows_fn: Callable[..., tuple[list[dict[str, Any]], str | None]] = rerank_rows,
         embed_query_fn: Callable[[str], list[float]] | None = None,
     ) -> None:
         self.project_uid = project_uid
@@ -67,6 +69,7 @@ class DynamicProjectEvidenceService:
         self._doc_uids = tuple(sorted(set(doc_uids or [])))
         self._list_ready_documents_fn = list_ready_documents_fn
         self._search_chunks_fn = search_chunks_fn
+        self._rerank_rows_fn = rerank_rows_fn
         self._embed_query_fn = embed_query_fn
         self._manifest: tuple[tuple[str, str], ...] = ()
         self._lock = threading.RLock()
@@ -132,6 +135,14 @@ class DynamicProjectEvidenceService:
             query=query,
             query_vector=[float(value) for value in query_vector],
             limit=candidate_limit,
+            rrf_k=int(settings.rag_rrf_candidate_k),
+        )
+        rows, rerank_skipped = self._rerank_rows_fn(
+            query=query,
+            rows=rows,
+            model_name=settings.rag_rerank_model,
+            enabled=bool(settings.rag_rerank_enabled)
+            and bool(settings.rag_project_rerank_enabled),
         )
         with self._lock:
             self._manifest = manifest
@@ -184,6 +195,9 @@ class DynamicProjectEvidenceService:
                 "top_k": settings.rag_top_k,
                 "dynamic_manifest": [list(item) for item in manifest],
                 "reason": "no_candidates" if not rows else None,
+                "rerank_enabled": bool(settings.rag_rerank_enabled)
+                and bool(settings.rag_project_rerank_enabled),
+                "rerank_skipped": rerank_skipped,
             },
         }
 

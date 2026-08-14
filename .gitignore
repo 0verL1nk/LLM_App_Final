@@ -95,5 +95,12 @@ config
 # Git worktrees
 .worktrees/
 
+# Read-only upstream source references used for local architecture research
+ref/
+
 
 data
+
+HANDOFF.md
+
+tmp

@@ -24,6 +24,8 @@ fi
 
 case "${MODE}" in
   core)
+    echo "[quality][core] repository development rules"
+    "${UV}" run --extra dev python scripts/repository_guard.py --check
     echo "[quality][core] ruff check (core scope)"
     "${UV}" run --extra dev ruff check api agent/domain agent/tools agent/application/contracts.py
     echo "[quality][core] ty (core scope)"

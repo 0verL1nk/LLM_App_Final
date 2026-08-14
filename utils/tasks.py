@@ -4,57 +4,24 @@
 
 import json
 import logging
-import os
-import sys
-
-from openai.types.chat import ChatCompletionMessageParam
-
-# 添加项目根目录到路径
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# 注意：这些导入需要在 worker 进程中工作
-# 使用绝对导入以确保在 RQ worker 中正常工作
-try:
-    from utils.utils import (
-        extract_files,
-        extract_json_string,
-        get_api_key,
-        get_base_url,
-        get_model_name,
-        llm_content_to_text,
-        save_content_to_database,
-    )
-except ImportError:
-    # 如果相对导入失败，尝试绝对导入
-    import os
-    import sys
-
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from utils.utils import (
-        extract_files,
-        extract_json_string,
-        get_api_key,
-        get_base_url,
-        get_model_name,
-        llm_content_to_text,
-        save_content_to_database,
-    )
 
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
-try:
-    from agent.llm_provider import build_openai_compatible_chat_model
-    from agent.settings import load_agent_settings
-except ImportError:
-    from agent.llm_provider import build_openai_compatible_chat_model
-    from agent.settings import load_agent_settings
-
-try:
-    from utils.task_queue import TaskStatus, update_task_status
-except ImportError:
-    from utils.task_queue import TaskStatus, update_task_status
+from agent.llm_provider import build_openai_compatible_chat_model
+from agent.settings import load_agent_settings
+from utils.task_queue import TaskStatus, update_task_status
+from utils.utils import (
+    extract_files,
+    extract_json_string,
+    get_api_key,
+    get_base_url,
+    get_model_name,
+    llm_content_to_text,
+    save_content_to_database,
+)
 
 logger = logging.getLogger("llm_app.worker_tasks")
 if not logger.handlers:

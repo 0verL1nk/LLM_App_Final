@@ -67,6 +67,39 @@ def test_execute_turn_core_streams_answer_deltas_without_reinvoking() -> None:
     assert [event["content"] for event in events] == ["流式", "回答"]
 
 
+def test_execute_turn_core_streams_provider_thinking_as_a_separate_part() -> None:
+    from types import SimpleNamespace
+
+    class _StreamingAgent:
+        def stream(self, *_args, **_kwargs):
+            yield {"type": "messages", "data": (SimpleNamespace(content="<think>先核验"), {})}
+            yield {"type": "messages", "data": (SimpleNamespace(content="资料</think>结论"), {})}
+            yield {
+                "type": "values",
+                "data": {"messages": [SimpleNamespace(content="<think>先核验资料</think>结论", tool_calls=[])]},
+            }
+
+    events: list[dict[str, object]] = []
+    result = execute_turn_core(
+        prompt="请回答",
+        leader_agent=_StreamingAgent(),
+        leader_runtime_config={},
+        on_event=events.append,
+    )
+
+    assert result["answer"] == "结论"
+    assert result["response_parts"] == [
+        {"id": "reasoning-0", "type": "reasoning", "text": "先核验资料"},
+        {"id": "text-0", "type": "markdown", "text": "结论"},
+    ]
+    assert [event["performative"] for event in events] == [
+        "answer_part_insert",
+        "answer_part_delta",
+        "answer_part_delta",
+        "answer_part_delta",
+    ]
+
+
 def test_execute_turn_core_keeps_markdown_answer_with_inline_ui_surface() -> None:
     from types import SimpleNamespace
     from unittest.mock import Mock
@@ -401,6 +434,26 @@ def test_execute_turn_core_sends_raw_user_prompt_and_turn_context() -> None:
     }
 
 
+def test_execute_turn_core_accepts_a_persisted_tool_message_input() -> None:
+    captured: dict[str, object] = {}
+
+    class _Agent:
+        def invoke(self, payload, config=None):
+            captured["payload"] = payload
+            return {"messages": [{"role": "assistant", "content": "已整合子任务结果"}]}
+
+    tool_message = {"role": "tool", "name": "delegate_task", "tool_call_id": "call-1", "content": "{\"summary\":\"证据\"}"}
+    result = execute_turn_core(
+        prompt="继续整合",
+        leader_agent=_Agent(),
+        leader_runtime_config={},
+        input_messages=[tool_message],
+    )
+
+    assert result["answer"] == "已整合子任务结果"
+    assert captured["payload"] == {"messages": [tool_message]}
+
+
 def test_execute_turn_core_logs_final_answer(caplog) -> None:
     from unittest.mock import Mock
 
@@ -434,70 +487,3 @@ def test_maybe_to_dict_handles_none_and_noncallable_values():
             return {"ok": True}
 
     assert _maybe_to_dict(_Payload()) == {"ok": True}
-
-
-def test_execute_turn_core_exposes_observed_delegation_and_scheduler_state():
-    from unittest.mock import Mock
-
-    mock_agent = Mock()
-    mock_agent.invoke.return_value = {
-        "messages": [
-            {
-                "role": "assistant",
-                "content": "",
-                "tool_calls": [
-                    {
-                        "id": "task-1",
-                        "name": "task",
-                        "args": {
-                            "subagent_type": "researcher",
-                            "description": "检索证据",
-                        },
-                    }
-                ],
-            },
-            {
-                "role": "tool",
-                "name": "task",
-                "tool_call_id": "task-1",
-                "content": "证据结果",
-            },
-            {"role": "assistant", "content": "请先执行 todo", "tool_calls": []},
-        ],
-        "todo_scheduler_hint": {
-            "ready_todo_ids": ["todo-2"],
-            "blocked_todo_ids": [],
-            "completed_todo_ids": ["todo-1"],
-            "in_progress_todo_ids": [],
-        },
-        "todos": [
-            {
-                "id": "todo-1",
-                "content": "检索证据",
-                "status": "completed",
-                "depends_on": [],
-            },
-            {
-                "id": "todo-2",
-                "content": "整理结论",
-                "status": "ready",
-                "depends_on": ["todo-1"],
-            },
-        ],
-    }
-
-    result = execute_turn_core(
-        prompt="请协作完成分析",
-        leader_agent=mock_agent,
-        leader_runtime_config={},
-    )
-
-    assert result["policy_decision"]["delegation_enabled"] is True
-    assert result["todo_scheduler_hint"]["ready_todo_ids"] == ["todo-2"]
-    assert result["delegation_execution"]["enabled"] is True
-    assert result["delegation_execution"]["roles"] == ["researcher"]
-    assert result["delegation_execution"]["tasks"][0]["status"] == "completed"
-    assert result["delegation_rounds"] == 1
-    assert any(
-        event["performative"] == "delegate_task" for event in result["trace_payload"]
-    )

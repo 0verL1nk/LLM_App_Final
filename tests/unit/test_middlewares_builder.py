@@ -1,10 +1,9 @@
-from deepagents.middleware.subagents import SubAgentMiddleware
 from langchain_core.language_models import FakeListChatModel
 
 from agent.middlewares.builder import build_middleware_list
+from agent.middlewares.durable_delegation import DurableDelegationMiddleware
 from agent.middlewares.llm_logger import llm_logger_middleware
 from agent.middlewares.plan import plan_middleware
-from agent.middlewares.todolist import todolist_middleware
 from agent.profiles import AgentProfile, paper_leader_profile
 from agent.session_factory import AgentDependencies
 
@@ -17,7 +16,7 @@ def _model() -> FakeListChatModel:
     return FakeListChatModel(responses=["ok"])
 
 
-def test_leader_runtime_exposes_official_task_subagents_with_bounded_tools() -> None:
+def test_leader_runtime_exposes_durable_delegation_for_registered_roles() -> None:
     middleware = build_middleware_list(
         model=_model(),
         profile=paper_leader_profile,
@@ -26,19 +25,11 @@ def test_leader_runtime_exposes_official_task_subagents_with_bounded_tools() -> 
         enable_tool_selector=False,
     )
 
-    subagents = next(item for item in middleware if isinstance(item, SubAgentMiddleware))
-    tool_names_by_role = {
-        spec["name"]: {getattr(tool, "name", "") for tool in spec["tools"]}
-        for spec in subagents._subagents
-    }
+    delegation = next(item for item in middleware if isinstance(item, DurableDelegationMiddleware))
 
-    assert [tool.name for tool in subagents.tools] == ["task"]
-    assert tool_names_by_role == {
-        "researcher": {"search_document", "search_web", "search_papers", "use_skill"},
-        "reviewer": {"search_document", "use_skill"},
-        "writer": {"use_skill"},
-    }
-    assert todolist_middleware in middleware
+    assert [tool.name for tool in delegation.tools] == ["delegate_task"]
+    assert "researcher" in delegation.system_prompt
+    assert "reviewer" in delegation.system_prompt
     assert plan_middleware in middleware
 
 
@@ -58,7 +49,6 @@ def test_worker_runtime_cannot_recursively_delegate_or_plan() -> None:
         enable_tool_selector=False,
     )
 
-    assert not any(isinstance(item, SubAgentMiddleware) for item in middleware)
-    assert todolist_middleware not in middleware
+    assert not any(isinstance(item, DurableDelegationMiddleware) for item in middleware)
     assert plan_middleware not in middleware
     assert middleware[-1] is llm_logger_middleware

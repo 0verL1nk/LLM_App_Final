@@ -8,16 +8,19 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, StreamingResponse
 
+from agent.adapters.orm.run_repository import (
+    append_run_lifecycle_event,
+    expire_stalled_runs,
+    get_run,
+    list_run_events,
+    list_run_items,
+    list_session_runs,
+)
+from agent.adapters.orm.task_query_repository import request_run_cancel
 from agent.adapters.paddle_ocr import document_conversion_capability
 from agent.adapters.sqlite.rag_ingestion_repository import (
     get_ingestion,
     list_project_ingestions,
-)
-from agent.adapters.sqlite.run_repository import (
-    expire_stalled_runs,
-    get_run,
-    list_run_events,
-    list_session_runs,
 )
 from agent.application.document_library import upload_project_document
 from agent.application.rag_ingestion import (
@@ -25,6 +28,7 @@ from agent.application.rag_ingestion import (
     reconcile_project_ingestions,
 )
 from agent.application.research_workspace import research_workspace_service
+from agent.application.task_delivery import dispatch_task
 from agent.application.user_configuration import (
     read_user_configuration,
     save_user_configuration,
@@ -45,6 +49,7 @@ from agent.settings import load_agent_settings
 from utils.task_queue import enqueue_background_task, get_job_status
 
 from .dependencies import current_user_id
+from .runtime_task_routes import runtime_task_router
 from .schemas import (
     ProjectCreate,
     ProjectUpdate,
@@ -52,10 +57,12 @@ from .schemas import (
     SessionCreate,
     SessionUpdate,
     SettingsUpdate,
+    SteeringInputCreate,
     TurnCreate,
 )
 
 router = APIRouter(prefix="/api/v1")
+router.include_router(runtime_task_router)
 logger = logging.getLogger(__name__)
 UserId = Annotated[str, Depends(current_user_id)]
 
@@ -323,7 +330,8 @@ def create_agent_run(
             user_uuid=user_uuid,
             prompt=payload.prompt,
             client_request_id=payload.client_request_id,
-            enqueue_background_fn=enqueue_background_task,
+            enqueue_task_delivery_fn=lambda task_uid: dispatch_task(task_uid=task_uid),
+            execution_mode=payload.execution_mode,
         )
     except LookupError as exc:
         raise _not_found(exc) from exc
@@ -334,7 +342,39 @@ def create_agent_run(
         "data": {
             "run_id": run_uid,
             "status": run["status"],
+            "requested_mode": run.get("requested_mode", "auto"),
+            "resolved_mode": run.get("resolved_mode", "react"),
+            "route_reason": run.get("route_reason", "legacy_default"),
             "stream_url": f"/api/v1/runs/{run_uid}/events",
+        }
+    }
+
+
+@router.post("/projects/{project_uid}/sessions/{session_uid}/steering-inputs", status_code=202)
+def create_steering_input(
+    project_uid: str,
+    session_uid: str,
+    payload: SteeringInputCreate,
+    user_uuid: UserId,
+) -> dict[str, Any]:
+    """Queue a follow-up for the current Run; clients start a Run when none exists."""
+    try:
+        input_item = research_workspace_service.queue_steering_input(
+            project_uid=project_uid,
+            session_uid=session_uid,
+            user_uuid=user_uuid,
+            prompt=payload.prompt,
+            client_request_id=payload.client_request_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "data": {
+            "input_id": input_item["input_uid"],
+            "run_id": input_item["run_uid"],
+            "status": input_item["status"],
         }
     }
 
@@ -370,6 +410,31 @@ def read_agent_run(run_uid: str, user_uuid: UserId) -> dict[str, Any]:
     if run is None:
         raise HTTPException(status_code=404, detail="Run not found")
     return {"data": run}
+
+
+@router.get("/runs/{run_uid}/items")
+def list_agent_run_items(run_uid: str, user_uuid: UserId) -> dict[str, Any]:
+    """Return owned V2 run-item projections for recovery and inspector views."""
+    run = get_run(run_uid=run_uid, user_uuid=user_uuid)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return {"data": list_run_items(run_uid=run_uid)}
+
+
+@router.post("/runs/{run_uid}/cancel")
+def cancel_agent_run(run_uid: str, user_uuid: UserId) -> dict[str, Any]:
+    """Cancel an owned Run and request cancellation for all unfinished child work."""
+    run = get_run(run_uid=run_uid, user_uuid=user_uuid)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    changed = request_run_cancel(run_uid=run_uid)
+    if changed:
+        append_run_lifecycle_event(
+            run_uid=run_uid,
+            event_type="run.cancelled",
+            payload={"message": "运行已取消"},
+        )
+    return {"data": {"run_uid": run_uid, "cancel_requested": changed}}
 
 
 @router.get("/runs/{run_uid}/events")
@@ -423,8 +488,6 @@ async def stream_agent_run_events(
             "X-Accel-Buffering": "no",
         },
     )
-
-
 @router.get("/settings")
 def settings(user_uuid: UserId) -> dict[str, Any]:
     return {"data": read_user_configuration(user_uuid=user_uuid)}

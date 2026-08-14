@@ -2,7 +2,7 @@
 
 PaperSage 项目开发规范与工程化约束（团队约定版）
 
-最后更新：2026-03-11
+最后更新：2026-08-12
 
 ---
 
@@ -32,6 +32,9 @@ PaperSage 项目开发规范与工程化约束（团队约定版）
 4. `utils/`：遗留兼容与通用能力（逐步收敛）
 5. `tests/`：单元 / 集成 / eval
 6. `docs/plan/`：重构与治理计划
+7. `web/`：Vite/React/Electron 客户端；`src/pages` 只负责路由级组合，`src/components`
+   只负责展示和交互，`src/lib` 承载 API schema、query 与纯客户端状态。
+8. `scripts/`：可重复的开发、发布和仓库 guard；不得承载线上业务逻辑。
 
 依赖方向（必须遵守）：
 
@@ -39,6 +42,7 @@ PaperSage 项目开发规范与工程化约束（团队约定版）
 2. `agent.application -> agent.adapters`
 3. `agent.adapters -> infra/repository`
 4. 禁止 `domain` 依赖 `ui/pages`
+5. `web` 只能经 HTTP contract 访问后端，禁止导入 Python 业务模块或复制后端状态机。
 
 ---
 
@@ -57,13 +61,20 @@ PaperSage 项目开发规范与工程化约束（团队约定版）
 11. 同一业务用例默认只允许一个 canonical 入口；新增入口必须说明不可替代的语义价值。
 12. 新增抽象层若只做参数透传、别名导出或简单包装，默认不允许落地。
 13. UI 负责交互、状态展示与渲染；业务逻辑、运行时编排、数据访问不得混入 `ui/`。
+14. 新的 runtime 持久化必须使用 SQLAlchemy Core/ORM table expression + Alembic migration；
+    不得新增 `sqlite3` repository。现有 SQLite repository 只能减不增，并按可验证事务边界迁移。
+15. 所有可调度工作必须使用通用 `AgentTask(kind, task_uid)` 契约；不得新增 research-only
+    task type、进程内任务真相或静态 task-kind 白名单。
+16. 所有面向用户的 agent 运行状态必须来自 Run/RunItem/Task 的服务端事实；禁止前端 mock
+    进度、来源、context 用量或任务队列。
 
 ---
 
 ## 4. 禁止事项（MUST NOT）
 
 1. 不允许新增“巨型文件”：
-   - 单文件超过 800 行时，默认必须拆分并在 PR 描述说明原因。
+   - 任意代码文件不得超过 500 行。
+   - 已登记的历史超限文件只能减少，不能增长；新增文件没有豁免。
 2. 不允许在 `pages/` 重复初始化逻辑（DB、用户、session_state）。
 3. 不允许在 adapter 中仅做无意义透传（直接 `return utils.xxx`）而不定义清晰接口边界。
 4. 不允许新增全局可变状态，除非明确封装在 session/context 对象内。
@@ -71,6 +82,7 @@ PaperSage 项目开发规范与工程化约束（团队约定版）
 6. 不允许长期保留历史兼容 facade、wrapper、barrel export 作为主链路入口。
 7. 不允许为“看起来更整齐”而新增一层无独立语义的封装。
 8. 不允许把页面交互代码、组件渲染代码与业务逻辑、agent 编排逻辑写在同一模块中。
+9. 不允许以 re-export、参数透传 wrapper 或双实现作为“拆分”；迁移完成后必须删除旧入口。
 
 ---
 
@@ -119,6 +131,12 @@ PaperSage 项目开发规范与工程化约束（团队约定版）
 # 核心质量门禁（必跑）
 bash scripts/quality_gate.sh core
 
+# Windows PowerShell 等价命令（不得因 shell 不同跳过门禁）
+pwsh -File scripts/quality_gate.ps1 -Mode core
+
+# 仓库开发规则（代码规模、路径 hack 等）
+uv run --extra dev python scripts/repository_guard.py --check
+
 # 目标测试
 uv run --extra dev python -m pytest tests/unit -q
 
@@ -145,6 +163,7 @@ PR 描述至少包含：
 3. 是否新增重复初始化或重复逻辑
 4. 是否补齐测试与文档
 5. 是否存在潜在安全泄露
+6. 是否新增 raw `sqlite3` 持久化、前端 mock runtime 事实或超过 500 行的代码文件
 
 ---
 
@@ -153,8 +172,10 @@ PR 描述至少包含：
 1. `utils/utils.py` 只减不增：新能力必须进新模块。
 2. 页面初始化统一收敛到 bootstrap helper。
 3. `ui/agent_center_page.py` 继续拆分为 controller / view / state。
-4. worker 任务导入路径标准化，去除路径 hack。
+4. worker 任务导入路径标准化，禁止 `sys.path.insert` 路径 hack。
 5. 质量门禁逐步扩围到 `ui/pages/utils`。
+6. Runtime repository 统一迁到 `agent/adapters/orm`；schema 只由 Alembic 管理，禁止
+   `create_all` 和运行时 DDL 作为生产迁移路径。
 
 详见：
 

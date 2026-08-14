@@ -109,8 +109,6 @@ class _ScenarioAgent:
                 "current_plan": {"steps": [{"id": "step_1"}]},
                 "completed_step_ids": ["step_1"],
             }
-        if self._case.process_contract.require_todos:
-            result["todos"] = [{"id": "todo_1", "content": "完成任务", "status": "completed"}]
         return result
 
 

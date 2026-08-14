@@ -45,7 +45,6 @@ export const messageSchema = z.object({
   trace: z.array(z.record(z.string(), z.unknown())).optional(),
   evidence: z.array(z.record(z.string(), z.unknown())).optional(),
   retrieved_evidence: z.array(z.record(z.string(), z.unknown())).optional(),
-  delegation: z.record(z.string(), z.unknown()).optional(),
   plan: z.record(z.string(), z.unknown()).nullable().optional(),
   todos: z.array(z.record(z.string(), z.unknown())).optional(),
   a2ui: z.union([z.record(z.string(), z.unknown()), z.array(z.record(z.string(), z.unknown()))]).nullable().optional(),
@@ -74,7 +73,6 @@ export const turnResultSchema = z.object({
   trace_payload: z.array(z.record(z.string(), z.unknown())).default([]),
   evidence_items: z.array(z.record(z.string(), z.unknown())).default([]),
   retrieved_evidence_items: z.array(z.record(z.string(), z.unknown())).default([]),
-  delegation_execution: z.record(z.string(), z.unknown()).default({}),
   plan: z.record(z.string(), z.unknown()).nullable().optional(),
   agent_plan: z.record(z.string(), z.unknown()).nullable().optional(),
   todos: z.array(z.record(z.string(), z.unknown())).default([]),
@@ -89,6 +87,9 @@ export const runCreatedSchema = z.object({
   run_id: z.string(),
   status: z.string(),
   stream_url: z.string(),
+  requested_mode: z.enum(["auto", "react", "plan_execute", "agent_teams"]),
+  resolved_mode: z.enum(["react", "plan_execute", "agent_teams"]),
+  route_reason: z.string(),
 })
 
 export const runSchema = z.object({
@@ -102,7 +103,7 @@ export const runSchema = z.object({
 })
 
 export const agentEventSchema = z.object({
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]),
   eventId: z.string(),
   eventType: z.string(),
   sequence: z.number().int().positive(),
@@ -110,7 +111,30 @@ export const agentEventSchema = z.object({
   threadId: z.string(),
   runId: z.string(),
   traceId: z.string(),
-  payload: z.record(z.string(), z.unknown()),
+  payload: z.record(z.string(), z.unknown()).default({}),
+  item: z.object({
+    id: z.string(),
+    type: z.string(),
+    status: z.string(),
+    taskId: z.string().nullable().optional(),
+    payload: z.record(z.string(), z.unknown()).default({}),
+  }).optional(),
+})
+
+export const steeringInputSchema = z.object({
+  input_id: z.string(),
+  run_id: z.string(),
+  status: z.string(),
+})
+
+export const researchArtifactSchema = z.object({
+  artifact_uid: z.string(),
+  run_uid: z.string(),
+  task_uid: z.string(),
+  artifact_type: z.string(),
+  content: z.record(z.string(), z.unknown()),
+  evidence_refs: z.array(z.string()).default([]),
+  created_at: z.string().nullish(),
 })
 
 export type Project = z.infer<typeof projectSchema>
@@ -121,3 +145,5 @@ export type Settings = z.infer<typeof settingsSchema>
 export type TurnResult = z.infer<typeof turnResultSchema>
 export type AgentEvent = z.infer<typeof agentEventSchema>
 export type Run = z.infer<typeof runSchema>
+export type SteeringInput = z.infer<typeof steeringInputSchema>
+export type ResearchArtifact = z.infer<typeof researchArtifactSchema>

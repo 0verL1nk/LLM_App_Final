@@ -47,13 +47,13 @@ export type ToolHeaderProps = {
 );
 
 const statusLabels: Record<ToolPart["state"], string> = {
-  "approval-requested": "Awaiting Approval",
-  "approval-responded": "Responded",
-  "input-available": "Running",
-  "input-streaming": "Pending",
-  "output-available": "Completed",
-  "output-denied": "Denied",
-  "output-error": "Error",
+  "approval-requested": "等待确认",
+  "approval-responded": "已确认",
+  "input-available": "进行中",
+  "input-streaming": "等待输入",
+  "output-available": "已完成",
+  "output-denied": "已拒绝",
+  "output-error": "失败",
 };
 
 const statusIcons: Record<ToolPart["state"], ReactNode> = {
@@ -121,7 +121,7 @@ export type ToolInputProps = ComponentProps<"div"> & {
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
   <div className={cn("space-y-2 overflow-hidden", className)} {...props}>
     <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-      Parameters
+      参数
     </h4>
     <div className="rounded-md bg-muted/50">
       <ToolCode value={JSON.stringify(input, null, 2)} />
@@ -157,7 +157,7 @@ export const ToolOutput = ({
   return (
     <div className={cn("space-y-2", className)} {...props}>
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-        {errorText ? "Error" : "Result"}
+        {errorText ? "错误" : "结果"}
       </h4>
       <div
         className={cn(

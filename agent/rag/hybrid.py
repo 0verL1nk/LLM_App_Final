@@ -22,10 +22,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from ..settings import load_agent_settings
 from .evidence import EvidenceItem, EvidencePayload
+from .index_artifact import build_project_doc_index_artifact as _build_project_doc_index_artifact
+from .project_chunking import markdown_documents
 from .vector_store import build_vectorstore, stable_vectorstore_key
 
 logger = logging.getLogger(__name__)
-PROJECT_INDEX_SCHEMA_VERSION = 2
+PROJECT_INDEX_SCHEMA_VERSION = 3
 IngestionProgressCallback = Callable[[str, int | None, int | None], None]
 
 
@@ -180,76 +182,6 @@ def _resolve_min_relevance_score(settings: Any) -> float:
     return _clamp_relevance_score(raw)
 
 
-def _build_project_doc_index_artifact(
-    *,
-    project_uid: str,
-    doc_uid: str,
-    doc_name: str,
-    normalized_text: str,
-    source_spans: list[dict[str, Any]] | None = None,
-    settings_signature: str,
-    text_hash: str,
-    splitter: RecursiveCharacterTextSplitter,
-    embeddings: FastEmbedEmbeddings,
-    progress_callback: IngestionProgressCallback | None = None,
-) -> dict[str, Any]:
-    doc_docs = splitter.create_documents(
-        [normalized_text],
-        metadatas=[
-            {
-                "doc_uid": doc_uid,
-                "doc_name": doc_name,
-                "project_uid": project_uid,
-            }
-        ],
-    )
-    chunks = [doc.page_content for doc in doc_docs]
-    if progress_callback is not None:
-        progress_callback("chunking", len(chunks), len(chunks))
-    metadatas = [dict(doc.metadata) if isinstance(doc.metadata, dict) else {} for doc in doc_docs]
-    for doc, metadata in zip(doc_docs, metadatas, strict=True):
-        start_index = metadata.get("start_index")
-        if not isinstance(start_index, int):
-            continue
-        end_index = start_index + len(doc.page_content)
-        locations = [
-            span
-            for span in source_spans or []
-            if isinstance(span.get("start"), int)
-            and isinstance(span.get("end"), int)
-            and int(span["start"]) < end_index
-            and int(span["end"]) > start_index
-        ]
-        if locations:
-            metadata["ocr_locations"] = locations
-            first_page = locations[0].get("page_no")
-            if isinstance(first_page, int):
-                metadata["page_no"] = first_page
-    embedding_vectors: list[list[float]] = []
-    batch_size = max(1, int(os.getenv("RAG_INDEX_BATCH_SIZE", "256")))
-    total_chunks = len(chunks)
-    for start in range(0, total_chunks, batch_size):
-        batch = chunks[start : start + batch_size]
-        embedding_vectors.extend(_normalize_embedding_vectors(embeddings.embed_documents(batch)))
-        if progress_callback is not None:
-            progress_callback(
-                "embedding",
-                min(start + len(batch), total_chunks),
-                total_chunks,
-            )
-    return {
-        "schema_version": PROJECT_INDEX_SCHEMA_VERSION,
-        "project_uid": project_uid,
-        "doc_uid": doc_uid,
-        "doc_name": doc_name,
-        "text_hash": text_hash,
-        "settings_signature": settings_signature,
-        "chunks": chunks,
-        "metadatas": metadatas,
-        "embeddings": embedding_vectors,
-    }
-
-
 def _load_project_doc_index_artifact(path: Path) -> dict[str, Any] | None:
     if not path.exists() or not path.is_file():
         return None
@@ -323,6 +255,8 @@ def _load_or_build_project_doc_index_artifact(
         text_hash=text_hash,
         splitter=splitter,
         embeddings=embeddings,
+        schema_version=PROJECT_INDEX_SCHEMA_VERSION,
+        normalize_vectors=_normalize_embedding_vectors,
         progress_callback=progress_callback,
     )
     try:
@@ -348,6 +282,7 @@ def build_project_document_index_with_settings(
     doc_name: str,
     document_text: str,
     source_spans: list[dict[str, Any]] | None = None,
+    document_format: str = "plain",
     progress_callback: IngestionProgressCallback | None = None,
 ) -> dict[str, Any]:
     """Build one complete document index payload for an external store."""
@@ -369,6 +304,15 @@ def build_project_document_index_with_settings(
     )
     settings_signature = _settings_signature_for_project_index(settings)
     text_hash = _hash_text(normalized_text)
+    structured_documents = (
+        markdown_documents(
+            text=normalized_text,
+            chunk_size=settings.rag_chunk_size,
+            chunk_overlap=settings.rag_chunk_overlap,
+        )
+        if document_format == "markdown"
+        else None
+    )
     artifact = _build_project_doc_index_artifact(
         project_uid=project_uid,
         doc_uid=doc_uid,
@@ -378,7 +322,10 @@ def build_project_document_index_with_settings(
         settings_signature=settings_signature,
         text_hash=text_hash,
         splitter=splitter,
+        chunk_documents=structured_documents,
         embeddings=embeddings,
+        schema_version=PROJECT_INDEX_SCHEMA_VERSION,
+        normalize_vectors=_normalize_embedding_vectors,
         progress_callback=progress_callback,
     )
     chunk_count = len(artifact.get("chunks", []))

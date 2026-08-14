@@ -50,7 +50,7 @@ FastAPI exposes `/api/v1` as a thin transport over application and adapter servi
 
 The local deployment resolves `X-User-Id` to `local-user` by default. The transport
 must preserve project/user ownership checks. Agent turns return structured answer,
-trace, delegation, evidence, plan, Todo, and human-request data; UI never infers
+trace, delegation, evidence, revisioned plan, and human-request data; UI never infers
 Agent behavior from keywords.
 
 ## Conversation run protocol
@@ -58,8 +58,9 @@ Agent behavior from keywords.
 Agent work uses HTTP commands plus a durable SSE event stream. Creating a Run is
 idempotent through `client_request_id`, persists the user message immediately, and
 returns before model execution begins. The background worker records canonical
-events with `eventId`, a monotonic per-Run `sequence`, timestamp, type, and payload.
-The client folds `run.*`, `plan.updated`, `tool.*`, and `agent.*` events into a
+V2 events with `eventId`, a monotonic per-Run `sequence`, timestamp, type, and a
+typed optional `item`. The client folds `assistant_message`, `reasoning_summary`,
+`plan`, `tool_call`, `agent_task`, and `presentation` items into a
 compact execution timeline and exposes the full public trace in the inspector.
 It applies events by per-Run sequence, buffers a short out-of-order arrival, and
 ignores replayed sequences. A live answer is one Assistant message made of
@@ -67,13 +68,22 @@ Markdown, activity, citation, and A2UI parts - never a separate Agent chat room.
 
 While a Run is active, the conversation shows one low-emphasis, collapsible
 activity summary inside the Assistant message. Its data is projected on the server from
-actual tool lifecycle hooks: queued/started/completed/failed Runs, `write_todos`
-plan updates, tool names with sanitized inputs and outputs, and task-tool based
-subagent lifecycle. It must not infer model intent from event text, present
-invented progress tips, or label execution telemetry as hidden model reasoning.
-Provider reasoning is rendered only when a provider supplies an explicit,
-user-displayable reasoning part; PaperSage currently does not request or persist
-such parts.
+actual tool lifecycle hooks: tool names with sanitized inputs and outputs, plan updates,
+and task-tool based subagent lifecycle. Bare Run lifecycle records remain durable for
+recovery but are not user-facing activity. It must not infer model intent from event
+text or present invented progress tips. Providers that serialize a user-displayable
+reasoning stream as `<think>` are adapted server-side into a distinct `reasoning`
+message part. AI Elements `Reasoning` renders that part separately from Markdown,
+while `ChainOfThought` represents only real tool and subagent steps.
+`Plan`, `Task`, and `Tool` are likewise fed only by the persisted planning and
+tool-lifecycle contracts: the inspector renders the latest revisioned `update_plan`
+snapshot and each paired tool action. A user never sees
+synthetic task states, internal tool arguments, or a generic “run started” record.
+Components that require a distinct contract—attachments, approval confirmation,
+artifacts, and checkpoints—remain unavailable until their respective API and
+persistence lifecycles exist. AI Elements `Queue` is used only for a persisted Run
+that has been accepted by the server but has not yet emitted its first runtime event;
+it is not a client-side fake progress indicator.
 
 Assistant content is rendered by AI Elements `MessageResponse`, with Markdown,
 code blocks, CJK, and KaTeX math. PaperSage keeps the durable Run protocol as its
@@ -87,6 +97,12 @@ grounding actually used in the answer from retrieval context that was considered
 Both `search_document` and sequential `read_document` return the same citeable
 evidence schema.
 
+The input footer may show AI Elements `Context` only after the server returns
+`context_snapshot.session_context`. Its used/window values are calculated in
+`context_governance.build_context_usage_snapshot` from the persisted session
+messages plus the active system prompt and tool definitions. The browser must not
+estimate token capacity or synthesize provider usage.
+
 A provider response containing neither visible text nor tool calls is invalid. The
 model middleware retries it; exhaustion fails the Run with a user-safe error event.
 The backend must never convert an empty provider response into a synthetic Assistant
@@ -97,10 +113,12 @@ in SQLite independently of the browser connection, so a disconnected client does
 not own task execution. The older synchronous `/turns` endpoint remains only as a
 compatibility API; the React application must use the Run protocol.
 
-The Run stream also carries `message.part.delta` events produced from LangGraph's
-`messages` stream mode. The client renders those parts immediately and replays
-them from sequence zero when reopening a session with a queued or running Run.
-The final `run.completed` event remains the authoritative persisted answer; a
+The Run stream carries V2 `item.delta` records produced from LangGraph's `messages`
+stream mode. Assistant and display-safe reasoning text are keyed by part ID and
+their SQLite projection accumulates deltas, while A2UI envelopes stay in their own
+typed presentation item. The client renders and replays them by sequence when
+reopening a session with a queued or running Run. The final `run.completed` event
+remains the authoritative operational terminal state; a
 stream which has begun but cannot provide a final graph state fails rather than
 executing the Agent a second time.
 

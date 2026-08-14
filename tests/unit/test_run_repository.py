@@ -1,8 +1,9 @@
 import sqlite3
 from pathlib import Path
 
-from agent.adapters.sqlite.run_repository import (
+from agent.adapters.orm.run_repository import (
     append_run_event,
+    claim_run_execution,
     create_run,
     expire_stalled_runs,
     get_run,
@@ -76,6 +77,24 @@ def test_list_session_runs_only_returns_resumable_owned_runs(tmp_path: Path) -> 
     assert [run["run_uid"] for run in runs] == [resumable["run_uid"]]
 
 
+def test_run_execution_can_only_be_claimed_once(tmp_path: Path) -> None:
+    database = str(tmp_path / "runs.sqlite")
+    run, _ = create_run(
+        project_uid="project-1",
+        session_uid="session-1",
+        user_uuid="user-1",
+        client_request_id="request-claim",
+        prompt="执行一次",
+        db_name=database,
+    )
+
+    assert claim_run_execution(run_uid=str(run["run_uid"]), db_name=database) is True
+    assert claim_run_execution(run_uid=str(run["run_uid"]), db_name=database) is False
+    persisted = get_run(run_uid=str(run["run_uid"]), user_uuid="user-1", db_name=database)
+    assert persisted is not None
+    assert persisted["status"] == "running"
+
+
 def test_stalled_run_is_failed_and_gets_a_terminal_event(tmp_path: Path) -> None:
     database = str(tmp_path / "runs.sqlite")
     run, _ = create_run(project_uid="project-1", session_uid="session-1", user_uuid="user-1", client_request_id="request-1", prompt="问题", db_name=database)
@@ -84,3 +103,4 @@ def test_stalled_run_is_failed_and_gets_a_terminal_event(tmp_path: Path) -> None
     assert expire_stalled_runs(project_uid="project-1", session_uid="session-1", user_uuid="user-1", max_idle_seconds=0, db_name=database) == [run["run_uid"]]
     assert get_run(run_uid=run["run_uid"], user_uuid="user-1", db_name=database)["status"] == "failed"
     assert list_run_events(run_uid=run["run_uid"], db_name=database)[-1]["eventType"] == "run.failed"
+    claim_run_execution,

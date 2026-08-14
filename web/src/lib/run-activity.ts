@@ -29,18 +29,18 @@ export function describeRunEvent(event: AgentEvent): string {
 }
 
 export function visibleRunEvents(events: AgentEvent[]): AgentEvent[] {
-  return events.filter((event) => ["run.created", "run.started", "run.completed", "run.failed", "plan.updated", "agent.spawned", "agent.completed", "tool.execution.started", "tool.execution.completed"].includes(event.eventType))
+  return events.filter((event) => ["run.failed", "plan.updated", "agent.spawned", "agent.completed", "tool.execution.started", "tool.execution.completed"].includes(event.eventType))
 }
 
 /**
  * Collapse lifecycle pairs by their runtime action id.  This uses the durable
- * tool/delegation contract rather than inferring stages from display strings.
+ * tool/agent-task contract rather than inferring stages from display strings.
  */
 export function summarizeRunActivity(events: AgentEvent[]): RunActivityStep[] {
   const steps: RunActivityStep[] = []
   const byActionId = new Map<string, RunActivityStep>()
   for (const event of visibleRunEvents(events)) {
-    if (["run.created", "run.started", "run.completed", "plan.updated"].includes(event.eventType)) continue
+    if (event.eventType === "plan.updated") continue
     if (event.eventType === "run.failed") {
       steps.push({ event, eventIds: [event.eventId], label: describeRunEvent(event), status: "failed" })
       continue

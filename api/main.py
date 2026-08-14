@@ -11,14 +11,17 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from agent import __version__
+from agent.adapters.orm import run_migrations
 from agent.application.research_workspace import research_workspace_service
 from agent.logging_utils import configure_application_logging
 
+from .context_memory_routes import context_memory_router
 from .routes import router
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    run_migrations()
     yield
     research_workspace_service.close()
 
@@ -32,6 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router)
+app.include_router(context_memory_router, prefix="/api/v1")
 
 RESOURCE_ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 WEB_DIST = RESOURCE_ROOT / "web" / "dist"

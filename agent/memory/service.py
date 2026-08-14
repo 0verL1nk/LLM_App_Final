@@ -4,9 +4,8 @@ from typing import Any
 
 import numpy as np
 
+from agent.adapters.orm.memory_repository import list_memory_items
 from agent.embedding_provider import get_embedding_model
-
-from .repository import list_project_memory_items, touch_memory_items
 
 
 def search_project_memory_items(
@@ -17,12 +16,10 @@ def search_project_memory_items(
     limit: int = 5,
     db_name: str = "./database.sqlite",
 ) -> list[dict[str, Any]]:
-    items = list_project_memory_items(
-        uuid=uuid,
-        project_uid=project_uid,
-        limit=300,
-        db_name=db_name,
-    )
+    items = [
+        *list_memory_items(uuid=uuid, project_uid=project_uid, level="L3", limit=300, db_name=db_name),
+        *list_memory_items(uuid=uuid, project_uid=project_uid, level="L4", limit=100, db_name=db_name),
+    ]
     query_text = str(query or "").strip()
     if not items or not query_text:
         return []
@@ -45,10 +42,6 @@ def search_project_memory_items(
         item = dict(items[int(index)])
         item["score"] = round(float(scores[int(index)]), 4)
         selected.append(item)
-    touch_memory_items(
-        memory_uids=[item["memory_uid"] for item in selected],
-        db_name=db_name,
-    )
     return selected
 
 

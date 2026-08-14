@@ -14,8 +14,8 @@ describe("run activity", () => {
     expect(describeRunEvent(event("run.failed", { message: "模型执行失败" }))).toBe("模型执行失败")
   })
 
-  it("hides model-internal progress events from the user-facing activity line", () => {
-    expect(visibleRunEvents([event("step.progress"), event("run.started")]).map((item) => item.eventType)).toEqual(["run.started"])
+  it("hides lifecycle and model-internal events from the user-facing activity line", () => {
+    expect(visibleRunEvents([event("step.progress"), event("run.started")])).toEqual([])
   })
 
   it("merges a tool lifecycle into one user-visible activity", () => {

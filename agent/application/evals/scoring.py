@@ -33,19 +33,23 @@ def _stable_list_of_dicts(payload: Any) -> list[dict[str, Any]]:
 
 def compute_execution_completion_ratio(
     *,
-    todos: list[dict[str, Any]],
+    plan: dict[str, Any] | None,
     runtime_state: dict[str, Any] | None,
 ) -> float | None:
-    def _todo_completion_ratio() -> float | None:
-        total_todos = len(todos)
-        if total_todos == 0:
+    def _plan_completion_ratio() -> float | None:
+        steps = plan.get("steps") if isinstance(plan, dict) else None
+        if not isinstance(steps, list) or not steps:
             return None
-        completed = 0
-        for item in todos:
+        completed_steps = 0
+        valid_steps = 0
+        for item in steps:
+            if not isinstance(item, dict):
+                continue
+            valid_steps += 1
             status = str(item.get("status") or "").strip().lower()
             if status in {"completed", "done"}:
-                completed += 1
-        return completed / total_todos
+                completed_steps += 1
+        return completed_steps / valid_steps if valid_steps else None
 
     def _runtime_plan_completion_ratio() -> float | None:
         if not isinstance(runtime_state, dict):
@@ -77,47 +81,29 @@ def compute_execution_completion_ratio(
             return None
         return completed_steps / total_steps
 
-    todo_ratio = _todo_completion_ratio()
+    plan_ratio = _plan_completion_ratio()
     runtime_ratio = _runtime_plan_completion_ratio()
 
-    if runtime_ratio is not None and todo_ratio is not None:
-        return max(todo_ratio, runtime_ratio)
+    if runtime_ratio is not None and plan_ratio is not None:
+        return max(plan_ratio, runtime_ratio)
     if runtime_ratio is not None:
         return runtime_ratio
-    if todo_ratio is None:
-        return None
-    if todo_ratio > 0.0:
-        return todo_ratio
-    # Todos can remain stale in end-to-end runs because write_todos does not
-    # guarantee completion updates. Treat all-noncompleted todo state as
-    # unavailable unless a runtime plan explicitly confirms zero progress.
-    return None
+    return plan_ratio
 
 
 def normalize_turn_result(turn_result: dict[str, Any]) -> dict[str, Any]:
     answer = str(turn_result.get("answer") or "").strip()
     evidence_items = turn_result.get("evidence_items")
     normalized_evidence = _stable_list_of_dicts(evidence_items)
-    todos = turn_result.get("todos")
-    normalized_todos = _stable_list_of_dicts(todos)
     plan = _stable_dict(turn_result.get("plan"))
     runtime_state = _stable_dict(turn_result.get("runtime_state"))
-    agent_plan = _stable_dict(turn_result.get("agent_plan"))
-    delegation_execution = _stable_dict(turn_result.get("delegation_execution")) or {}
-    delegation_tasks = _stable_list_of_dicts(delegation_execution.get("tasks"))
-    delegated_subagent_types = sorted(
-        {
-            str(task.get("subagent_type") or "").strip()
-            for task in delegation_tasks
-            if str(task.get("subagent_type") or "").strip()
-        }
-    )
     phase_path = str(turn_result.get("phase_path") or "").strip()
     trace_payload = turn_result.get("trace_payload")
     normalized_trace = trace_payload if isinstance(trace_payload, list) else []
     raw_output_messages = turn_result.get("output_messages")
     output_messages: list[Any] = raw_output_messages if isinstance(raw_output_messages, list) else []
     used_tool_names: list[str] = []
+    delegated_roles: list[str] = []
     for item in output_messages:
         tool_calls = (
             item.get("tool_calls")
@@ -132,29 +118,30 @@ def normalize_turn_result(turn_result: dict[str, Any]) -> dict[str, Any]:
             tool_name = str(tool_call.get("name") or "").strip()
             if tool_name and tool_name not in used_tool_names:
                 used_tool_names.append(tool_name)
+            if tool_name == "delegate_task" and isinstance(tool_call.get("args"), dict):
+                role = str(tool_call["args"].get("role") or "").strip()
+                if role:
+                    delegated_roles.append(role)
     execution_completion_ratio = compute_execution_completion_ratio(
-        todos=normalized_todos,
+        plan=plan,
         runtime_state=runtime_state,
     )
     return {
         "answer": answer,
         "evidence_items": normalized_evidence,
         "evidence_count": len(normalized_evidence),
-        "todos": normalized_todos,
-        "todo_count": len(normalized_todos),
         "plan": plan,
         "runtime_state": runtime_state,
-        "agent_plan": agent_plan,
-        "plan_present": bool(plan or agent_plan or (runtime_state or {}).get("current_plan")),
+        "plan_present": bool(plan or (runtime_state or {}).get("current_plan")),
         "phase_path": phase_path,
         "trace_payload": normalized_trace,
         "trace_diagnostic_count": len(normalized_trace),
         "output_messages": output_messages,
         "used_tool_names": used_tool_names,
         "execution_completion_ratio": execution_completion_ratio,
-        "delegation_count": len(delegation_tasks),
-        "delegated_subagent_types": delegated_subagent_types,
-        "parallel_delegation": any(bool(task.get("parallel")) for task in delegation_tasks),
+        "delegation_count": len(delegated_roles),
+        "delegated_subagent_types": sorted(set(delegated_roles)),
+        "parallel_delegation": False,
         "run_latency_ms": float(turn_result.get("run_latency_ms") or 0.0),
         "used_document_rag": bool(turn_result.get("used_document_rag", False)),
         "leader_tool_names": (
@@ -212,9 +199,6 @@ def evaluate_case_result(
     evidence_pass = evidence_count >= required_evidence_count
     plan_present = bool(normalized_result["plan_present"])
     plan_pass = (not process_contract.require_plan) or plan_present
-    todo_count = int(normalized_result["todo_count"])
-    todo_pass = (not process_contract.require_todos) or todo_count > 0
-
     execution_completion_ratio = normalized_result["execution_completion_ratio"]
     ratio_pass = True
     if process_contract.min_execution_completion_ratio is not None:
@@ -247,7 +231,6 @@ def evaluate_case_result(
         [
             evidence_pass,
             plan_pass,
-            todo_pass,
             ratio_pass,
             phase_pass,
             tool_names_pass,
@@ -259,7 +242,6 @@ def evaluate_case_result(
     completed = final_success and process_success
     process_checks = {
         "plan_passed": plan_pass,
-        "todo_passed": todo_pass,
         "tool_names_passed": tool_names_pass,
         "used_tool_names": used_tool_names,
         "subagent_types_passed": subagent_types_pass,

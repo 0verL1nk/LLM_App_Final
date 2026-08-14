@@ -10,3 +10,4 @@ class AgentState(BaseAgentState):
     trace_labels: NotRequired[list[str]]
     trace_summary: NotRequired[str]
     turn_system_context: NotRequired[str]
+    steering_inputs_for_model: NotRequired[list[dict[str, object]]]

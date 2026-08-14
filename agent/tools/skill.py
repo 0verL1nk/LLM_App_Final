@@ -12,10 +12,7 @@ logger = logging.getLogger(__name__)
 
 class SkillInput(BaseModel):
     skill_name: str = Field(
-        description=(
-            "Skill template name. Available skills include: summary, critical_reading, "
-            "method_compare, translation, mindmap, agentic_search."
-        )
+        description="Registered skill template name. The runtime resolves the current skill registry."
     )
     task: str = Field(
         description="Current user task where the selected skill guidance should be applied."
@@ -27,7 +24,7 @@ def _get_skill_options() -> str:
     skills = discover_available_skills()
     if skills:
         return ", ".join(sorted(s.name for s in skills))
-    return "summary, critical_reading, method_compare, translation, mindmap"
+    return "none"
 
 
 @tool(

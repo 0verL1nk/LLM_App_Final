@@ -8,7 +8,7 @@ export function formatEvidenceCitations(
     const reference = rawReference.trim()
     const chunkId = reference.split("|", 1)[0]?.trim() ?? ""
     const evidenceIndex = evidence.findIndex((item) => String(item.chunk_id ?? "") === chunkId)
-    const label = evidenceIndex >= 0 ? `证据 ${evidenceIndex + 1}` : "引用"
+    const label = evidenceIndex >= 0 ? String(evidenceIndex + 1) : "引用"
     return ` [${label}](#evidence-${encodeURIComponent(reference)})`
   })
 }
