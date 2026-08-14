@@ -12,6 +12,7 @@ from ..adapters.orm.run_repository import (
     get_run,
     update_run_status,
 )
+from ..adapters.orm.memory_repository import save_session_summary
 from ..adapters.orm.task_dispatch_repository import create_leader_run
 from ..adapters.rag import DynamicProjectEvidenceService
 from ..adapters.sqlite.project_repository import (
@@ -54,8 +55,6 @@ from .steering_inputs import (
     unconfirmed_steering_inputs,
 )
 from .workspace import require_project
-
-
 @dataclass
 class _RuntimeEntry:
     session: AgentSession
@@ -73,12 +72,7 @@ class ResearchWorkspaceService:
         with self._guard:
             return self._locks.setdefault(key, threading.Lock())
     def _runtime(
-        self,
-        *,
-        project_uid: str,
-        session_uid: str,
-        user_uuid: str,
-        resolved_mode: str = "agent_teams",
+        self, *, project_uid: str, session_uid: str, user_uuid: str, resolved_mode: str = "agent_teams"
     ) -> _RuntimeEntry:
         key = (user_uuid, project_uid, session_uid, resolved_mode)
         project = require_project(project_uid=project_uid, user_uuid=user_uuid)
@@ -99,7 +93,6 @@ class ResearchWorkspaceService:
                 existing.evidence.update_scope(list(scope))
                 existing.scope = scope
                 return existing
-
         api_key = read_api_key_for_user(uuid=user_uuid)
         model_name = read_model_name_for_user(uuid=user_uuid)
         if not api_key or not model_name:
@@ -186,7 +179,6 @@ class ResearchWorkspaceService:
         )
         if not created:
             return run
-
         key = (user_uuid, project_uid, session_uid, "agent_teams")
         with self._lock_for(key):
             messages = list_project_session_messages(
@@ -243,6 +235,7 @@ class ResearchWorkspaceService:
                 prompt=normalized_prompt,
                 user_uuid=user_uuid,
                 project_uid=project_uid,
+                session_uid=session_uid,
                 search_project_memory_items_fn=search_project_memory_items,
             )
             result = execute_agent_center_turn(
@@ -320,6 +313,13 @@ class ResearchWorkspaceService:
                 messages=messages,
             )
             if input_messages is None:
+                save_session_summary(
+                    uuid=user_uuid,
+                    project_uid=project_uid,
+                    session_uid=session_uid,
+                    summary=str(result["answer"]),
+                    source_run_uid=str(run_uid or ""),
+                )
                 enqueue_turn_memory_consolidation(
                     user_uuid=user_uuid,
                     project_uid=project_uid,
