@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.1](https://github.com/0verL1nk/PaperSage/compare/v1.4.0...v1.4.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* align streamdown shiki dependencies ([3be5a94](https://github.com/0verL1nk/PaperSage/commit/3be5a949e48f1d5c4da70dbd038f70497d4adda2))
+* align streamdown shiki dependencies ([4fc18ce](https://github.com/0verL1nk/PaperSage/commit/4fc18cefdfc53347c121eff89a29d3c60dd59be0))
+
 ## [1.4.0](https://github.com/0verL1nk/PaperSage/compare/v1.3.6...v1.4.0) (2026-08-14)
 
 
