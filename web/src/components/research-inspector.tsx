@@ -3,10 +3,30 @@ import {
   BookOpen,
   ChevronDown,
   FileText,
-  ListTodo,
   MapPin,
+  Scale,
 } from "lucide-react";
 
+import {
+  Plan,
+  PlanContent,
+  PlanDescription,
+  PlanHeader,
+  PlanTitle,
+  PlanTrigger,
+} from "@/components/ai-elements/plan";
+import {
+  Task,
+  TaskContent,
+  TaskItem,
+  TaskTrigger,
+} from "@/components/ai-elements/task";
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+} from "@/components/ai-elements/tool";
+import { MessageResponse } from "@/components/ai-elements/message";
 import { EvidencePreview } from "@/components/evidence-preview";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -22,13 +42,21 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { AgentEvent, Message, TurnResult } from "@/lib/schemas";
+import type { AgentEvent, Message, ResearchArtifact, TurnResult } from "@/lib/schemas";
+import { useResearchArtifacts } from "@/lib/queries";
+import {
+  latestPlanTodos,
+  normalizeResearchTodos,
+  summarizeToolExecutions,
+  type ResearchTodo,
+} from "@/lib/research-activity-details";
 import { useUiStore } from "@/stores/ui-store";
 
 type Evidence = Record<string, unknown>;
 
 type ResearchInspectorProps = {
   projectId: string;
+  sessionId: string;
   turn?: TurnResult;
   latest?: Message;
   liveEvents: AgentEvent[];
@@ -58,19 +86,74 @@ function locationLabel(evidence: Evidence): string | null {
   return locationCount > 1 ? `${pageText} · ${locationCount} 处定位` : pageText;
 }
 
-function planItems(plan: Evidence | null | undefined): string[] {
-  if (!plan) return [];
-  for (const candidate of [plan.todos, plan.steps, plan.items]) {
-    const items = asRecords(candidate)
-      .map((item) =>
-        String(item.content ?? item.title ?? item.label ?? "").trim(),
-      )
-      .filter(Boolean);
-    if (items.length) return items;
-  }
-  return typeof plan.summary === "string" && plan.summary.trim()
-    ? [plan.summary.trim()]
-    : [];
+function todoStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    pending: "待处理",
+    ready: "可开始",
+    in_progress: "进行中",
+    completed: "已完成",
+    blocked: "受阻",
+    failed: "失败",
+    canceled: "已取消",
+  };
+  return labels[status] ?? (status || "待处理");
+}
+
+function toolTitle(toolName: string): string {
+  return {
+    search_document: "检索资料",
+    read_document: "阅读原文",
+    list_document: "查看资料库",
+    web_search: "检索网页",
+  }[toolName] ?? toolName;
+}
+
+function ResearchPlan({
+  plan,
+  todos,
+}: {
+  plan: Evidence | null | undefined;
+  todos: ResearchTodo[];
+}) {
+  const goal = typeof plan?.goal === "string" ? plan.goal.trim() : "";
+  const description = typeof plan?.description === "string" ? plan.description.trim() : "";
+  if (!goal && !description && !todos.length) return null;
+
+  return (
+    <Plan defaultOpen>
+      <PlanHeader className="px-4 py-3">
+        <div className="space-y-1">
+          <PlanTitle>研究计划</PlanTitle>
+          <PlanDescription>
+            {goal || description || `已记录 ${todos.length} 项任务`}
+          </PlanDescription>
+        </div>
+        <PlanTrigger aria-label="展开或收起研究计划" />
+      </PlanHeader>
+      <PlanContent className="space-y-4 px-4 pb-4">
+        {description && <p className="text-sm leading-6 text-muted-foreground">{description}</p>}
+        {todos.length > 0 && (
+          <div className="space-y-3">
+            {todos.map((todo) => (
+              <Task key={todo.id} defaultOpen={todo.status === "in_progress"}>
+                <TaskTrigger title={todo.content}>
+                  <div className="flex w-full cursor-pointer items-center justify-between gap-3 text-left text-sm">
+                    <span>{todo.content}</span>
+                    <Badge variant="secondary">{todoStatusLabel(todo.status)}</Badge>
+                  </div>
+                </TaskTrigger>
+                {todo.dependsOn.length > 0 && (
+                  <TaskContent>
+                    <TaskItem>依赖任务：{todo.dependsOn.join("、")}</TaskItem>
+                  </TaskContent>
+                )}
+              </Task>
+            ))}
+          </div>
+        )}
+      </PlanContent>
+    </Plan>
+  );
 }
 
 function DetailSection({
@@ -140,13 +223,57 @@ function EvidenceCard({
   );
 }
 
+function EvidenceMerge({ artifact, projectId }: { artifact: ResearchArtifact; projectId: string }) {
+  const content = artifact.content;
+  const claims = asRecords(content.claims);
+  const conflicts = asRecords(content.conflicts);
+  const evidence = asRecords(content.evidence);
+  const openQuestions = Array.isArray(content.open_questions) ? content.open_questions.filter((item): item is string => typeof item === "string") : [];
+  const summaries = asRecords(content.packet_summaries);
+  if (!claims.length && !conflicts.length && !openQuestions.length && !summaries.length) return null;
+  return (
+    <DetailSection icon={Scale} title="跨任务证据合并" count={claims.length}>
+      <div className="space-y-3">
+        {conflicts.length > 0 && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+            <p className="font-medium">发现 {conflicts.length} 组待裁决矛盾</p>
+            <p className="mt-1 text-muted-foreground">系统保留双方主张及来源，等待 Leader 基于证据明确判断。</p>
+          </div>
+        )}
+        {claims.map((claim) => (
+          <div key={String(claim.claim_id)} className="rounded-lg border bg-muted/20 p-3">
+            <p className="text-sm leading-6">{String(claim.statement ?? "未命名主张")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{String(claim.role ?? "unknown")} · {String(claim.task_uid ?? "")}</p>
+            {Array.isArray(claim.evidence_refs) && claim.evidence_refs.length > 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">证据：{claim.evidence_refs.map(String).join("、")}</p>
+            )}
+          </div>
+        ))}
+        {evidence.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {evidence.map((reference) => (
+              <EvidencePreview key={String(reference.chunk_id)} projectId={projectId} evidence={reference} />
+            ))}
+          </div>
+        )}
+        {openQuestions.length > 0 && <p className="text-sm text-muted-foreground">待解问题：{openQuestions.join("；")}</p>}
+        {summaries.map((summary) => (
+          <MessageResponse key={String(summary.task_uid)}>{String(summary.summary ?? "")}</MessageResponse>
+        ))}
+      </div>
+    </DetailSection>
+  );
+}
+
 export function ResearchInspector({
   projectId,
+  sessionId,
   turn,
   latest,
   liveEvents,
 }: ResearchInspectorProps) {
   const store = useUiStore();
+  const researchArtifacts = useResearchArtifacts(projectId, sessionId);
   const citedEvidence = asRecords(turn?.evidence_items ?? latest?.evidence);
   const retrievedEvidence = asRecords(
     turn?.retrieved_evidence_items ?? latest?.retrieved_evidence,
@@ -167,7 +294,10 @@ export function ResearchInspector({
   const context = turn?.context_snapshot ?? latest?.context_snapshot;
   const scope = context?.project_scope as Evidence | undefined;
   const memories = asRecords(context?.memory_items);
-  const steps = planItems(plan);
+  const todos = normalizeResearchTodos(turn?.todos);
+  const plannedTodos = todos.length ? todos : latestPlanTodos(liveEvents);
+  const toolExecutions = summarizeToolExecutions(liveEvents);
+  const latestMerge = [...(researchArtifacts.data ?? [])].reverse().find((artifact) => artifact.artifact_type === "evidence_merge");
 
   return (
     <Sheet open={store.inspectorOpen} onOpenChange={store.setInspectorOpen}>
@@ -237,18 +367,34 @@ export function ResearchInspector({
             </Collapsible>
           )}
 
-          {steps.length > 0 && (
-            <DetailSection icon={ListTodo} title="研究计划">
-              <ol className="space-y-2 border-l pl-4">
-                {steps.map((step, index) => (
-                  <li
-                    key={`${index}-${step}`}
-                    className="relative text-sm leading-6 text-muted-foreground before:absolute before:-left-[1.3rem] before:top-2 before:size-2 before:rounded-full before:bg-primary"
-                  >
-                    {step}
-                  </li>
+          <ResearchPlan plan={plan} todos={plannedTodos} />
+
+          {latestMerge && <EvidenceMerge artifact={latestMerge} projectId={projectId} />}
+
+          {toolExecutions.length > 0 && (
+            <DetailSection icon={Activity} title="已使用的工具" count={toolExecutions.length}>
+              <div className="space-y-2">
+                {toolExecutions.map((tool) => (
+                  <Tool key={tool.actionId} defaultOpen={tool.status === "failed"}>
+                    <ToolHeader
+                      type="dynamic-tool"
+                      toolName={tool.toolName}
+                      title={toolTitle(tool.toolName)}
+                      state={tool.status === "active" ? "input-available" : tool.status === "failed" ? "output-error" : "output-available"}
+                    />
+                    <ToolContent>
+                      {tool.summary ? (
+                        <p className="text-sm leading-6 text-muted-foreground">{tool.summary}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">{tool.status === "active" ? "正在处理" : "本次调用未返回可展示的摘要。"}</p>
+                      )}
+                      {tool.durationMs !== undefined && (
+                        <p className="text-xs text-muted-foreground">耗时 {(tool.durationMs / 1000).toFixed(1)} 秒</p>
+                      )}
+                    </ToolContent>
+                  </Tool>
                 ))}
-              </ol>
+              </div>
             </DetailSection>
           )}
 
@@ -294,6 +440,7 @@ export function ResearchInspector({
                     key={index}
                     className="mt-2 text-sm leading-6 text-muted-foreground"
                   >
+                    <span className="mr-1 text-xs uppercase">{String(item.memory_type ?? "memory")}</span>
                     {String(item.content ?? "")}
                   </p>
                 ))}

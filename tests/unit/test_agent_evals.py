@@ -13,7 +13,6 @@ from agent.application.evals import (
     run_agent_evals,
     select_eval_cases,
 )
-from agent.middlewares.todolist import Todo
 
 
 def test_load_eval_cases_supports_stable_process_contracts(tmp_path: Path) -> None:
@@ -126,7 +125,6 @@ def test_evaluate_case_result_combines_judge_and_process_checks() -> None:
             "current_plan": {"steps": [{"id": "s1"}, {"id": "s2"}]},
             "completed_step_ids": ["s1", "s2"],
         },
-        "todos": [],
         "phase_path": "接收请求 -> 规划 -> 输出最终答案",
         "trace_payload": [
             {"performative": "complexity_analysis"},
@@ -442,24 +440,21 @@ def test_build_eval_report_summarizes_case_results() -> None:
     assert report["remediation_area_counts"] == {"prompt": 1, "retrieval/tooling": 1}
 
 
-def test_evaluate_case_result_supports_pydantic_todos() -> None:
+def test_evaluate_case_result_uses_revisioned_plan_steps() -> None:
     case = AgentEvalCase.from_dict(
         {
-            "id": "todos_001",
+            "id": "plan_001",
             "category": "multi_step",
             "prompt": "请按步骤完成任务",
             "success_rubric": "Answer should confirm the task is finished.",
-            "require_todos": True,
+            "require_plan": True,
             "min_execution_completion_ratio": 1.0,
         }
     )
 
     turn_result = {
         "answer": "任务完成",
-        "todos": [
-            Todo(id="t1", content="第一步", status="completed"),
-            Todo(id="t2", content="第二步", status="completed"),
-        ],
+        "plan": {"revision": 0, "goal": "完成任务", "steps": [{"id": "t1", "title": "第一步", "status": "completed"}, {"id": "t2", "title": "第二步", "status": "completed"}]},
         "phase_path": "规划 -> 输出最终答案",
         "trace_payload": [],
         "run_latency_ms": 5.0,
@@ -477,27 +472,24 @@ def test_evaluate_case_result_supports_pydantic_todos() -> None:
 
     assert result["completed"] is True
     assert result["execution_completion_ratio"] == 1.0
-    assert result["process_checks"]["todo_passed"] is True
+    assert result["process_checks"]["plan_passed"] is True
 
 
-def test_evaluate_case_result_prefers_runtime_completion_signal_over_stale_todos() -> None:
+def test_evaluate_case_result_prefers_runtime_completion_signal_over_stale_plan() -> None:
     case = AgentEvalCase.from_dict(
         {
-            "id": "todos_runtime_001",
+            "id": "plan_runtime_001",
             "category": "multi_step",
             "prompt": "请按步骤完成任务",
             "success_rubric": "Answer should confirm the task is finished.",
-            "require_todos": True,
+            "require_plan": True,
             "min_execution_completion_ratio": 1.0,
         }
     )
 
     turn_result = {
         "answer": "任务完成",
-        "todos": [
-            Todo(id="t1", content="检索资料", status="pending"),
-            Todo(id="t2", content="输出结论", status="in_progress"),
-        ],
+        "plan": {"revision": 0, "goal": "完成任务", "steps": [{"id": "t1", "title": "检索资料", "status": "pending"}, {"id": "t2", "title": "输出结论", "status": "in_progress"}]},
         "runtime_state": {
             "current_plan": {"steps": [{"id": "s1"}, {"id": "s2"}]},
             "completed_step_ids": ["s1", "s2"],
@@ -523,14 +515,13 @@ def test_evaluate_case_result_prefers_runtime_completion_signal_over_stale_todos
 
 
 
-def test_evaluate_case_result_treats_zero_progress_todos_as_unavailable_signal() -> None:
+def test_evaluate_case_result_reports_zero_progress_plan() -> None:
     case = AgentEvalCase.from_dict(
         {
-            "id": "todos_unavailable_001",
+            "id": "plan_unavailable_001",
             "category": "multi_step",
             "prompt": "请按步骤完成任务",
             "success_rubric": "Answer should confirm the task is finished.",
-            "require_todos": True,
             "require_plan": True,
             "min_execution_completion_ratio": 1.0,
         }
@@ -538,11 +529,7 @@ def test_evaluate_case_result_treats_zero_progress_todos_as_unavailable_signal()
 
     turn_result = {
         "answer": "任务完成",
-        "plan": {"goal": "完成任务"},
-        "todos": [
-            Todo(id="t1", content="检索资料", status="pending"),
-            Todo(id="t2", content="输出结论", status="in_progress"),
-        ],
+        "plan": {"revision": 0, "goal": "完成任务", "steps": [{"id": "t1", "title": "检索资料", "status": "pending"}, {"id": "t2", "title": "输出结论", "status": "in_progress"}]},
         "phase_path": "处理中 -> 输出最终答案",
         "trace_payload": [],
         "run_latency_ms": 5.0,
@@ -558,9 +545,9 @@ def test_evaluate_case_result_treats_zero_progress_todos_as_unavailable_signal()
         ),
     )
 
-    assert result["completed"] is True
-    assert result["execution_completion_ratio"] is None
-    assert result["process_checks"]["ratio_passed"] is True
+    assert result["completed"] is False
+    assert result["execution_completion_ratio"] == 0.0
+    assert result["process_checks"]["ratio_passed"] is False
 
 
 def test_evaluate_case_result_treats_malformed_completed_step_ids_as_unavailable_signal() -> None:

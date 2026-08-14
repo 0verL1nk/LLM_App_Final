@@ -10,6 +10,7 @@ from ..turn_engine import execute_turn_core
 class AgentCenterTurnRequest:
     prompt: str
     turn_context: dict[str, Any] | None = None
+    input_messages: list[Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -34,4 +35,5 @@ def execute_agent_center_turn(
         search_document_evidence_fn=deps.search_document_evidence_fn,
         leader_tool_specs=deps.leader_tool_specs,
         on_event=on_event,
+        input_messages=request.input_messages,
     )

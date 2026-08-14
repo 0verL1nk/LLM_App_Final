@@ -1,0 +1,15 @@
+{
+  "legacy_over_limit_files": {
+    "agent/adapters/sqlite/project_repository.py": 1049,
+    "agent/application/research_workspace.py": 679,
+    "agent/application/turn_engine.py": 560,
+    "agent/rag/hybrid.py": 1665,
+    "tests/unit/test_agent_evals.py": 666,
+    "tests/unit/test_rag_hybrid.py": 602,
+    "tools/mindmap-cli/main.go": 589,
+    "utils/utils.py": 1772,
+    "web/src/components/ai-elements/code-block.tsx": 562,
+    "web/src/components/ai-elements/prompt-input.tsx": 1466,
+    "web/src/pages/research-page.tsx": 588
+  }
+}

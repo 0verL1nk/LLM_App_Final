@@ -3,60 +3,38 @@ from typing import Any
 from agent.application import research_workspace
 
 
-def test_research_run_emits_validated_surface_metadata(monkeypatch) -> None:
-    events: list[dict[str, Any]] = []
-
+def _capture_v2_writes(monkeypatch) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    lifecycle: list[dict[str, Any]] = []
+    items: list[dict[str, Any]] = []
     monkeypatch.setattr(research_workspace, "update_run_status", lambda **_kwargs: True)
-    monkeypatch.setattr(
-        research_workspace,
-        "append_run_event",
-        lambda **kwargs: events.append(kwargs) or kwargs,
-    )
+    monkeypatch.setattr(research_workspace, "claim_run_execution", lambda **_kwargs: True)
+    monkeypatch.setattr(research_workspace, "append_run_lifecycle_event", lambda **kwargs: lifecycle.append(kwargs) or kwargs)
+    monkeypatch.setattr(research_workspace, "append_run_item_event", lambda **kwargs: items.append(kwargs) or kwargs)
+    return lifecycle, items
+
+
+def test_research_run_emits_validated_surface_as_v2_presentation_item(monkeypatch) -> None:
+    _lifecycle, items = _capture_v2_writes(monkeypatch)
     monkeypatch.setattr(
         research_workspace.research_workspace_service,
         "execute_turn",
-        lambda **_kwargs: {
-            "a2ui_surface": {
-                "catalogId": "https://papersage.local/a2ui/catalogs/mindmap-v1.json",
-                "surfaceId": "research-map-1",
-                "title": "论文结构",
-                "messages": [{"version": "v0.9", "createSurface": {"surfaceId": "research-map-1"}}],
-            }
-        },
+        lambda **_kwargs: {"a2ui_surface": {"catalogId": "https://papersage.local/a2ui/catalogs/mindmap-v1.json", "surfaceId": "research-map-1", "title": "论文结构", "messages": [{"version": "v0.9", "createSurface": {"surfaceId": "research-map-1"}}]}},
     )
 
-    research_workspace.execute_research_run(
-        run_uid="run-1",
-        project_uid="project-1",
-        session_uid="session-1",
-        user_uuid="user-1",
-        prompt="梳理结构",
-    )
+    research_workspace.execute_research_run(run_uid="run-1", project_uid="project-1", session_uid="session-1", user_uuid="user-1", prompt="梳理结构")
 
-    a2ui_event = next(event for event in events if event["event_type"] == "ui.a2ui")
-    assert a2ui_event["payload"] == {
+    presentation = next(item for item in items if item["item_type"] == "presentation")
+    assert presentation["event_type"] == "item.delta"
+    assert presentation["payload"] == {
+        "partId": "",
         "envelope": {"version": "v0.9", "createSurface": {"surfaceId": "research-map-1"}},
-        "surface": {
-            "catalogId": "https://papersage.local/a2ui/catalogs/mindmap-v1.json",
-            "surfaceId": "research-map-1",
-            "title": "论文结构",
-        },
+        "surface": {"catalogId": "https://papersage.local/a2ui/catalogs/mindmap-v1.json", "surfaceId": "research-map-1", "title": "论文结构"},
     }
 
 
-def test_research_run_anchors_surface_between_streamed_markdown_parts(monkeypatch) -> None:
-    events: list[dict[str, Any]] = []
-    surface = {
-        "catalogId": "https://papersage.local/a2ui/catalogs/mindmap-v1.json",
-        "surfaceId": "research-map-1",
-        "title": "论文结构",
-        "messages": [
-            {"version": "v0.9", "createSurface": {"surfaceId": "research-map-1"}},
-            {"version": "v0.9", "updateDataModel": {"surfaceId": "research-map-1", "path": "/mindmap", "value": {"label": "论文", "children": []}}},
-        ],
-    }
-    monkeypatch.setattr(research_workspace, "update_run_status", lambda **_kwargs: True)
-    monkeypatch.setattr(research_workspace, "append_run_event", lambda **kwargs: events.append(kwargs) or kwargs)
+def test_research_run_uses_v2_items_for_parts_and_presentation(monkeypatch) -> None:
+    lifecycle, items = _capture_v2_writes(monkeypatch)
+    surface = {"catalogId": "https://papersage.local/a2ui/catalogs/mindmap-v1.json", "surfaceId": "research-map-1", "title": "论文结构", "messages": [{"version": "v0.9", "createSurface": {"surfaceId": "research-map-1"}}, {"version": "v0.9", "updateDataModel": {"surfaceId": "research-map-1", "path": "/mindmap", "value": {"label": "论文", "children": []}}}]}
 
     def execute_turn(**kwargs: Any) -> dict[str, Any]:
         on_event = kwargs["on_event"]
@@ -67,10 +45,9 @@ def test_research_run_anchors_surface_between_streamed_markdown_parts(monkeypatc
         return {"a2ui_surfaces": [{**surface, "partId": "surface-0"}]}
 
     monkeypatch.setattr(research_workspace.research_workspace_service, "execute_turn", execute_turn)
-
     research_workspace.execute_research_run(run_uid="run-1", project_uid="project-1", session_uid="session-1", user_uuid="user-1", prompt="梳理结构")
 
-    public_events = [event for event in events if event["event_type"] not in {"run.started", "run.completed"}]
-    assert [event["event_type"] for event in public_events] == ["message.part.delta", "message.part.insert", "ui.a2ui", "ui.a2ui", "message.part.delta", "ui.a2ui"]
-    assert public_events[1]["payload"] == {"partId": "surface-0", "type": "a2ui"}
-    assert public_events[2]["payload"]["surface"]["partId"] == "surface-0"
+    assert [item["event_type"] for item in items] == ["item.delta", "item.created", "item.delta", "item.delta", "item.delta", "item.delta"]
+    assert items[1]["item_type"] == "presentation"
+    assert items[1]["payload"] == {"partId": "surface-0", "presentation": "a2ui"}
+    assert not [event for event in lifecycle if event["event_type"].startswith("message.") or event["event_type"] == "ui.a2ui"]

@@ -120,6 +120,7 @@ def test_cross_page_vl_keeps_layout_locations(monkeypatch, tmp_path):
     payload = extract_document_with_paddle_ocr(str(source))
 
     assert payload["parser"] == "paddleocr-vl-cross-page"
+    assert payload["format"] == "markdown"
     assert payload["text"] == "# 跨页标题\n\n连续表格"
     assert payload["source_spans"] == [
         {

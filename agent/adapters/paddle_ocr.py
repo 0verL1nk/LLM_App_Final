@@ -414,6 +414,7 @@ def extract_document_with_paddle_ocr(
                 if merged_text:
                     return {
                         "text": merged_text,
+                        "format": "markdown",
                         "parser": "paddleocr-vl-cross-page",
                         "ocr_profile": profile.name,
                         "source_spans": _structured_source_spans(merged_results, merged_text),
@@ -468,6 +469,7 @@ def extract_document_with_paddle_ocr(
         raise PaddleOcrError("PaddleOCR 已运行，但没有识别到可索引文本。")
     return {
         "text": text,
+        "format": "plain",
         "parser": "paddleocr-v6",
         "ocr_profile": profile.name,
         "source_spans": spans,

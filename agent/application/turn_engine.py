@@ -5,14 +5,14 @@ import time
 from typing import Any, cast
 
 from ..domain.human_request import extract_human_requests
-from ..domain.trace import TraceEvent, phase_label_from_performative, phase_summary
+from ..domain.trace import TraceEvent, phase_label_from_performative
 from ..method_compare_parser import parse_method_compare_payload
-from ..stream import extract_stream_text
 from .a2ui_fragments import A2UIFragmentStreamParser, PresentationDecision
 from .a2ui_mindmap import build_mindmap_surface_from_request
 from .contracts import EventCallback, SearchDocumentFn, TurnCoreResult
-from .delegation import build_delegation_execution
 from .ports import AgentInvoker, EvidenceRetriever
+from .response_stream import ResponseStreamPartRouter
+from .turn_runtime import build_phase_path, execute_agent_with_streaming
 
 logger = logging.getLogger(__name__)
 
@@ -32,48 +32,6 @@ _INLINE_EVIDENCE_DOC_PATTERN = re.compile(
     r"(?<![\w/])([A-Za-z0-9_.-]+:[^|\s<>\]]+)(?=\|p(?:\d+|null)\b)",
     flags=re.IGNORECASE,
 )
-
-
-def _execute_agent_with_streaming(
-    *,
-    leader_agent: AgentInvoker,
-    prompt: str,
-    config: dict[str, Any],
-    on_delta: EventCallback | None,
-) -> dict[str, Any]:
-    """Run once while forwarding final-answer chunks and retaining final state."""
-    stream = getattr(leader_agent, "stream", None)
-    if not callable(stream):
-        return leader_agent.invoke({"messages": [{"role": "user", "content": prompt}]}, config=config)
-
-    final_state: dict[str, Any] | None = None
-    received_stream_part = False
-    try:
-        for part in stream(
-            {"messages": [{"role": "user", "content": prompt}]},
-            config=config,
-            stream_mode=["messages", "values"],
-            version="v2",
-        ):
-            received_stream_part = True
-            if not isinstance(part, dict):
-                continue
-            if part.get("type") == "messages":
-                delta = extract_stream_text(part.get("data"))
-                if delta and on_delta is not None:
-                    on_delta({"performative": "answer_delta", "content": delta})
-            elif part.get("type") == "values" and isinstance(part.get("data"), dict):
-                final_state = part["data"]
-    except (TypeError, NotImplementedError):
-        # Lightweight test doubles and legacy invokers can expose an unusable
-        # ``stream`` attribute. They still retain the canonical invoke contract.
-        final_state = None
-
-    if final_state is not None:
-        return final_state
-    if received_stream_part:
-        raise RuntimeError("Agent stream ended without a final state")
-    return leader_agent.invoke({"messages": [{"role": "user", "content": prompt}]}, config=config)
 
 
 def normalize_evidence_items(raw_payload: Any) -> list[dict[str, Any]]:
@@ -221,15 +179,6 @@ def _maybe_to_dict(payload: Any) -> dict[str, Any] | None:
     return result
 
 
-def _stable_phase_path(*, phase_labels: list[str], answer: str, messages: list[Any]) -> str:
-    normalized_labels = list(phase_labels)
-    if (answer.strip() or messages) and (
-        not normalized_labels or normalized_labels[-1] != "输出最终答案"
-    ):
-        normalized_labels.append("输出最终答案")
-    return phase_summary(normalized_labels)
-
-
 def extract_evidence_chunk_ids(answer: str) -> list[str]:
     """从 answer 中提取所有 <evidence> 标签中的 chunk_id。
 
@@ -292,6 +241,7 @@ def execute_turn_core(
     search_document_evidence_fn: EvidenceRetriever | None = None,
     leader_tool_specs: list[dict[str, Any]] | None = None,
     on_event: EventCallback | None = None,
+    input_messages: list[Any] | None = None,
 ) -> TurnCoreResult:
     if leader_agent is None:
         raise ValueError("Leader agent is not initialized")
@@ -351,6 +301,8 @@ def execute_turn_core(
     response_parts: list[dict[str, str]] = []
     streamed_text_seen = False
     text_part_id = "text-0"
+    reasoning_part_id = "reasoning-0"
+    reasoning_part_inserted = False
     pending_surface_part_id = ""
 
     def emit_visible_text(text: str) -> None:
@@ -380,6 +332,31 @@ def execute_turn_core(
             }
         )
         text_part_id = f"text-{len(fragments) + 1}"
+
+    def emit_reasoning_text(text: str) -> None:
+        nonlocal reasoning_part_inserted
+        if not text:
+            return
+        if not reasoning_part_inserted:
+            reasoning_part_inserted = True
+            response_parts.append({"id": reasoning_part_id, "type": "reasoning", "text": ""})
+            _collect_event(
+                {
+                    "performative": "answer_part_insert",
+                    "metadata": {"part_id": reasoning_part_id, "part_type": "reasoning"},
+                }
+            )
+        for part in response_parts:
+            if part.get("id") == reasoning_part_id:
+                part["text"] += text
+                break
+        _collect_event(
+            {
+                "performative": "answer_part_delta",
+                "content": text,
+                "metadata": {"part_id": reasoning_part_id},
+            }
+        )
 
     def emit_surface(fragment: PresentationDecision) -> None:
         if not pending_surface_part_id:
@@ -417,14 +394,22 @@ def execute_turn_core(
         on_fragment=emit_surface,
         on_error=report_surface_failure,
     )
+    response_router = ResponseStreamPartRouter(
+        on_text=parser.feed,
+        on_reasoning=emit_reasoning_text,
+    )
+
     def ingest_delta(event: TraceEvent) -> None:
         nonlocal streamed_text_seen
-        streamed_text_seen = True
-        parser.feed(str(event.get("content") or ""))
+        content = str(event.get("content") or "")
+        if content:
+            streamed_text_seen = True
+            response_router.feed(content)
 
-    result = _execute_agent_with_streaming(
+    initial_messages = input_messages or [{"role": "user", "content": prompt}]
+    result = execute_agent_with_streaming(
         leader_agent=leader_agent,
-        prompt=prompt,
+        input_messages=initial_messages,
         config=config,
         on_delta=ingest_delta,
     )
@@ -443,7 +428,8 @@ def execute_turn_core(
                 answer = str(last_msg.get("content", ""))
 
     if not streamed_text_seen and answer:
-        parser.feed(answer)
+        response_router.feed(answer)
+    response_router.finish()
     parser.finish()
     answer = "".join(visible_deltas)
     if not answer:
@@ -455,7 +441,6 @@ def execute_turn_core(
     trace_payload = event_logs
     plan_payload = result.get("plan") if isinstance(result, dict) else None
     runtime_state_payload = result.get("runtime_state") if isinstance(result, dict) else None
-    todo_scheduler_hint = result.get("todo_scheduler_hint") if isinstance(result, dict) else None
 
     # 检测是否使用了document RAG
     used_document_rag = False
@@ -477,15 +462,10 @@ def execute_turn_core(
         referenced_chunk_ids=referenced_chunk_ids,
         referenced_doc_uids=referenced_doc_uids,
     )
-    delegation_execution = build_delegation_execution(messages, event_logs)
-    delegated_research = any(
-        task["subagent_type"] == "researcher"
-        for task in delegation_execution["tasks"]
-    )
     if (
         not evidence_items
         and (referenced_chunk_ids or referenced_doc_uids)
-        and (used_document_rag or delegated_research)
+        and used_document_rag
         and callable(search_document_evidence_fn)
     ):
         try:
@@ -551,40 +531,16 @@ def execute_turn_core(
         if isinstance(a2ui_surface, dict) and isinstance(a2ui_surface.get("mindmap"), dict)
         else None
     )
-    # 从 result 中提取 middleware 添加的 state
-    todos = result.get("todos", []) if isinstance(result, dict) else []
-    agent_plan = result.get("agent_plan") if isinstance(result, dict) else None
-    for task in delegation_execution["tasks"]:
-        _collect_event(
-            {
-                "sender": "leader",
-                "receiver": task["subagent_type"],
-                "performative": "delegate_task",
-                "content": task["description"],
-            }
-        )
-        if task["status"] in {"completed", "failed"}:
-            _collect_event(
-                {
-                    "sender": task["subagent_type"],
-                    "receiver": "leader",
-                    "performative": "delegate_result",
-                    "content": task["status"],
-                }
-            )
-
     run_latency_ms = (time.perf_counter() - run_started) * 1000.0
-    phase_path = _stable_phase_path(phase_labels=phase_labels, answer=answer, messages=messages)
+    phase_path = build_phase_path(phase_labels=phase_labels, answer=answer, messages=messages)
 
     return {
         "answer": answer,
         "policy_decision": {
-            "plan_enabled": bool(agent_plan or plan_payload),
-            "delegation_enabled": delegation_execution["enabled"],
+            "plan_enabled": bool(plan_payload),
             "reason": "runtime-observed",
             "source": "runtime",
         },
-        "delegation_execution": delegation_execution,
         "trace_payload": trace_payload,
         "plan": _maybe_to_dict(plan_payload),
         "runtime_state": _maybe_to_dict(runtime_state_payload),
@@ -596,15 +552,9 @@ def execute_turn_core(
         "response_parts": response_parts,
         "method_compare_data": method_compare_data,
         "run_latency_ms": run_latency_ms,
-        "delegation_rounds": delegation_execution["rounds"],
         "phase_path": phase_path,
         "used_document_rag": used_document_rag,
         "ask_human_requests": extract_human_requests(messages),
-        "todos": todos,
-        "agent_plan": agent_plan,
         "leader_tool_names": registered_tool_names,
         "output_messages": messages if isinstance(messages, list) else [],
-        "todo_scheduler_hint": (
-            todo_scheduler_hint if isinstance(todo_scheduler_hint, dict) else None
-        ),
     }

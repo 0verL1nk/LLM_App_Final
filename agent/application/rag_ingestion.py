@@ -90,6 +90,7 @@ def process_document_ingestion(
         ):
             normalized_text = str(stored_text.get("text_content") or "").strip()
             extraction: dict[str, Any] = {"parser": "stored_text"}
+            document_format = "plain"
             source_spans: list[dict[str, Any]] = []
         else:
             extraction = extract_document_payload(
@@ -107,6 +108,7 @@ def process_document_ingestion(
                 for item in extraction.get("source_spans", [])
                 if isinstance(item, dict)
             ]
+            document_format = str(extraction.get("format") or "plain")
         if not normalized_text:
             raise ValueError("Document extraction returned empty text")
         text_hash = hashlib.sha256(normalized_text.encode("utf-8")).hexdigest()
@@ -126,6 +128,7 @@ def process_document_ingestion(
             doc_name=doc_name,
             document_text=normalized_text,
             source_spans=source_spans,
+            document_format=document_format,
             progress_callback=_report,
         )
         chunk_count = int(index_payload.get("chunk_count", 0) or 0)

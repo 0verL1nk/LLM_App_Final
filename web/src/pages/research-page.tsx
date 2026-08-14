@@ -12,12 +12,19 @@ import { lazy, Suspense, type ReactNode, useCallback, useEffect, useMemo, useRef
 import { toast } from "sonner";
 
 import { A2UIMindmap } from "@/components/a2ui-mindmap";
+import { EvidenceCitations } from "@/components/evidence-citations";
+import { ResearchOrbs } from "@/components/agent-status";
 import { PageError } from "@/components/page-state";
 import {
   Message as AiMessage,
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
 import {
   Conversation,
   ConversationContent,
@@ -32,20 +39,35 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import {
-  Source,
-  Sources,
-  SourcesContent,
-  SourcesTrigger,
-} from "@/components/ai-elements/sources";
+  Context,
+  ContextContent,
+  ContextContentBody,
+  ContextContentHeader,
+  ContextTrigger,
+} from "@/components/ai-elements/context";
+import {
+  Queue,
+  QueueItem,
+  QueueItemContent,
+  QueueItemIndicator,
+  QueueList,
+  QueueSection,
+  QueueSectionContent,
+  QueueSectionLabel,
+  QueueSectionTrigger,
+} from "@/components/ai-elements/queue";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   useMessages,
   useProject,
   useResumableRuns,
+  useSteeringInput,
   useTurn,
 } from "@/lib/queries";
 import { formatEvidenceCitations } from "@/lib/evidence";
+import { sessionContextUsage } from "@/lib/context-usage";
 import { consumeEventStream } from "@/lib/api";
 import {
   createLiveRun,
@@ -77,6 +99,10 @@ function assistantParts(message: Message): RenderedMessagePart[] {
       stored.push({ id: typeof part.id === "string" ? part.id : `text-${index}`, type, text: part.text });
       return;
     }
+    if (type === "reasoning" && typeof part.text === "string") {
+      stored.push({ id: typeof part.id === "string" ? part.id : `reasoning-${index}`, type, text: part.text });
+      return;
+    }
     if (type === "a2ui") {
       stored.push({ id: typeof part.id === "string" ? part.id : `surface-${index}`, type, surfaceId: typeof part.surfaceId === "string" ? part.surfaceId : undefined });
     }
@@ -95,10 +121,12 @@ function MessageBubble({
   message,
   onInspect,
   activity,
+  isStreaming = false,
 }: {
   message: Message;
   onInspect: (tab: "evidence" | "activity" | "plan") => void;
   activity?: ReactNode;
+  isStreaming?: boolean;
 }) {
   const assistant = message.role === "assistant";
   const evidenceCount = message.evidence?.length ?? 0;
@@ -115,6 +143,11 @@ function MessageBubble({
       return items;
     }, {});
   const parts = assistant ? assistantParts(message) : [];
+  const reasoningText = parts
+    .filter((part): part is Extract<RenderedMessagePart, { type: "reasoning" }> => part.type === "reasoning")
+    .map((part) => part.text)
+    .join("\n\n");
+  const isWaitingForFirstPart = isStreaming && !reasoningText && !parts.length;
   return (
     <div className={cn("flex gap-3", !assistant && "justify-end")}>
       {assistant && (
@@ -150,11 +183,25 @@ function MessageBubble({
               }}
             >
               {activity}
+              {isWaitingForFirstPart && <ResearchOrbs />}
+              {reasoningText && (
+                <Reasoning className="mb-3" isStreaming={isStreaming}>
+                  <ReasoningTrigger
+                    getThinkingMessage={(streaming, duration) => streaming
+                      ? "正在思考"
+                      : duration
+                        ? `思考了 ${duration} 秒`
+                        : "思考过程"}
+                  />
+                  <ReasoningContent>{reasoningText}</ReasoningContent>
+                </Reasoning>
+              )}
               {parts.map((part) => {
                 if (part.type === "markdown") {
                   const content = part.text === message.content ? renderedContent : formatEvidenceCitations(part.text, message.evidence);
                   return <MessageResponse key={part.id} className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-pre:bg-background">{content}</MessageResponse>;
                 }
+                if (part.type === "reasoning") return null;
                 const surface = part.surfaceId ? surfaces[part.surfaceId] : undefined;
                 return surface ? (
                   <A2UIMindmap key={part.id} surface={surface} onInspectEvidence={() => onInspect("evidence")} />
@@ -201,26 +248,7 @@ function MessageBubble({
             )}
           </div>
         )}
-        {assistant && evidenceCount > 0 && (
-          <Sources className="mt-3">
-            <SourcesTrigger count={evidenceCount}>
-              引用证据 · {evidenceCount}
-            </SourcesTrigger>
-            <SourcesContent>
-              {message.evidence?.map((item, index) => (
-                <Source
-                  key={String(item.chunk_id ?? index)}
-                  href={`#evidence-${String(item.chunk_id ?? index)}`}
-                  title={String(item.doc_name ?? item.doc_uid ?? "项目文档")}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    onInspect("evidence");
-                  }}
-                />
-              ))}
-            </SourcesContent>
-          </Sources>
-        )}
+        {assistant && evidenceCount > 0 && <EvidenceCitations evidence={message.evidence ?? []} onInspect={() => onInspect("evidence")} />}
       </AiMessage>
       {!assistant && (
         <Avatar className="mt-1 size-8">
@@ -245,6 +273,8 @@ function ResearchWorkspace({
   const refetchMessages = messages.refetch;
   const resumableRuns = useResumableRuns(projectId, sessionId);
   const turn = useTurn(projectId, sessionId);
+  const steeringInput = useSteeringInput(projectId, sessionId);
+  const [executionMode, setExecutionMode] = useState<"auto" | "react" | "plan_execute" | "agent_teams">("auto");
   const [lastTurn, setLastTurn] = useState<TurnResult>();
   const [liveRuns, setLiveRuns] = useState<Record<string, LiveRun>>({});
   const resumedRunIds = useRef(new Set<string>());
@@ -254,6 +284,9 @@ function ResearchWorkspace({
         .reverse()
         .find((item) => item.role === "assistant"),
     [messages.data],
+  );
+  const contextUsage = sessionContextUsage(
+    lastTurn?.context_snapshot ?? latestAssistant?.context_snapshot,
   );
   const inspectorOpen = useUiStore((state) => state.inspectorOpen);
   const openInspector = useUiStore((state) => state.openInspector);
@@ -330,11 +363,20 @@ function ResearchWorkspace({
     const normalizedPrompt = prompt.trim();
     if (!normalizedPrompt || normalizedPrompt.length > 100_000) return;
     if (turn.isPending) return;
+    if (activeRuns.length > 0) {
+      try {
+        await steeringInput.mutateAsync(normalizedPrompt);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "未能加入运行中队列");
+      }
+      return;
+    }
     let createdRunId = "";
     try {
       setLastTurn(
         await turn.mutateAsync({
           prompt: normalizedPrompt,
+          executionMode,
           onRunCreated: (runId) => {
             createdRunId = runId;
             resumedRunIds.current.add(runId);
@@ -389,7 +431,26 @@ function ResearchWorkspace({
               )}
               {activeRuns.map(([runId, run]) => (
                 <div key={runId}>
-                  {(run.events.length > 0 || run.parts.length > 0) && (
+                  {run.events.length === 0 && (
+                    <Queue className="mx-auto mb-4 max-w-3xl">
+                      <QueueSection defaultOpen>
+                        <QueueSectionTrigger>
+                          <QueueSectionLabel label="研究运行已创建" />
+                        </QueueSectionTrigger>
+                        <QueueSectionContent>
+                          <QueueList>
+                            <QueueItem>
+                              <div className="flex items-start gap-2">
+                                <QueueItemIndicator />
+                                <QueueItemContent>等待服务端首个运行事件</QueueItemContent>
+                              </div>
+                            </QueueItem>
+                          </QueueList>
+                        </QueueSectionContent>
+                      </QueueSection>
+                    </Queue>
+                  )}
+                  {(run.events.length > 0 || run.parts.length > 0 || Object.keys(run.items).length > 0) && (
                     <Suspense fallback={null}>
                       <MessageBubble
                         message={{
@@ -404,7 +465,8 @@ function ResearchWorkspace({
                           })),
                         }}
                         onInspect={openInspector}
-                        activity={<ResearchRunActivity events={run.events} />}
+                        activity={<ResearchRunActivity items={Object.values(run.items)} />}
+                        isStreaming
                       />
                     </Suspense>
                   )}
@@ -415,13 +477,24 @@ function ResearchWorkspace({
             <ConversationScrollButton />
           </Conversation>
           <div className="shrink-0 border-t bg-background p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:p-5">
+            {!messages.data?.length && !turn.isPending && !activeRuns.length && (
+              <Suggestions className="mx-auto mb-3 max-w-3xl">
+                {[
+                  "概括这组论文的核心问题与结论",
+                  "比较不同方法的假设、数据集和局限",
+                  "找出当前证据不足、需要进一步核对的结论",
+                ].map((suggestion) => (
+                  <Suggestion key={suggestion} suggestion={suggestion} onClick={submit} />
+                ))}
+              </Suggestions>
+            )}
             <PromptInput
               className="mx-auto max-w-3xl"
               onSubmit={({ text }) => submit(text)}
             >
               <PromptInputBody>
                 <PromptInputTextarea
-                  disabled={turn.isPending || activeRuns.length > 0}
+                  disabled={turn.isPending}
                   placeholder="询问论文、比较方法，或开展一项研究任务…"
                 />
               </PromptInputBody>
@@ -429,14 +502,46 @@ function ResearchWorkspace({
                 <span className="text-[11px] text-muted-foreground">
                   Enter 发送 · Shift + Enter 换行 · 回答可能需要核对原始证据
                 </span>
-                <PromptInputSubmit
-                  disabled={turn.isPending || activeRuns.length > 0}
-                  status={
-                    turn.isPending || activeRuns.length > 0
-                      ? "submitted"
-                      : "ready"
-                  }
-                />
+                <div className="flex items-center gap-1">
+                  <select
+                    aria-label="本轮研究模式"
+                    className="h-7 rounded-md border bg-background px-2 text-xs text-muted-foreground"
+                    value={executionMode}
+                    disabled={turn.isPending || activeRuns.length > 0}
+                    onChange={(event) => setExecutionMode(event.target.value as typeof executionMode)}
+                  >
+                    <option value="auto">自动</option>
+                    <option value="react">ReAct</option>
+                    <option value="plan_execute">Plan-Execute</option>
+                    <option value="agent_teams">Agent Teams</option>
+                  </select>
+                  {contextUsage && (
+                    <Context
+                      maxTokens={contextUsage.maxTokens}
+                      usedTokens={contextUsage.usedTokens}
+                    >
+                      <ContextTrigger aria-label="查看会话上下文容量" />
+                      <ContextContent align="end">
+                        <ContextContentHeader />
+                        <ContextContentBody className="space-y-1 text-xs text-muted-foreground">
+                          <p>服务端基于当前会话、系统提示和工具定义计算。</p>
+                          {contextUsage.messageTokens !== null && <p>会话消息：{contextUsage.messageTokens.toLocaleString()} tokens</p>}
+                          {contextUsage.segments.map((segment) => (
+                            <p key={segment.key}>{segment.label}：{segment.tokens.toLocaleString()} tokens</p>
+                          ))}
+                        </ContextContentBody>
+                      </ContextContent>
+                    </Context>
+                  )}
+                  <PromptInputSubmit
+                  disabled={turn.isPending}
+                    status={
+                      turn.isPending
+                        ? "submitted"
+                        : "ready"
+                    }
+                  />
+                </div>
               </PromptInputFooter>
             </PromptInput>
           </div>
@@ -444,8 +549,7 @@ function ResearchWorkspace({
       </div>
       {inspectorOpen && (
         <Suspense fallback={null}>
-          <ResearchInspector
-            projectId={projectId}
+          <ResearchInspector projectId={projectId} sessionId={sessionId}
             turn={lastTurn}
             latest={latestAssistant}
             liveEvents={liveEvents}

@@ -40,7 +40,7 @@ def build_paper_domain_prompt(
 
 [其他工具]
 - 需要总结/批判性阅读/方法比较/翻译时，可调用 use_skill
-- 复杂且可独立执行的子任务可委派给 task subagent；简单任务不要委派
+- 复杂且可独立执行的子任务可调用 delegate_task；简单任务不要委派
 - 多个互不依赖的子任务应在同一轮并行委派，最后由 leader 综合结果
 
 当前对话项目：{proj_name}
@@ -61,7 +61,7 @@ def build_external_research_prompt(
 [约束]
 - 不要调用或声称使用 search_document、read_document、list_document
 - 根据问题使用 search_papers 或 search_web，并明确资料来源
-- 简单问题直接回答；复杂且独立的研究任务可委派给 task subagent
+- 简单问题直接回答；复杂且独立的研究任务可调用 delegate_task
 - 不确定时明确说明证据不足，不得把公开资料伪装成项目内证据
 
 当前项目：{proj_name}

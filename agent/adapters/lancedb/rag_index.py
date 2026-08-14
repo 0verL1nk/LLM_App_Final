@@ -36,6 +36,10 @@ def _schema(vector_size: int) -> pa.Schema:
             pa.field("doc_name", pa.string(), nullable=False),
             pa.field("index_version", pa.string(), nullable=False),
             pa.field("chunk_index", pa.int64(), nullable=False),
+            pa.field("section_path", pa.string(), nullable=False),
+            pa.field("heading_level", pa.int64(), nullable=False),
+            pa.field("prev_chunk_id", pa.string()),
+            pa.field("next_chunk_id", pa.string()),
             pa.field("start_index", pa.int64()),
             pa.field("page_no", pa.int64()),
             pa.field("ocr_locations_json", pa.string()),
@@ -136,6 +140,18 @@ def publish_document_index(
                 "doc_name": doc_name,
                 "index_version": index_version,
                 "chunk_index": chunk_index,
+                "section_path": str(metadata.get("section_path") or ""),
+                "heading_level": int(metadata.get("heading_level") or 0),
+                "prev_chunk_id": (
+                    str(metadata["prev_chunk_id"])
+                    if metadata.get("prev_chunk_id")
+                    else None
+                ),
+                "next_chunk_id": (
+                    str(metadata["next_chunk_id"])
+                    if metadata.get("next_chunk_id")
+                    else None
+                ),
                 "start_index": (
                     metadata.get("start_index")
                     if isinstance(metadata.get("start_index"), int)
@@ -195,8 +211,14 @@ def search_published_chunks(
     query: str,
     query_vector: list[float],
     limit: int,
+    rrf_k: int = 60,
 ) -> list[dict[str, Any]]:
-    """Run LanceDB native dense + BM25 hybrid search over ready versions only."""
+    """Fuse separately retrieved dense and FTS/BM25 candidates with RRF.
+
+    Keeping both ranked lists is intentional: the returned score is an RRF
+    score, not a provider-specific hybrid score, so retrieval traces remain
+    explainable across LanceDB releases.
+    """
     if not ready_versions or not query_vector:
         return []
     grouped: dict[str, list[tuple[str, str]]] = defaultdict(list)
@@ -212,24 +234,46 @@ def search_published_chunks(
                 continue
             table = database.open_table(name)
             condition = _version_filter(project_uid, versions)
-            rows = (
-                table.search(query_type="hybrid")
-                .vector(query_vector)
-                .text(query)
+            dense_rows = (
+                table.search(query_vector)
                 .where(condition, prefilter=True)
                 .limit(max(1, limit))
                 .to_list()
             )
-            for row in rows:
-                row.pop("vector", None)
-                row.pop("_score", None)
-                row.pop("_distance", None)
-            candidates.extend(rows)
-    candidates.sort(
-        key=lambda item: float(item.get("_relevance_score", 0.0) or 0.0),
-        reverse=True,
-    )
+            sparse_rows = (
+                table.search(query, query_type="fts")
+                .where(condition, prefilter=True)
+                .limit(max(1, limit))
+                .to_list()
+            )
+            candidates.extend(_fuse_rrf(dense_rows, sparse_rows, rrf_k=rrf_k))
+    candidates.sort(key=lambda item: float(item["_relevance_score"]), reverse=True)
     return candidates[: max(1, limit)]
+
+
+def _fuse_rrf(
+    dense_rows: list[dict[str, Any]], sparse_rows: list[dict[str, Any]], *, rrf_k: int
+) -> list[dict[str, Any]]:
+    """Return chunk-id-deduplicated RRF candidates, retaining rank provenance."""
+    fused: dict[str, dict[str, Any]] = {}
+    denominator = max(1, int(rrf_k))
+    for source, rows in (("dense", dense_rows), ("bm25", sparse_rows)):
+        for rank, raw_row in enumerate(rows, start=1):
+            chunk_id = str(raw_row.get("chunk_id") or "")
+            if not chunk_id:
+                continue
+            row = fused.setdefault(chunk_id, dict(raw_row))
+            row["_relevance_score"] = float(row.get("_relevance_score", 0.0)) + 1.0 / (
+                denominator + rank
+            )
+            row[f"_{source}_rank"] = rank
+    results: list[dict[str, Any]] = []
+    for row in fused.values():
+        row.pop("vector", None)
+        row.pop("_score", None)
+        row.pop("_distance", None)
+        results.append(row)
+    return results
 
 
 __all__ = [

@@ -25,6 +25,7 @@ def create_cross_page_pipeline(*, device: str) -> Any:
     from paddleocr import PaddleOCRVL
 
     return PaddleOCRVL(
+        pipeline_version="v1.6",
         device=device,
         use_doc_orientation_classify=True,
         use_doc_unwarping=False,

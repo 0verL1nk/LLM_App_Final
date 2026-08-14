@@ -10,7 +10,7 @@ describe("formatEvidenceCitations", () => {
     )
 
     expect(rendered).not.toContain("<evidence>")
-    expect(rendered).toContain("[证据 1](#evidence-chunk-1%7Cp1%7Co10-20")
+    expect(rendered).toContain("[1](#evidence-chunk-1%7Cp1%7Co10-20")
   })
 
   it("hides the protocol syntax even when evidence details are unavailable", () => {

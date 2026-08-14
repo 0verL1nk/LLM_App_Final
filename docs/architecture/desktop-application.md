@@ -8,6 +8,12 @@ Electron is intentionally limited to `web/electron/`:
 - `preload.cjs` exposes that small allowlist as `window.papersageDesktop`; Node integration remains disabled.
 - `src/lib/platform.ts` is the sole renderer-side platform boundary. A browser returns no controls, so the custom title bar is not rendered and all regular Web behaviour is unchanged.
 
+The shared sidebar footer has an account/connection menu. It reports the actual local
+mode used by the packaged FastAPI service. Cloud mode is intentionally disabled until
+Electron owns authenticated remote endpoint selection and a compatibility check; the
+renderer must not turn the development `X-User-Id: local-user` header into a cloud
+identity or pretend that an unconfigured endpoint is connected.
+
 `make desktop-dev` runs Vite plus the Electron shell. `make desktop-package-win`, `make desktop-package-mac`, and `make desktop-package-linux` build the shared web bundle, package the Python server with its `web/dist` resources, then produce NSIS, DMG, or AppImage/deb on their native operating system. Never add desktop-only business logic to pages or React components; add narrowly scoped capabilities to the preload bridge and platform module instead.
 
 In Electron, the app shell owns the viewport: the document itself never scrolls, while the central content region provides the single application scroller. Native overflow inside sheets and code blocks uses the same thin themed scrollbar; persistent navigation panes continue to use Radix `ScrollArea`.
