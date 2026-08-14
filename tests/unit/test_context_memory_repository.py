@@ -1,5 +1,9 @@
 from agent.adapters.orm.database import run_migrations
-from agent.adapters.orm.memory_repository import delete_memory_item, list_memory_items, upsert_memory_item
+from agent.adapters.orm.memory_repository import (
+    delete_memory_item,
+    list_memory_items,
+    upsert_memory_item,
+)
 
 
 def test_l3_is_project_scoped_and_l4_is_user_scoped(tmp_path) -> None:
