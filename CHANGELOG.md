@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.0](https://github.com/0verL1nk/PaperSage/compare/v1.5.1...v1.6.0) (2026-08-15)
+
+
+### Features
+
+* **web:** interleaved message timeline with inline citations ([#121](https://github.com/0verL1nk/PaperSage/issues/121)) ([2327f5d](https://github.com/0verL1nk/PaperSage/commit/2327f5d7c8b04f767e37bb36f485fdee4e80a324))
+
 ## [1.5.1](https://github.com/0verL1nk/PaperSage/compare/v1.5.0...v1.5.1) (2026-08-15)
 
 
