@@ -8,6 +8,7 @@ runtime callers can selectively load only what is needed.
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -119,31 +120,52 @@ def _rank_references(task: str, references: list[Path]) -> list[Path]:
         return sorted(references, key=lambda item: item.name)
 
 
+def _default_user_skills_dir() -> Path:
+    """Resolve the user-overlay skills directory.
+
+    The packaged backend runs with the Electron userData directory as its
+    working directory, so the relative default lands next to the runtime
+    database; PAPERSAGE_USER_SKILLS_DIR overrides it for tests and portable
+    setups.
+    """
+    override = os.environ.get("PAPERSAGE_USER_SKILLS_DIR")
+    return Path(override) if override else Path.cwd() / "skills"
+
+
 class SkillLoader:
-    def __init__(self, skills_dir: str | None = None):
+    def __init__(self, skills_dir: str | None = None, user_skills_dir: str | None = None):
         self.skills_dir = Path(skills_dir) if skills_dir else Path(__file__).parent
+        self.user_skills_dir = Path(user_skills_dir) if user_skills_dir else _default_user_skills_dir()
+        # Highest priority first: user skills override bundled ones by name.
+        self.search_paths = [self.user_skills_dir, self.skills_dir]
         self._cache: dict[str, Skill] = {}
         self._metadata_cache: dict[str, SkillMetadata] = {}
 
     def discover_skills(self) -> list[SkillMetadata]:
         if not self.skills_dir.exists():
-            logger.warning("Skills directory not found: %s", self.skills_dir)
-            return []
+            logger.warning("Bundled skills directory not found: %s", self.skills_dir)
 
         skills: list[SkillMetadata] = []
-        for skill_path in self.skills_dir.iterdir():
-            if not skill_path.is_dir():
+        seen: set[str] = set()
+        for base in self.search_paths:
+            if not base.exists():
                 continue
-            skill_md = skill_path / "SKILL.md"
-            if not skill_md.exists():
-                continue
-            try:
-                metadata = self._parse_skill_metadata(skill_md)
-            except Exception as exc:
-                logger.warning("Failed to parse skill %s: %s", skill_path.name, exc)
-                continue
-            skills.append(metadata)
-            self._metadata_cache[metadata.name] = metadata
+            for skill_path in base.iterdir():
+                if not skill_path.is_dir():
+                    continue
+                skill_md = skill_path / "SKILL.md"
+                if not skill_md.exists():
+                    continue
+                try:
+                    metadata = self._parse_skill_metadata(skill_md)
+                except Exception as exc:
+                    logger.warning("Failed to parse skill %s: %s", skill_path.name, exc)
+                    continue
+                if metadata.name in seen:
+                    continue
+                seen.add(metadata.name)
+                skills.append(metadata)
+                self._metadata_cache[metadata.name] = metadata
         return skills
 
     def get_skill(self, name: str) -> Skill | None:
@@ -153,18 +175,19 @@ class SkillLoader:
         if normalized_name in self._cache:
             return self._cache[normalized_name]
 
-        skill_path = self.skills_dir / normalized_name
-        skill_md = skill_path / "SKILL.md"
-        if not skill_md.exists():
-            logger.warning("Skill not found: %s", normalized_name)
-            return None
-        try:
-            skill = self._parse_skill(skill_md, skill_path)
-        except Exception as exc:
-            logger.error("Failed to load skill %s: %s", normalized_name, exc)
-            return None
-        self._cache[normalized_name] = skill
-        return skill
+        for base in self.search_paths:
+            skill_md = base / normalized_name / "SKILL.md"
+            if not skill_md.exists():
+                continue
+            try:
+                skill = self._parse_skill(skill_md, skill_md.parent)
+            except Exception as exc:
+                logger.error("Failed to load skill %s: %s", normalized_name, exc)
+                return None
+            self._cache[normalized_name] = skill
+            return skill
+        logger.warning("Skill not found: %s", normalized_name)
+        return None
 
     @staticmethod
     def _resource_index(skill_path: Path) -> SkillResources:
@@ -184,6 +207,10 @@ class SkillLoader:
         frontmatter, _body = _extract_frontmatter(content)
         name = str(frontmatter.get("name") or skill_md.parent.name).strip()
         description = str(frontmatter.get("description") or "").strip()
+        if not frontmatter:
+            logger.warning("Skill %s has no readable frontmatter; falling back to its folder name", skill_md)
+        elif not description:
+            logger.warning("Skill %s is missing a description; registry entries will look degraded", skill_md)
         return SkillMetadata(
             name=name,
             description=description,
@@ -195,6 +222,10 @@ class SkillLoader:
         frontmatter, body = _extract_frontmatter(content)
         name = str(frontmatter.get("name") or skill_path.name).strip()
         description = str(frontmatter.get("description") or "").strip()
+        if not frontmatter:
+            logger.warning("Skill %s has no readable frontmatter; falling back to its folder name", skill_md)
+        elif not description:
+            logger.warning("Skill %s is missing a description", skill_md)
         instructions = body if body else content
         return Skill(
             name=name,
