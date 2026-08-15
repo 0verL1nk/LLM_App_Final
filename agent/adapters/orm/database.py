@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -66,9 +67,19 @@ def begin_runtime_write(engine: Engine) -> Generator[Connection, None, None]:
         connection.close()
 
 
+def _alembic_root() -> Path:
+    """Locate the alembic tree in source checkouts and frozen desktop builds."""
+    if getattr(sys, "frozen", False):
+        return Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+    return Path(__file__).resolve().parents[3]
+
+
 def run_migrations(database: str | None = None) -> None:
     """Upgrade through Alembic; schema creation is never performed implicitly."""
-    root = Path(__file__).resolve().parents[3]
+    root = _alembic_root()
     config = Config(str(root / "alembic.ini"))
+    # script_location must be absolute: the desktop backend runs with a
+    # userData working directory where a relative "alembic" would not resolve.
+    config.set_main_option("script_location", str(root / "alembic"))
     config.set_main_option("sqlalchemy.url", build_database_url(database))
     command.upgrade(config, "head")

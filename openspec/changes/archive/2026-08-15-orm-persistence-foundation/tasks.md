@@ -10,9 +10,9 @@
   contracts and removing the old implementation once covered. Run events/items, task
   submission/outbox delivery, task lease/attempts, parent coordination and
   `steering_input_repository` are direct SQLAlchemy Core repositories in `agent/adapters/orm`.
-- [ ] Replace dynamic identifier interpolation with whitelisted ORM expressions; audit
+- [x] Replace dynamic identifier interpolation with whitelisted ORM expressions; audit
   all remaining raw SQL and document each exception.
 - [x] Add repository transaction/race tests for Run claim, event sequence allocation,
   task lease completion, steering transfer and owner isolation.
-- [ ] Update desktop/API architecture documentation and packaging checks; run the full
+- [x] Update desktop/API architecture documentation and packaging checks; run the full
   focused runtime suite plus migration upgrade tests against an existing database copy.

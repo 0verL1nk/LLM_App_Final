@@ -23,9 +23,21 @@ const args = [
   "--workpath", path.join(root, "web", ".pyinstaller-work"),
   "--specpath", path.join(root, "web", ".pyinstaller-work"),
   "--add-data", `${path.join(root, "web", "dist")}${separator}web/dist`,
+  "--add-data", `${path.join(root, "alembic.ini")}${separator}.`,
+  "--add-data", `${path.join(root, "alembic")}${separator}alembic`,
   "--collect-data", "paddlex", "--collect-binaries", "paddle",
   path.join(root, "scripts", "desktop_api.py"),
 ]
 for (const packageName of ocrMetadataPackages) args.splice(-1, 0, "--copy-metadata", packageName)
 const result = spawnSync(python, args, { cwd: root, stdio: "inherit" })
-process.exit(result.status ?? 1)
+if (result.status !== 0) process.exit(result.status ?? 1)
+// The backend runs Alembic migrations at startup; a bundle without the
+// alembic tree bricks the desktop app with "No 'script_location'".
+const internal = path.join(output, "papersage-api", "_internal")
+for (const required of [path.join(internal, "alembic.ini"), path.join(internal, "alembic", "env.py")]) {
+  if (!fs.existsSync(required)) {
+    process.stderr.write(`Packaged backend is missing ${required}; migrations would fail at startup.\n`)
+    process.exit(1)
+  }
+}
+process.exit(0)
