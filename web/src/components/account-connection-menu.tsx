@@ -55,7 +55,7 @@ export function AccountConnectionMenu({ onOpenSettings }: AccountConnectionMenuP
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onOpenSettings}>
           <Settings className="mr-2 size-4" />
-          模型与本地设置
+          设置
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

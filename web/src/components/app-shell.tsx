@@ -4,7 +4,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { BookOpen, ChevronDown, Menu, MessageSquarePlus, Settings } from "lucide-react";
+import { BookOpen, ChevronDown, Menu, MessageSquarePlus } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -33,35 +33,6 @@ import { cn } from "@/lib/utils";
 import { desktopWindowControls } from "@/lib/platform";
 import { useCreateSession, useProjects, useSessions } from "@/lib/queries";
 import { useUiStore } from "@/stores/ui-store";
-
-const nav = [{ to: "/settings", label: "设置", icon: Settings }] as const;
-
-function Navigation() {
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  });
-  return (
-    <nav className="flex flex-col gap-1">
-      {nav.map((item) => {
-        const Icon = item.icon;
-        const active = pathname.startsWith(item.to);
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={cn(
-              "flex h-10 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
-              active && "bg-accent text-foreground",
-            )}
-          >
-            <Icon className="size-4" />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
 
 function WorkspaceSidebar({
   includeBrand = false,
@@ -223,7 +194,9 @@ export function AppShell() {
         )}
       >
         <WorkspaceSidebar includeBrand={!desktop} />
-        <div className="border-t pt-3"><Navigation />{desktop && desktopVersion && <p className="mt-1 px-3 text-[11px] text-muted-foreground/70">v{desktopVersion}</p>}</div>
+        {desktop && desktopVersion && (
+          <p className="px-3 pb-1 pt-2 text-[11px] text-muted-foreground/70">v{desktopVersion}</p>
+        )}
       </aside>
       <header className="sticky top-0 z-30 flex h-14 items-center border-b bg-background/90 px-4 backdrop-blur md:hidden">
         <Button
@@ -248,7 +221,6 @@ export function AppShell() {
           <div className="mt-5 min-h-0 flex-1">
             <WorkspaceSidebar />
           </div>
-          <div className="border-t pt-3"><Navigation /></div>
         </SheetContent>
       </Sheet>
       <main
