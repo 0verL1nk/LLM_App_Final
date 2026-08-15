@@ -167,6 +167,28 @@ PR 描述至少包含：
 
 ---
 
+## 7.1 发布与合并规范（Release & Merge）
+
+背景：merge commit 的正文会内嵌 PR 标题，release-please 会把它和分支上的原提交
+各记一次，导致 changelog 条目重复；残留的 `release-as` 钉子会让发布 PR 反复提议
+已存在的版本号，合并即撞 tag（1.4.3 事故）。以下规范防止复发：
+
+1. **PR 一律 squash merge**（仓库设置已强制 squash-only）。squash 提交标题取
+   PR 标题，正文留空；禁止再引入 merge commit / rebase 合并。
+2. **PR 标题必须符合 Conventional Commits**（`feat:`/`fix:`/`chore:`/`docs:`
+   等）：squash 之后它就是 main 上的提交，也是 changelog 的唯一来源。
+3. **版本号只由 release-please 推进**：禁止手动修改 `CHANGELOG.md`、
+   `.release-please-manifest.json`、`agent/__init__.py`、`web/package.json`
+   中的版本，禁止手动创建或推送 `v*` tag（tag 推送会触发三平台自动打包）。
+4. **`release-as` 钉子是临时手段**：仅紧急指定版本号时添加，且必须在对应的
+   发布 PR 合并后的下一个 PR 中移除，不允许在配置中过夜残留。
+5. **热修流程**：从 `origin/main` 切 `fix/*` 分支 → 补回归测试 → squash merge
+   → 等待 Prepare Release 生成 patch 版本发布 PR → 合并发布。
+6. **发布 PR 由 Release Train 定时合并**；紧急时可手动合并，但合并前必须核对
+   其目标版本号大于已存在的最新 tag。
+
+---
+
 ## 8. 架构演进要求（针对当前项目）
 
 1. `utils/utils.py` 只减不增：新能力必须进新模块。
