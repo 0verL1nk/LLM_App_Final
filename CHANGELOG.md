@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.4](https://github.com/0verL1nk/PaperSage/compare/v1.4.3...v1.4.4) (2026-08-15)
+
+
+### Bug Fixes
+
+* **ci:** release train must squash-merge under squash-only settings ([#103](https://github.com/0verL1nk/PaperSage/issues/103)) ([ca012b8](https://github.com/0verL1nk/PaperSage/commit/ca012b88a247657cc7c51c6fb6d3533ed0130c63))
+* **orm:** reconcile drifted agent_run_events schema ([78fc1ba](https://github.com/0verL1nk/PaperSage/commit/78fc1ba6a363bfcaa259bb5f03951e76d95f1db3))
+* **orm:** reconcile drifted agent_run_events schema ([c1c7e46](https://github.com/0verL1nk/PaperSage/commit/c1c7e46e67ebd9306fa29a7081c1ee646d89e30b))
+* **web:** merge duplicate settings entries into the account menu ([deb63d5](https://github.com/0verL1nk/PaperSage/commit/deb63d51b6e9f66576824e90603e370db86826b4))
+* **web:** merge duplicate settings entries into the account menu ([d681296](https://github.com/0verL1nk/PaperSage/commit/d6812960cdd0676710261d87e34f967de9a5d8f7))
+
+
+### Documentation
+
+* add release and merge conventions ([#102](https://github.com/0verL1nk/PaperSage/issues/102)) ([62669af](https://github.com/0verL1nk/PaperSage/commit/62669af71e534674baea97904f65c6f29c3d4878))
+
 ## [1.4.3](https://github.com/0verL1nk/PaperSage/compare/v1.4.2...v1.4.3) (2026-08-15)
 
 
