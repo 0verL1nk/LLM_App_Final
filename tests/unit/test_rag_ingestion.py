@@ -360,7 +360,7 @@ def test_ingestion_reports_real_embedding_batches_and_publishes_atomically(
         def embed_query(self, _query):
             return [1.0, 10.0]
 
-    monkeypatch.setattr("agent.rag.hybrid.FastEmbedEmbeddings", _Embeddings)
+    monkeypatch.setattr("agent.rag.fastembed_runtime.FastEmbedEmbeddings", _Embeddings)
     monkeypatch.setenv("AGENT_PROJECT_INDEX_CACHE_DIR", str(tmp_path / "indexes"))
     monkeypatch.setenv("LOCAL_RAG_CHUNK_SIZE", "12")
     monkeypatch.setenv("LOCAL_RAG_CHUNK_OVERLAP", "0")
@@ -437,6 +437,11 @@ def test_friendly_error_message_covers_known_failures() -> None:
         ImportError("Could not import 'fastembed' Python package. Please install it with `pip install fastembed`.")
     )
     assert "重新安装" in fastembed
+
+    partial_download = _friendly_error_message(
+        Exception("NO_SUCHFILE : 3 : Load model model_optimized.onnx failed. File doesn't exist")
+    )
+    assert "缓存不完整" in partial_download
 
     assert _friendly_error_message(ValueError(_LEGACY_EMPTY_TEXT_ERROR_MESSAGE)) == EMPTY_TEXT_ERROR_MESSAGE
     assert _friendly_error_message(ValueError("文档没有可识别的页面。")) == "文档没有可识别的页面。"

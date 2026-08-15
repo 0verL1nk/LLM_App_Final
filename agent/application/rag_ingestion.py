@@ -37,6 +37,8 @@ def _friendly_error_message(exc: BaseException) -> str:
     message = str(exc) or exc.__class__.__name__
     if "No available model hosting platforms detected" in message:
         return "OCR 模型尚未下载，且当前无法连接模型服务器。请检查网络连接后点击「重试」。"
+    if "NO_SUCHFILE" in message or "File doesn't exist" in message:
+        return "本地模型缓存不完整或下载中断，已自动清理，请检查网络后点击「重试」。"
     if isinstance(exc, ImportError) and "fastembed" in message:
         return "本地向量组件缺失，请重新安装或更新 PaperSage。"
     if message == _LEGACY_EMPTY_TEXT_ERROR_MESSAGE:
