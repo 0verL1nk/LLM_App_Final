@@ -170,6 +170,7 @@ class EvidencePacket(BaseModel):
     limitations: list[str | PacketLimitation] = Field(default_factory=list)
     open_questions: list[str | OpenQuestion] = Field(default_factory=list)
     confidence: float | None = Field(default=0.5, ge=0.0, le=1.0)
+    metrics: dict[str, float] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _missing_confidence_defaults_to_half(self) -> "EvidencePacket":

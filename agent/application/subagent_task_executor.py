@@ -123,6 +123,10 @@ def _model_for_user(user_uuid: str) -> Any:
     )
 
 
+# EvidencePacket.summary is bounded by the wire contract (domain field max_length).
+_SUMMARY_MAX_CHARS = 6000
+
+
 def _sanitize_result(
     result: dict[str, Any],
     *,
@@ -160,7 +164,7 @@ def _sanitize_result(
             }
         )
     EvidencePacket.model_validate({
-        "summary": answer[:6000],
+        "summary": answer[:_SUMMARY_MAX_CHARS],
         "evidence_refs": evidence_refs,
         "claims": [],
         "evidence": evidence,
@@ -168,7 +172,7 @@ def _sanitize_result(
         "open_questions": [],
     })
     return {
-        "summary": answer[:6000],
+        "summary": answer[:_SUMMARY_MAX_CHARS],
         "research_question": str(result.get("research_question") or ""),
         "evidence_refs": evidence_refs,
         "evidence": evidence,

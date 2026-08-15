@@ -23,6 +23,10 @@ class EvidenceScope:
     project_uid: str
     allowed_doc_uids: frozenset[str] = frozenset()
     allowed_chunk_ids: frozenset[str] = frozenset()
+    # Exact URLs the run actually fetched (the web-results ledger). None means
+    # no ledger exists for this run yet; URL evidence then cannot be verified
+    # and enforcement is explicitly disabled rather than silently faked.
+    allowed_urls: frozenset[str] | None = None
 
     def local_evidence_allowed(self, *, project_uid: str, doc_uid: str, chunk_id: str) -> bool:
         if project_uid.strip() != self.project_uid:
@@ -191,6 +195,8 @@ def _evidence_reference(item: dict[str, Any], scope: EvidenceScope) -> EvidenceR
     if not doc_uid and not chunk_id and source_url:
         parsed = urlparse(source_url)
         if parsed.scheme in {"http", "https"} and parsed.netloc:
+            if scope.allowed_urls is not None and source_url not in scope.allowed_urls:
+                return None
             return EvidenceReference(
                 chunk_id=source_url[:256],
                 doc_uid=(parsed.netloc or "web")[:256],

@@ -43,7 +43,11 @@ _EVENT_STATUS_COMPAT: dict[RunItemEventType, frozenset[RunItemStatus]] = {
     RunItemEventType.ITEM_CANCELLED: frozenset({RunItemStatus.CANCELLED}),
 }
 
-SENSITIVE_ITEM_KEYS = frozenset({"api_key", "authorization", "password", "secret", "token"})
+SENSITIVE_ITEM_KEYS = frozenset({
+    "api_key", "api-key", "apikey", "authorization", "password", "secret", "token",
+    "access_token", "refresh_token", "id_token", "bearer", "credentials", "cookie",
+    "set-cookie", "session", "private_key", "client_secret",
+})
 
 
 class RunItemProtocolError(ValueError):

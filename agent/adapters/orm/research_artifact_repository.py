@@ -11,6 +11,7 @@ from typing import Any
 from sqlalchemy import and_, func, insert, select, update
 from sqlalchemy.exc import IntegrityError
 
+from ...domain.run_item import sanitize_item_payload
 from ...domain.agent_task import AgentTaskKind, AgentTaskStatus, EvidencePacket
 from .database import begin_runtime_write, create_engine
 from .models import agent_runs, agent_tasks, research_artifact_revisions, research_artifacts
@@ -59,7 +60,7 @@ def create_research_artifact(
                     run_uid=run_uid,
                     task_uid=task_uid,
                     artifact_type=normalized_type,
-                    content_json=json.dumps(content, ensure_ascii=False),
+                    content_json=json.dumps(sanitize_item_payload(content), ensure_ascii=False),
                     evidence_refs_json=json.dumps(sorted(set(evidence_refs)), ensure_ascii=False),
                     created_at=timestamp,
                     updated_at=timestamp,
@@ -188,7 +189,7 @@ def create_scoped_research_artifact(
                     run_uid=source_run_uid or None,
                     task_uid=None,
                     artifact_type=normalized_type,
-                    content_json=json.dumps(content, ensure_ascii=False),
+                    content_json=json.dumps(sanitize_item_payload(content), ensure_ascii=False),
                     evidence_refs_json=json.dumps(sorted(set(evidence_refs)), ensure_ascii=False),
                     validity_scope=validity_scope,
                     update_policy=update_policy,
@@ -263,7 +264,7 @@ def add_research_artifact_revision(
                     artifact_uid=artifact_uid,
                     revision=next_revision,
                     status="proposed",
-                    content_json=json.dumps(content, ensure_ascii=False),
+                    content_json=json.dumps(sanitize_item_payload(content), ensure_ascii=False),
                     evidence_refs_json=json.dumps(sorted(set(evidence_refs)), ensure_ascii=False),
                     source_run_uid=str(artifact._mapping["run_uid"] or ""),
                     source_task_uid=str(artifact._mapping["task_uid"] or ""),
@@ -374,7 +375,7 @@ def _insert_revision(
             artifact_uid=artifact_uid,
             revision=revision,
             status=status,
-            content_json=json.dumps(content, ensure_ascii=False),
+            content_json=json.dumps(sanitize_item_payload(content), ensure_ascii=False),
             evidence_refs_json=json.dumps(evidence_refs, ensure_ascii=False),
             source_run_uid=source_run_uid,
             source_task_uid=source_task_uid,
@@ -414,7 +415,12 @@ def _timestamp() -> str:
 
 
 __all__ = [
+    "add_research_artifact_revision",
     "create_research_artifact",
+    "create_scoped_research_artifact",
+    "decide_research_artifact_revision",
+    "get_research_artifact",
+    "list_research_artifact_revisions",
     "list_research_artifacts",
     "reconcile_evidence_packet_artifacts",
 ]

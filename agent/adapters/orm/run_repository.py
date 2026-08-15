@@ -241,7 +241,8 @@ class _RunItemSnapshot(list):
 def list_run_items(
     *, run_uid: str, after_sequence: int = 0, db_name: str = "./database.sqlite"
 ) -> dict[str, Any]:
-    """Return the V2 item snapshot and the event-sequence replay cursor."""
+    """Return the V2 item snapshot: a list of projections that also answers
+    ["items"] (sequence-enriched) and ["lastSequence"]. See _RunItemSnapshot."""
     ensure_runtime_schema(db_name)
     engine = create_engine(db_name)
     try:
@@ -397,15 +398,6 @@ def _public_event(event: Any, *, run_uid: str, session_uid: str) -> dict[str, An
     return result
 
 
-def _project_item_payload(existing_payload: dict[str, Any], *, item_type: str, event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
-    if item_type in {"assistant_message", "reasoning_summary"} and event_type == "item.delta":
-        return {**existing_payload, **payload, "text": str(existing_payload.get("text") or "") + str(payload.get("delta") or "")}
-    if item_type == "presentation" and event_type == "item.delta":
-        envelopes = list(existing_payload.get("envelopes") or [])
-        if isinstance(payload.get("envelope"), dict):
-            envelopes.append(payload["envelope"])
-        return {**existing_payload, **payload, "envelopes": envelopes}
-    return {**existing_payload, **payload}
 
 
 def _read_one(db_name: str, statement: Any) -> dict[str, Any] | None:

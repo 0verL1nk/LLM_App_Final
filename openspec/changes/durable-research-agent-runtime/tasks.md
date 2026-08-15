@@ -98,7 +98,7 @@
 
 ## 7. Research artifacts, collaboration and writing
 
-- [ ] Define Pydantic/Zod contracts for `EvidencePacket`, atomic claim, limitation,
+- [x] Define Pydantic/Zod contracts for `EvidencePacket`, atomic claim, limitation,
   open question, `WritingBrief`, `DraftRevision` and claim-span provenance.
 - [ ] Make evidence research, method review, cross-check and argument editing
   capability profiles emit validated packets; retain a concise narrative field but
@@ -109,7 +109,7 @@
 - [ ] Persist `ResearchArtifact` revisions with source run/task/evidence references;
   migrate the current memory consolidator incrementally rather than converting
   ungrounded chat summaries into facts.
-- [ ] Add writing revision storage and APIs that preserve the original draft, attach
+- [x] Add writing revision storage and APIs that preserve the original draft, attach
   claim spans to evidence, and support accept/reject/rewrite without destructive
   overwrite.
 - [ ] Build research UI for packet evidence coverage, contradictions, open questions,
