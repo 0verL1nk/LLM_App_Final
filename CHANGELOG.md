@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.1](https://github.com/0verL1nk/PaperSage/compare/v1.5.0...v1.5.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* **desktop:** repair packaged ingestion, surface failures, install-dir model cache, GPU tier gating ([#117](https://github.com/0verL1nk/PaperSage/issues/117)) ([9c4af73](https://github.com/0verL1nk/PaperSage/commit/9c4af73b788fe988623cd092c4d97e2f83e3fefb))
+* structured model JSON schema injection and UTF-8 backend stdio ([#115](https://github.com/0verL1nk/PaperSage/issues/115)) ([4c1deff](https://github.com/0verL1nk/PaperSage/commit/4c1deff9226822c0276c591514169354a63aa4be))
+
 ## [1.5.0](https://github.com/0verL1nk/PaperSage/compare/v1.4.4...v1.5.0) (2026-08-15)
 
 
