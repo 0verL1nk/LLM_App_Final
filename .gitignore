@@ -60,7 +60,6 @@ models
 docs/*
 !docs/architecture/
 !docs/architecture/agent-runtime.md
-!docs/design/
 
 .serena
 
