@@ -1,5 +1,6 @@
 import { applyA2UIEnvelope, applyA2UISurfaceMetadata, type A2UISurface } from "@/lib/a2ui"
 import type { AgentEvent } from "@/lib/schemas"
+import type { RunItemsResponse } from "@/lib/run-items"
 
 export type RenderedMessagePart =
   | { id: string; type: "markdown"; text: string }
@@ -11,14 +12,17 @@ export type LiveRunItem = NonNullable<AgentEvent["item"]>
 export type LiveRun = {
   events: AgentEvent[]
   items: Record<string, LiveRunItem>
+  itemOrder: string[]
   parts: RenderedMessagePart[]
   surfaces: Record<string, A2UISurface>
+  status: "in_progress" | "completed" | "failed" | "cancelled"
   lastSequence: number
   pendingBySequence: Record<number, AgentEvent>
 }
 
-export function createLiveRun(): LiveRun {
-  return { events: [], items: {}, parts: [], surfaces: {}, lastSequence: 0, pendingBySequence: {} }
+export function createLiveRun(runId?: string): LiveRun {
+  void runId
+  return { events: [], items: {}, itemOrder: [], parts: [], surfaces: {}, status: "in_progress", lastSequence: 0, pendingBySequence: {} }
 }
 
 function applyEvent(run: LiveRun, event: AgentEvent): LiveRun {
@@ -79,19 +83,27 @@ function applyEvent(run: LiveRun, event: AgentEvent): LiveRun {
 function applyItemEvent(run: LiveRun, event: AgentEvent): LiveRun {
   const item = event.item
   if (!item) return run
-  const items = { ...run.items, [item.id]: item }
   const payload = item.payload
   if (item.type === "assistant_message" || item.type === "reasoning_summary") {
     const partId = String(payload.partId ?? item.id)
     const type = item.type === "reasoning_summary" ? "reasoning" as const : "markdown" as const
     const delta = String(payload.delta ?? "")
+    const previous = run.items[item.id]
+    const accumulated = delta
+      ? String(previous?.payload?.text ?? "") + delta
+      : String(payload.text ?? previous?.payload?.text ?? "")
+    const projected: LiveRunItem = { ...item, payload: { ...payload, text: accumulated } }
+    const items = { ...run.items, [item.id]: projected }
+    const itemOrder = run.itemOrder.includes(item.id) ? run.itemOrder : [...run.itemOrder, item.id]
     const existing = run.parts.find((part) => part.id === partId)
     const parts = existing?.type === type
-      ? run.parts.map((part) => part.id === partId && part.type === type ? { ...part, text: delta ? part.text + delta : String(payload.text ?? part.text) } : part)
-      : [...run.parts, { id: partId, type, text: delta || String(payload.text ?? "") }]
+      ? run.parts.map((part) => part.id === partId && part.type === type ? { ...part, text: accumulated } : part)
+      : [...run.parts, { id: partId, type, text: accumulated }]
     // One arrival marker per part keeps run.events a usable chronology log.
-    return { ...run, items, parts, events: existing ? run.events : [...run.events, event] }
+    return { ...run, items, itemOrder, parts, events: existing ? run.events : [...run.events, event] }
   }
+  const items = { ...run.items, [item.id]: item }
+  const itemOrder = run.itemOrder.includes(item.id) ? run.itemOrder : [...run.itemOrder, item.id]
   if (item.type === "presentation") {
     const partId = String(payload.partId ?? item.id)
     const metadata = payload.surface && typeof payload.surface === "object"
@@ -111,9 +123,17 @@ function applyItemEvent(run: LiveRun, event: AgentEvent): LiveRun {
       : item.status === "failed"
         ? run.parts
         : [...run.parts, { id: partId, type: "a2ui" as const, surfaceId: nextSurface?.surfaceId }]
-    return { ...run, items, surfaces, parts }
+    return { ...run, items, itemOrder, surfaces, parts }
   }
-  return { ...run, items, events: [...run.events, event] }
+  const status = _runStatusFrom(event.eventType)
+  return status ? { ...run, status, items, itemOrder, events: [...run.events, event] } : { ...run, items, itemOrder, events: [...run.events, event] }
+}
+
+function _runStatusFrom(eventType: string): LiveRun["status"] | null {
+  if (eventType === "run.completed") return "completed"
+  if (eventType === "run.failed") return "failed"
+  if (eventType === "run.cancelled") return "cancelled"
+  return null
 }
 
 /**
@@ -136,4 +156,44 @@ export function reduceLiveRun(run: LiveRun, event: AgentEvent): LiveRun {
 
 export function liveAnswer(parts: RenderedMessagePart[]): string {
   return parts.reduce((answer, part) => part.type === "markdown" ? answer + part.text : answer, "")
+}
+export function liveRunItems(run: LiveRun): LiveRunItem[] {
+  return run.itemOrder.map((id) => run.items[id]).filter((item): item is LiveRunItem => Boolean(item))
+}
+
+export function liveMessageParts(items: LiveRunItem[]): RenderedMessagePart[] {
+  const parts: RenderedMessagePart[] = []
+  for (const item of items) {
+    if (item.type !== "assistant_message" && item.type !== "reasoning_summary") continue
+    const partId = String(item.payload?.partId ?? item.id)
+    const type = item.type === "reasoning_summary" ? "reasoning" : "markdown"
+    const text = String(item.payload?.text ?? "")
+    const existing = parts.find((part) => part.id === partId)
+    if (existing && (existing.type === "markdown" || existing.type === "reasoning") && existing.type === type) {
+      existing.text = text || existing.text
+    } else {
+      parts.push({ id: partId, type, text })
+    }
+  }
+  return parts
+}
+
+export function hydrateLiveRun(run: LiveRun, snapshot: RunItemsResponse): LiveRun {
+  const items: Record<string, LiveRunItem> = { ...run.items }
+  const itemOrder = [...run.itemOrder]
+  for (const item of snapshot.items) {
+    items[item.id] = { id: item.id, type: item.type, status: item.status, taskId: item.taskId, payload: item.payload }
+    if (!itemOrder.includes(item.id)) itemOrder.push(item.id)
+  }
+  const parts = liveMessageParts(itemOrder.map((id) => items[id]).filter(Boolean))
+  return {
+    ...run,
+    items,
+    itemOrder,
+    parts: run.parts.length ? run.parts : parts,
+    lastSequence: Math.max(run.lastSequence, snapshot.lastSequence ?? 0),
+    // The snapshot is authoritative: any events stalled on a sequence gap are
+    // superseded (their items are already reflected) and must not re-apply.
+    pendingBySequence: {},
+  }
 }

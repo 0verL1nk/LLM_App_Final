@@ -106,3 +106,4 @@ data
 HANDOFF.md
 
 tmp.pytest-tmp/
+.pytest-tmp/

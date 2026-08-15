@@ -135,12 +135,121 @@ export const steeringInputSchema = z.object({
   status: z.string(),
 })
 
+const bboxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()])
+
+export const evidenceReferenceSchema = z.object({
+  chunk_id: z.string().min(1),
+  doc_uid: z.string().min(1),
+  page_no: z.number().int().nullish(),
+  offset_start: z.number().int().nullish(),
+  offset_end: z.number().int().nullish(),
+  bbox: bboxSchema.nullish(),
+  source_url: z.string().default(""),
+})
+
+export const claimTypeSchema = z.enum(["paper_fact", "hypothesis", "cross_paper_synthesis"])
+
+export const atomicClaimSchema = z.object({
+  statement: z.string().min(1),
+  evidence_refs: z.array(z.string()).default([]),
+  claim_type: claimTypeSchema.default("paper_fact"),
+  limitation: z.string().default(""),
+})
+
+const packetLimitationSchema = z.object({
+  kind: z.string().default("general"),
+  statement: z.string().min(1),
+  evidence_refs: z.array(z.string()).default([]),
+})
+
+const openQuestionSchema = z.object({
+  question: z.string().min(1),
+  suggested_action: z.string().default(""),
+  evidence_refs: z.array(z.string()).default([]),
+})
+
+export const evidencePacketSchema = z.object({
+  research_question: z.string().default(""),
+  summary: z.string().min(1),
+  evidence_refs: z.array(z.string()).default([]),
+  claims: z.array(atomicClaimSchema).default([]),
+  evidence: z.array(evidenceReferenceSchema).default([]),
+  limitations: z.array(z.union([z.string(), packetLimitationSchema])).default([]),
+  open_questions: z.array(z.union([z.string(), openQuestionSchema])).default([]),
+  confidence: z.number().min(0).max(1).default(0.5),
+  metrics: z.record(z.string(), z.number()).default({}),
+})
+
+export const reviewFindingKindSchema = z.enum([
+  "over_claim",
+  "insufficient_evidence",
+  "method_result_confusion",
+  "missed_counterexample",
+  "terminology_inconsistency",
+  "citation_gap",
+])
+
+export const writingBriefSchema = z.object({
+  audience: z.string().min(1),
+  purpose: z.string().min(1),
+  target_section: z.string().default(""),
+  claim_budget: z.number().int().min(0).default(0),
+  style_constraints: z.array(z.string()).default([]),
+})
+
+export const draftRevisionSchema = z.object({
+  section: z.string().default(""),
+  text: z.string().default(""),
+  claim_ids: z.array(z.string()).default([]),
+  evidence_refs: z.array(z.string()).default([]),
+  claim_spans: z
+    .array(
+      z.object({
+        claim_id: z.string(),
+        start: z.number().int().min(0),
+        end: z.number().int().min(1),
+        evidence_refs: z.array(z.string()).default([]),
+        note: z.string().default(""),
+      }),
+    )
+    .default([]),
+  rationale: z.string().default(""),
+  unsupported_claims: z.array(z.string()).default([]),
+  citation_gaps: z.array(z.string()).default([]),
+  review_findings: z
+    .array(
+      z.object({
+        kind: reviewFindingKindSchema,
+        location: z.string().default(""),
+        note: z.string().default(""),
+      }),
+    )
+    .default([]),
+  based_on_revision: z.string().default(""),
+})
+
+export const researchArtifactRevisionSchema = z.object({
+  revision_uid: z.string(),
+  artifact_uid: z.string(),
+  revision: z.number().int().min(1),
+  status: z.enum(["proposed", "accepted", "rejected", "superseded"]),
+  content: z.record(z.string(), z.unknown()).default({}),
+  evidence_refs: z.array(z.string()).default([]),
+  source_run_uid: z.string().default(""),
+  source_task_uid: z.string().default(""),
+  based_on_revision_uid: z.string().default(""),
+  decision_note: z.string().default(""),
+  decided_at: z.string().default(""),
+  created_at: z.string().nullish(),
+})
+
 export const researchArtifactSchema = z.object({
   artifact_uid: z.string(),
-  run_uid: z.string(),
-  task_uid: z.string(),
+  uuid: z.string().default(""),
+  run_uid: z.string().nullish().transform((value) => value ?? ""),
+  task_uid: z.string().nullish().transform((value) => value ?? ""),
   artifact_type: z.string(),
-  content: z.record(z.string(), z.unknown()),
+  content: z.record(z.string(), z.unknown()).default({}),
   evidence_refs: z.array(z.string()).default([]),
   created_at: z.string().nullish(),
 })

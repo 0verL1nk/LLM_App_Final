@@ -437,60 +437,6 @@ def cancel_agent_run(run_uid: str, user_uuid: UserId) -> dict[str, Any]:
     return {"data": {"run_uid": run_uid, "cancel_requested": changed}}
 
 
-@router.get("/runs/{run_uid}/events")
-async def stream_agent_run_events(
-    run_uid: str,
-    user_uuid: UserId,
-    after_sequence: Annotated[int, Query(alias="afterSeq", ge=0)] = 0,
-) -> StreamingResponse:
-    run = get_run(run_uid=run_uid, user_uuid=user_uuid)
-    if run is None:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    async def event_stream():
-        sequence = after_sequence
-        heartbeat_at = asyncio.get_running_loop().time()
-        while True:
-            events = await run_in_threadpool(
-                list_run_events,
-                run_uid=run_uid,
-                after_sequence=sequence,
-            )
-            for event in events:
-                sequence = int(event["sequence"])
-                yield (
-                    f"id: {event['eventId']}\n"
-                    f"event: {event['eventType']}\n"
-                    f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-                )
-            current = await run_in_threadpool(get_run, run_uid=run_uid, user_uuid=user_uuid)
-            if current is None or (current["status"] in {"completed", "failed", "cancelled"} and not events):
-                break
-            now = asyncio.get_running_loop().time()
-            if now - heartbeat_at >= 15:
-                await run_in_threadpool(
-                    expire_stalled_runs,
-                    project_uid=str(run["project_uid"]),
-                    session_uid=str(run["session_uid"]),
-                    user_uuid=user_uuid,
-                    max_idle_seconds=load_agent_settings().agent_llm_request_timeout + 30,
-                )
-                yield ": ping\n\n"
-                heartbeat_at = now
-            await asyncio.sleep(0.25)
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache, no-transform",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        },
-    )
-@router.get("/settings")
-def settings(user_uuid: UserId) -> dict[str, Any]:
-    return {"data": read_user_configuration(user_uuid=user_uuid)}
 
 
 @router.put("/settings")
