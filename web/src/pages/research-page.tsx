@@ -65,8 +65,7 @@ import {
 import { formatEvidenceCitations } from "@/lib/evidence";
 import { sessionContextUsage } from "@/lib/context-usage";
 import { consumeEventStream } from "@/lib/api";
-import { api } from "@/lib/api";
-import { z } from "zod";
+import { fetchRunSnapshot, postTaskAction } from "@/lib/run-recovery";
 import {
   createLiveRun,
   hydrateLiveRun,
@@ -320,14 +319,12 @@ function ResearchWorkspace({
   const runTaskAction = useCallback(
     (taskUid: string, action: "cancel" | "retry") => {
       setTaskAction({ taskUid, action });
-      void api(`/tasks/${taskUid}/${action === "cancel" ? "cancel" : "retry"}`, z.unknown(), { method: "POST" })
+      void postTaskAction(taskUid, action)
         .then(() => {
           toast.success(action === "cancel" ? "已请求取消任务" : "任务已重新排队");
           void refetchMessages();
         })
-        .catch((error: unknown) => {
-          toast.error(error instanceof Error ? error.message : "任务操作失败");
-        })
+        .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "任务操作失败"))
         .finally(() => setTaskAction(null));
     },
     [refetchMessages],
@@ -338,35 +335,19 @@ function ResearchWorkspace({
       if (resumedRunIds.current.has(run.run_uid)) continue;
       resumedRunIds.current.add(run.run_uid);
       ensureLiveRun(run.run_uid);
-      // Hydrate the persisted item snapshot first, then subscribe strictly
-      // after its cursor so replayed events never duplicate hydrated text.
+      // Hydrate the snapshot, then subscribe strictly after its cursor (no duplicated text).
       void (async () => {
-        let afterSeq = 0;
-        try {
-          const response = await fetch(`/api/v1/runs/${run.run_uid}/items`, {
-            headers: { "X-User-Id": "local-user" },
-            signal: controller.signal,
-          });
-          if (response.ok) {
-            const snapshot = (await response.json()) as {
-              data?: unknown[];
-              lastSequence?: number;
-            };
-            const items = Array.isArray(snapshot.data) ? snapshot.data : [];
-            const cursor = Number(snapshot.lastSequence ?? 0);
-            setLiveRuns((current) => ({
-              ...current,
-              [run.run_uid]: hydrateLiveRun(current[run.run_uid] ?? createLiveRun(), {
-                // The wire item shape matches LiveRunItem for the fields hydration reads.
-                items: items as never[],
-                lastSequence: cursor,
-              }),
-            }));
-            afterSeq = cursor;
-          }
-        } catch {
-          // Snapshot hydration is best-effort; full replay still works.
+        const snapshot = await fetchRunSnapshot(run.run_uid, controller.signal);
+        if (snapshot) {
+          setLiveRuns((current) => ({
+            ...current,
+            [run.run_uid]: hydrateLiveRun(current[run.run_uid] ?? createLiveRun(), {
+              items: snapshot.items as never[],
+              lastSequence: snapshot.lastSequence,
+            }),
+          }));
         }
+        const afterSeq = snapshot?.lastSequence ?? 0;
         await consumeEventStream(
           `/runs/${run.run_uid}/events?afterSeq=${afterSeq}`,
           (rawEvent) => {
