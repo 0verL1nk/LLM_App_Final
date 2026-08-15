@@ -24,6 +24,8 @@ function run(command, args, options = {}) {
 // undefined. fastembed declares onnxruntime as a hard dependency, so the
 // pinned closure is installed with --no-deps (it is already fully resolved
 // by uv export) and the CUDA runtime goes in through a separate resolve.
+// The [cuda]/[cudnn] extras of onnxruntime-gpu are empty on Windows; the
+// nvidia-*-cu13 wheels provide the CUDA/cuDNN DLLs instead.
 function resolvePyinstallerInvocation() {
   if (!gpuBundle) {
     return { command: python, prefix: ["run", "--with", "pyinstaller", "pyinstaller"] }
@@ -45,7 +47,10 @@ function resolvePyinstallerInvocation() {
     "install",
     "--python",
     venvPython,
-    "onnxruntime-gpu[cuda,cudnn]>=1.24.3,<2.0.0",
+    "onnxruntime-gpu>=1.24.3,<2.0.0",
+    "nvidia-cudnn-cu13",
+    "nvidia-cublas-cu13",
+    "nvidia-cuda-runtime-cu13",
     "pyinstaller",
   ])
   return { command: venvPython, prefix: ["-m", "PyInstaller"] }
@@ -81,6 +86,15 @@ const pyinstallerArgs = [
   path.join(root, "scripts", "desktop_api.py"),
 ]
 for (const packageName of ocrMetadataPackages) pyinstallerArgs.splice(-1, 0, "--copy-metadata", packageName)
+if (gpuBundle) {
+  pyinstallerArgs.splice(-1, 0,
+    "--copy-metadata", "onnxruntime-gpu",
+    "--collect-binaries", "nvidia.cudnn",
+    "--collect-binaries", "nvidia.cublas",
+    "--collect-binaries", "nvidia.cuda_runtime",
+    "--runtime-hook", path.join(root, "web", "scripts", "gpu_dll_runtime_hook.py"),
+  )
+}
 const invocation = resolvePyinstallerInvocation()
 run(invocation.command, [...invocation.prefix, ...pyinstallerArgs])
 // The backend runs Alembic migrations at startup; a bundle without the
@@ -107,5 +121,21 @@ if (!fs.readdirSync(internal).some((name) => /^fastembed-[^/]*\.dist-info$/.test
 if (gpuBundle && !fs.readdirSync(internal).some((name) => /^onnxruntime_gpu-[^/]*\.dist-info$/.test(name))) {
   process.stderr.write("GPU bundle is missing onnxruntime-gpu; OCR would silently fall back to CPU.\n")
   process.exit(1)
+}
+if (gpuBundle) {
+  const bundledFiles = new Set()
+  const walk = (directory) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      if (entry.isDirectory()) walk(path.join(directory, entry.name))
+      else bundledFiles.add(entry.name.toLowerCase())
+    }
+  }
+  walk(internal)
+  for (const requiredDll of ["cudnn64_9.dll", "cublas64_13.dll", "cublaslt64_13.dll"]) {
+    if (!bundledFiles.has(requiredDll)) {
+      process.stderr.write(`GPU bundle is missing ${requiredDll}; the CUDA provider would fail at startup.\n`)
+      process.exit(1)
+    }
+  }
 }
 process.exit(0)
