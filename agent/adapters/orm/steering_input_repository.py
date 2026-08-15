@@ -9,7 +9,7 @@ from typing import Any
 from sqlalchemy import and_, select, update
 
 from ...adapters.orm.database import create_engine
-from ...adapters.orm.models import steering_inputs
+from ...adapters.orm.models import agent_runs, steering_inputs
 from ...adapters.orm.runtime_schema import ensure_runtime_schema
 from ...domain.steering_input import SteeringInputStatus
 
@@ -182,8 +182,8 @@ def transfer_unconfirmed_steering_inputs(*, source_run_uid: str, target_run_uid:
     engine = create_engine(db_name)
     try:
         with engine.begin() as connection:
-            source = connection.exec_driver_sql("SELECT status FROM agent_runs WHERE run_uid = ?", (source_run_uid,)).first()
-            target = connection.exec_driver_sql("SELECT status FROM agent_runs WHERE run_uid = ?", (target_run_uid,)).first()
+            source = connection.execute(select(agent_runs.c.status).where(agent_runs.c.run_uid == source_run_uid)).first()
+            target = connection.execute(select(agent_runs.c.status).where(agent_runs.c.run_uid == target_run_uid)).first()
             if source is None or target is None:
                 raise LookupError("Run not found")
             if str(source[0]) not in {"completed", "failed"}:
