@@ -22,7 +22,6 @@ from agent.rag.hybrid import (
 @pytest.fixture(autouse=True)
 def _replace_embedding_downloads(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep retrieval unit tests deterministic and independent of model hosting."""
-    from agent.rag import hybrid as hybrid_module
 
     class _FakeEmbeddings:
         def __init__(self, **_kwargs: object) -> None:
@@ -34,7 +33,9 @@ def _replace_embedding_downloads(monkeypatch: pytest.MonkeyPatch) -> None:
         def embed_query(self, query: str) -> list[float]:
             return [float(len(query))] * 384
 
-    monkeypatch.setattr(hybrid_module, "FastEmbedEmbeddings", _FakeEmbeddings)
+    from agent.rag import fastembed_runtime
+
+    monkeypatch.setattr(fastembed_runtime, "FastEmbedEmbeddings", _FakeEmbeddings)
 
 
 class TestReciprocalRankFusion:
@@ -457,7 +458,9 @@ def test_project_retriever_reuses_persisted_doc_indexes(monkeypatch, tmp_path):
     )
 
     monkeypatch.setenv("AGENT_PROJECT_INDEX_CACHE_DIR", str(tmp_path / "project_indexes"))
-    monkeypatch.setattr(hybrid_module, "FastEmbedEmbeddings", _FakeEmbeddings)
+    from agent.rag import fastembed_runtime
+
+    monkeypatch.setattr(fastembed_runtime, "FastEmbedEmbeddings", _FakeEmbeddings)
     monkeypatch.setattr(hybrid_module, "load_agent_settings", lambda: fake_settings)
 
     documents = [
@@ -526,7 +529,9 @@ def test_project_retriever_returns_empty_for_low_relevance(monkeypatch, tmp_path
     )
 
     monkeypatch.setenv("AGENT_PROJECT_INDEX_CACHE_DIR", str(tmp_path / "project_indexes"))
-    monkeypatch.setattr(hybrid_module, "FastEmbedEmbeddings", _FakeEmbeddings)
+    from agent.rag import fastembed_runtime
+
+    monkeypatch.setattr(fastembed_runtime, "FastEmbedEmbeddings", _FakeEmbeddings)
     monkeypatch.setattr(hybrid_module, "load_agent_settings", lambda: fake_settings)
 
     documents = [
@@ -583,7 +588,9 @@ def test_project_retriever_uses_similarity_score(monkeypatch, tmp_path):
     )
 
     monkeypatch.setenv("AGENT_PROJECT_INDEX_CACHE_DIR", str(tmp_path / "project_indexes"))
-    monkeypatch.setattr(hybrid_module, "FastEmbedEmbeddings", _FakeEmbeddings)
+    from agent.rag import fastembed_runtime
+
+    monkeypatch.setattr(fastembed_runtime, "FastEmbedEmbeddings", _FakeEmbeddings)
     monkeypatch.setattr(hybrid_module, "load_agent_settings", lambda: fake_settings)
 
     documents = [

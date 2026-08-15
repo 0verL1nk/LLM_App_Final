@@ -17,11 +17,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable
 
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from ..settings import load_agent_settings
 from .evidence import EvidenceItem, EvidencePayload
+from .fastembed_runtime import build_fastembed_embeddings
 from .index_artifact import build_project_doc_index_artifact as _build_project_doc_index_artifact
 from .project_chunking import markdown_documents
 from .vector_store import build_vectorstore, stable_vectorstore_key
@@ -227,7 +227,7 @@ def _load_or_build_project_doc_index_artifact(
     normalized_text: str,
     settings_signature: str,
     splitter: RecursiveCharacterTextSplitter,
-    embeddings: FastEmbedEmbeddings,
+    embeddings: Any,
     allow_build: bool = True,
     require_persistence: bool = False,
     progress_callback: IngestionProgressCallback | None = None,
@@ -298,7 +298,7 @@ def build_project_document_index_with_settings(
     )
     if progress_callback is not None:
         progress_callback("loading_model", None, None)
-    embeddings = FastEmbedEmbeddings(
+    embeddings = build_fastembed_embeddings(
         model_name=settings.local_embedding_model,
         cache_dir=settings.local_embedding_cache_dir,
     )
@@ -610,7 +610,7 @@ class HybridRetriever:
         self.llm_client: Any = None
 
         # 初始化 Dense 检索（向量检索）
-        embeddings = FastEmbedEmbeddings(
+        embeddings = build_fastembed_embeddings(
             model_name=embedding_model,
             cache_dir=embedding_cache_dir,
         )
@@ -1196,7 +1196,7 @@ def build_project_evidence_retriever_with_settings(
     reused_doc_indexes = 0
     built_doc_indexes = 0
     settings_signature = _settings_signature_for_project_index(settings)
-    embeddings = FastEmbedEmbeddings(
+    embeddings = build_fastembed_embeddings(
         model_name=settings.local_embedding_model,
         cache_dir=settings.local_embedding_cache_dir,
     )

@@ -2,11 +2,11 @@ import hashlib
 import os
 from typing import Any, Callable
 
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from ..settings import load_agent_settings
 from .evidence import EvidenceItem, EvidencePayload
+from .fastembed_runtime import build_fastembed_embeddings
 from .vector_store import build_vectorstore, stable_vectorstore_key
 
 
@@ -33,14 +33,14 @@ def ensure_local_embedding_model_downloaded() -> str:
     settings = load_agent_settings()
     os.makedirs(settings.local_embedding_cache_dir, exist_ok=True)
     try:
-        embeddings = FastEmbedEmbeddings(
+        embeddings = build_fastembed_embeddings(
             model_name=settings.local_embedding_model,
             cache_dir=settings.local_embedding_cache_dir,
         )
         embeddings.embed_query("warmup")
         return settings.local_embedding_model
     except Exception:
-        fallback_embeddings = FastEmbedEmbeddings(
+        fallback_embeddings = build_fastembed_embeddings(
             model_name=settings.local_embedding_fallback_model,
             cache_dir=settings.local_embedding_cache_dir,
         )
@@ -190,7 +190,7 @@ def build_local_evidence_retriever(
         metadata["project_uid"] = project_uid
         metadatas.append(metadata)
 
-    embeddings = FastEmbedEmbeddings(
+    embeddings = build_fastembed_embeddings(
         model_name=model_name,
         cache_dir=settings.local_embedding_cache_dir,
     )
