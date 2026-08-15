@@ -19,8 +19,9 @@ jobs:
   native-package:
     name: Build ${{ matrix.name }} package
     runs-on: ${{ matrix.os }}
-    # GPU test builds only produce a Windows artifact; skip the other legs.
-    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.gpu == true && matrix.name != 'Windows') }}
+    # GPU dispatches only need the Windows artifact; the other legs still run
+    # (job-level `if` cannot see the matrix context) but ignore the GPU env,
+    # since package-backend.cjs gates it on win32.
     strategy:
       fail-fast: false
       matrix:
