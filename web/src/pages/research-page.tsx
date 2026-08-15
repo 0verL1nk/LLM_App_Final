@@ -21,11 +21,13 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
+import { CitationContext, evidenceMarkdownComponents } from "@/components/evidence-inline-citations";
 import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from "@/components/ai-elements/reasoning";
+  AssistantTimeline,
+  buildLiveTimeline,
+  buildTraceTimeline,
+  type AssistantTimelineStep,
+} from "@/components/assistant-run-timeline";
 import {
   Conversation,
   ConversationContent,
@@ -75,6 +77,13 @@ import type { AgentEvent, Message, TurnResult } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
 
+const EXECUTION_MODES = [
+  { value: "auto", label: "自动" },
+  { value: "react", label: "ReAct" },
+  { value: "plan_execute", label: "计划执行" },
+  { value: "agent_teams", label: "团队协作" },
+] as const;
+
 const ResearchInspector = lazy(async () => {
   const module = await import("@/components/research-inspector");
   return { default: module.ResearchInspector };
@@ -115,11 +124,13 @@ function MessageBubble({
   message,
   onInspect,
   activity,
+  timeline,
   isStreaming = false,
 }: {
   message: Message;
   onInspect: (tab: "evidence" | "activity" | "plan") => void;
   activity?: ReactNode;
+  timeline?: AssistantTimelineStep[];
   isStreaming?: boolean;
 }) {
   const assistant = message.role === "assistant";
@@ -137,11 +148,9 @@ function MessageBubble({
       return items;
     }, {});
   const parts = assistant ? assistantParts(message) : [];
-  const reasoningText = parts
-    .filter((part): part is Extract<RenderedMessagePart, { type: "reasoning" }> => part.type === "reasoning")
-    .map((part) => part.text)
-    .join("\n\n");
-  const isWaitingForFirstPart = isStreaming && !reasoningText && !parts.length;
+  const timelineSteps =
+    timeline ?? (assistant ? buildTraceTimeline(parts, message.trace ?? []) : []);
+  const isWaitingForFirstPart = isStreaming && !parts.length;
   return (
     <div className={cn("flex gap-3", !assistant && "justify-end")}>
       {assistant && (
@@ -176,24 +185,19 @@ function MessageBubble({
                 }
               }}
             >
-              {activity}
               {isWaitingForFirstPart && <ResearchOrbs />}
-              {reasoningText && (
-                <Reasoning className="mb-3" isStreaming={isStreaming}>
-                  <ReasoningTrigger
-                    getThinkingMessage={(streaming, duration) => streaming
-                      ? "正在思考"
-                      : duration
-                        ? `思考了 ${duration} 秒`
-                        : "思考过程"}
-                  />
-                  <ReasoningContent>{reasoningText}</ReasoningContent>
-                </Reasoning>
-              )}
+              <AssistantTimeline steps={timelineSteps} streaming={isStreaming} />
+              {activity}
+              <CitationContext.Provider
+                value={useMemo(
+                  () => ({ evidence: message.evidence ?? [], onInspect: () => onInspect("evidence") }),
+                  [message.evidence, onInspect],
+                )}
+              >
               {parts.map((part) => {
                 if (part.type === "markdown") {
                   const content = part.text === message.content ? renderedContent : formatEvidenceCitations(part.text, message.evidence);
-                  return <MessageResponse key={part.id} className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-pre:bg-background">{content}</MessageResponse>;
+                  return <MessageResponse key={part.id} className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-pre:bg-background" components={evidenceMarkdownComponents}>{content}</MessageResponse>;
                 }
                 if (part.type === "reasoning") return null;
                 const surface = part.surfaceId ? surfaces[part.surfaceId] : undefined;
@@ -203,6 +207,7 @@ function MessageBubble({
                   <div key={part.id} className="my-3 h-20 animate-pulse rounded-xl border bg-background/60" aria-label="正在生成可视化梳理" />
                 );
               })}
+              </CitationContext.Provider>
             </div>
           ) : (
             <p className="whitespace-pre-wrap">{message.content}</p>
@@ -460,6 +465,7 @@ function ResearchWorkspace({
                         }}
                         onInspect={openInspector}
                         activity={<ResearchRunActivity items={Object.values(run.items)} />}
+                        timeline={buildLiveTimeline(run)}
                         isStreaming
                       />
                     </Suspense>
@@ -497,18 +503,33 @@ function ResearchWorkspace({
                   Enter 发送 · Shift + Enter 换行 · 回答可能需要核对原始证据
                 </span>
                 <div className="flex items-center gap-1">
-                  <select
+                  <div
                     aria-label="本轮研究模式"
-                    className="h-7 rounded-md border bg-background px-2 text-xs text-muted-foreground"
-                    value={executionMode}
-                    disabled={turn.isPending || activeRuns.length > 0}
-                    onChange={(event) => setExecutionMode(event.target.value as typeof executionMode)}
+                    className="relative grid h-7 grid-cols-4 rounded-md bg-muted p-0.5"
+                    role="radiogroup"
                   >
-                    <option value="auto">自动</option>
-                    <option value="react">ReAct</option>
-                    <option value="plan_execute">Plan-Execute</option>
-                    <option value="agent_teams">Agent Teams</option>
-                  </select>
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-0.5 left-0.5 w-[calc(25%-0.25rem)] rounded-[5px] bg-background shadow-sm transition-transform duration-200"
+                      style={{ transform: `translateX(${EXECUTION_MODES.findIndex((mode) => mode.value === executionMode) * 100}%)` }}
+                    />
+                    {EXECUTION_MODES.map((mode) => (
+                      <button
+                        aria-checked={executionMode === mode.value}
+                        className={cn(
+                          "relative z-10 rounded-[5px] px-2 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                          executionMode === mode.value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                        )}
+                        disabled={turn.isPending || activeRuns.length > 0}
+                        key={mode.value}
+                        onClick={() => setExecutionMode(mode.value)}
+                        role="radio"
+                        type="button"
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
                   {contextUsage && <ContextCompositionCard usage={contextUsage} />}
                   <PromptInputSubmit
                   disabled={turn.isPending}
