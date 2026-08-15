@@ -203,6 +203,15 @@ def test_gpu_profile_requires_nvidia_driver(monkeypatch):
     )
     assert select_ocr_profile().device == "gpu:0"
 
+    from agent.adapters.ocr_profile import ocr_runtime_capability
+
+    assert ocr_runtime_capability() == {
+        "profile": "high_accuracy",
+        "device": "gpu:0",
+        "gpu_enabled": True,
+        "driver_available": True,
+    }
+
 
 def test_gpu_pipeline_failure_falls_back_to_cpu(monkeypatch, tmp_path):
     source = tmp_path / "paper.pdf"

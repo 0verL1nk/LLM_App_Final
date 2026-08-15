@@ -71,6 +71,9 @@ def ocr_runtime_capability() -> dict[str, Any]:
         "profile": profile.name,
         "device": profile.device,
         "gpu_enabled": profile.device.startswith("gpu"),
+        # An NVIDIA driver without the CUDA runtime means the desktop app can
+        # offer the downloadable GPU acceleration pack.
+        "driver_available": _cuda_runtime_usable(),
     }
 
 

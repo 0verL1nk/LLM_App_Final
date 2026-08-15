@@ -66,6 +66,7 @@ export const ocrRuntimeSchema = z.object({
   profile: z.string(),
   device: z.string(),
   gpu_enabled: z.boolean(),
+  driver_available: z.boolean().nullish(),
 })
 
 export const documentConversionSchema = z.object({

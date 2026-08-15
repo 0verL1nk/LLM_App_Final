@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { api } from "@/lib/api"
-import { desktopWindowControls } from "@/lib/platform"
+import { desktopWindowControls, type DesktopGpuPackStatus } from "@/lib/platform"
 import { keys, useDocumentConversion, useSettings } from "@/lib/queries"
 import { settingsSchema } from "@/lib/schemas"
 import { useUiStore } from "@/stores/ui-store"
@@ -94,9 +94,50 @@ function DocumentPreviewCard() {
 
 function OcrAccelerationCard() {
   const capability = useDocumentConversion()
+  const desktop = desktopWindowControls()
   const ocr = capability.data?.ocr
   const gpu = ocr?.gpu_enabled === true
-  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Gauge className="size-4 text-primary" />本地识别加速</CardTitle><CardDescription>{gpu ? "文档识别正在使用 NVIDIA GPU 加速。" : "文档识别当前使用 CPU；GPU 加速需要 GPU 版安装包。"}</CardDescription></CardHeader><CardContent className="flex flex-wrap items-center gap-2"><Badge variant={gpu ? "secondary" : "outline"}>{gpu ? "GPU 已启用" : "CPU 模式"}</Badge>{ocr && <Badge variant="outline">{ocr.device.startsWith("gpu") ? `NVIDIA ${ocr.device}` : ocr.profile}</Badge>}</CardContent></Card>
+  const driver = ocr?.driver_available === true
+  const [packStatus, setPackStatus] = useState<DesktopGpuPackStatus | null>(null)
+  const [toggling, setToggling] = useState(false)
+
+  useEffect(() => {
+    if (!desktop?.gpuPackStatus) return
+    void desktop.gpuPackStatus().then(setPackStatus)
+    return desktop.onGpuPackStatus(setPackStatus)
+  }, [desktop])
+
+  const busy = packStatus?.phase === "downloading" || packStatus?.phase === "extracting"
+  const enableGpu = async (): Promise<void> => {
+    if (!desktop) return
+    setToggling(true)
+    try {
+      const result = await desktop.enableGpuPack()
+      if (result.ok) {
+        toast.success("GPU 加速已就绪", { description: "应用即将重启以启用 NVIDIA 加速。" })
+        setTimeout(() => void desktop.relaunchApp(), 2000)
+      }
+    } catch {
+      toast.error("无法安装 GPU 加速包", { description: "请稍后重试，或查看诊断日志。" })
+    } finally {
+      setToggling(false)
+    }
+  }
+  const disableGpu = async (): Promise<void> => {
+    if (!desktop) return
+    setToggling(true)
+    try {
+      const result = await desktop.disableGpuPack()
+      if (result.ok) {
+        toast.success("已切回 CPU 模式", { description: "应用即将重启。" })
+        setTimeout(() => void desktop.relaunchApp(), 2000)
+      }
+    } finally {
+      setToggling(false)
+    }
+  }
+
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Gauge className="size-4 text-primary" />本地识别加速</CardTitle><CardDescription>{gpu ? "文档识别正在使用 NVIDIA GPU 加速。" : driver ? "检测到 NVIDIA 显卡，可下载 GPU 加速包启用 CUDA 识别（约 1.5 GB，支持断点续传）。" : "文档识别当前使用 CPU；GPU 加速需要 NVIDIA 显卡。"}</CardDescription></CardHeader><CardContent className="flex flex-col gap-3"><div className="flex flex-wrap items-center gap-2"><Badge variant={gpu ? "secondary" : "outline"}>{gpu ? "GPU 已启用" : "CPU 模式"}</Badge>{ocr && <Badge variant="outline">{gpu ? `NVIDIA ${ocr.device}` : ocr.profile}</Badge>}</div>{!gpu && driver && desktop && busy && <div className="flex flex-col gap-1"><Progress value={packStatus?.percent ?? 0} /><p className="text-xs text-muted-foreground">{packStatus?.phase === "downloading" ? `正在下载加速包 ${packStatus?.percent ?? 0}%` : "正在安装加速包…"}</p></div>}{!gpu && driver && desktop && !busy && <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="outline" onClick={() => void enableGpu()} disabled={toggling}>启用 GPU 加速</Button><p className="text-xs leading-5 text-muted-foreground">安装包约 1.5 GB，下载可断点续传；完成后应用会自动重启。</p></div>}{gpu && desktop && <Button type="button" variant="outline" onClick={() => void disableGpu()} disabled={toggling}>切回 CPU 模式</Button>}{packStatus?.phase === "error" && <p className="text-xs text-destructive">{packStatus.error ?? "GPU 加速包安装失败，请重试。"}</p>}</CardContent></Card>
 }
 
 export function SettingsPage() {

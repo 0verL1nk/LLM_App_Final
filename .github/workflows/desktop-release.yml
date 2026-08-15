@@ -133,9 +133,45 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  gpu-pack:
+    name: Build GPU acceleration pack
+    runs-on: windows-latest
+    # The pack is a release asset (picked up by publish-release like any
+    # other artifact) and also produced for on-demand GPU test builds.
+    if: ${{ startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.gpu == true) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6.0.10
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: |
+          uv sync --extra dev --no-install-project
+          pnpm --dir web install --frozen-lockfile
+      - name: Build GPU pack
+        run: pnpm --dir web run desktop:gpu-pack
+      - name: Upload GPU pack artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: PaperSage-GPU-Pack-${{ github.ref_type == 'tag' && github.ref_name || github.run_id }}
+          path: web/release/PaperSage-GPU-Pack-*.zip
+          if-no-files-found: error
+          retention-days: 14
+
   publish-release:
     name: Publish GitHub Release
-    needs: native-package
+    needs: [native-package, gpu-pack]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
