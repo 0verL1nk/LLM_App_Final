@@ -6,7 +6,6 @@ from .repository import (
     touch_memory_items,
     upsert_project_memory_item,
 )
-from .service import search_project_memory_items
 
 __all__ = [
     "ensure_memory_tables",
@@ -15,6 +14,16 @@ __all__ = [
     "touch_memory_items",
     "search_project_memory_items",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    # Lazy re-export: agent.memory.service pulls the full adapter stack, which
+    # loops back here through utils.utils when both initialize at import time.
+    if name == "search_project_memory_items":
+        from .service import search_project_memory_items
+
+        return search_project_memory_items
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def ensure_memory_layer_ready(db_name: str = "./database.sqlite") -> None:

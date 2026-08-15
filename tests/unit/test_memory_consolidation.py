@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from agent.memory.consolidation import MemoryConsolidation, MemoryOperation, process_memory_event
+from langchain_core.messages import AIMessage
+
+from agent.memory.consolidation import process_memory_event
 from agent.memory.repository import (
     create_memory_event,
     get_memory_event,
@@ -9,20 +11,17 @@ from agent.memory.repository import (
 
 
 class _StructuredModel:
-    def with_structured_output(self, _schema):
-        return self
-
     def invoke(self, _messages):
-        return MemoryConsolidation(
-            operations=[
-                MemoryOperation(
-                    action="create",
-                    memory_type="procedural",
-                    title="Response preference",
-                    content="The user prefers concise Chinese responses.",
-                    reason="Explicit standing preference",
-                )
-            ]
+        return AIMessage(
+            content=(
+                "<think>The user asked for concise Chinese responses.</think>\n"
+                "```json\n"
+                '{"operations": [{"action": "create", "memory_type": "procedural", '
+                '"title": "Response preference", '
+                '"content": "The user prefers concise Chinese responses.", '
+                '"reason": "Explicit standing preference"}]}\n'
+                "```"
+            )
         )
 
 

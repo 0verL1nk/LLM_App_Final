@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from langchain_core.messages import AIMessage
+
 from agent.adapters.sqlite.project_repository import (
     create_project,
     create_project_session,
@@ -9,11 +11,10 @@ from agent.application import session_titles
 
 
 class _TitleModel:
-    def with_structured_output(self, _schema):
-        return self
-
     def invoke(self, _messages):
-        return {"title": "比较两种检索策略"}
+        return AIMessage(
+            content='<think>用户想比较检索策略。</think>\n\n{"title": "比较两种检索策略"}'
+        )
 
 
 def test_generate_session_title_names_an_untitled_session(monkeypatch, tmp_path: Path) -> None:

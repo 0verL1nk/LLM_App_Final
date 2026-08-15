@@ -1,9 +1,48 @@
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
 from urllib.parse import urlsplit
 
 from langchain_openai import ChatOpenAI
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 
 from .settings import load_agent_settings
+
+_REASONING_BLOCK_PATTERN = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
+_CODE_FENCE_PATTERN = re.compile(r"```[a-zA-Z0-9_-]*\s*(.*?)\s*```", re.DOTALL)
+
+
+def strip_model_reasoning(text: str) -> str:
+    """Drop <think> reasoning blocks and code fences wrapped around JSON.
+
+    OpenAI-compatible providers such as DashScope emit reasoning text before
+    the JSON payload, which otherwise breaks structured-output parsing.
+    """
+    cleaned = _REASONING_BLOCK_PATTERN.sub("", text)
+    if "<think>" in cleaned:
+        cleaned = cleaned.split("<think>", 1)[0]
+    fenced = _CODE_FENCE_PATTERN.search(cleaned)
+    if fenced:
+        cleaned = fenced.group(1)
+    start, end = cleaned.find("{"), cleaned.rfind("}")
+    if start != -1 and end > start:
+        cleaned = cleaned[start : end + 1]
+    return cleaned.strip()
+
+
+def invoke_structured_model(
+    llm: Any,
+    schema: type[BaseModel],
+    messages: list[dict[str, str]],
+) -> BaseModel:
+    """Invoke a chat model and validate its sanitized JSON against ``schema``."""
+    response = llm.invoke(messages)
+    content = getattr(response, "content", response)
+    if not isinstance(content, str):
+        content = json.dumps(content, ensure_ascii=False)
+    return schema.model_validate_json(strip_model_reasoning(content))
 
 
 def _get_model_max_input_tokens(model_name: str) -> int:

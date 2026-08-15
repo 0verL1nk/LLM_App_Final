@@ -12,7 +12,7 @@ from ..adapters.user_settings import (
     read_base_url_for_user,
     read_model_name_for_user,
 )
-from ..llm_provider import build_openai_compatible_chat_model
+from ..llm_provider import build_openai_compatible_chat_model, invoke_structured_model
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +63,15 @@ def generate_session_title(*, user_uuid: str, project_uid: str, session_uid: str
             base_url=read_base_url_for_user(uuid=user_uuid),
             temperature=0.0,
         )
-        result = model.with_structured_output(SessionTitle).invoke([
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": f"用户问题：{prompt}\n\n助手回答：{answer}"},
-        ])
-        title = result.title if isinstance(result, SessionTitle) else SessionTitle.model_validate(result).title
+        result = invoke_structured_model(
+            model,
+            SessionTitle,
+            [
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": f"用户问题：{prompt}\n\n助手回答：{answer}"},
+            ],
+        )
+        title = result.title
         normalized_title = title.strip()
         if normalized_title:
             update_project_session(session_uid=session_uid, project_uid=project_uid, uuid=user_uuid, session_name=normalized_title, db_name=db_name)

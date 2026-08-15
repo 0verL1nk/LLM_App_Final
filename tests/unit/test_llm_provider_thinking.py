@@ -1,3 +1,6 @@
+from langchain_core.messages import AIMessage
+from pydantic import BaseModel
+
 from agent import llm_provider as provider
 from agent.settings import AgentSettings
 
@@ -103,3 +106,33 @@ def test_build_model_disables_thinking_when_overridden(monkeypatch):
 
     assert captured["reasoning_effort"] is None
     assert captured["extra_body"] is None
+
+
+class _ReplyModel(BaseModel):
+    title: str
+
+
+class _FakeChatModel:
+    def __init__(self, content: str) -> None:
+        self._content = content
+
+    def invoke(self, _messages):
+        return AIMessage(content=self._content)
+
+
+def test_strip_model_reasoning_removes_wrappers():
+    assert (
+        provider.strip_model_reasoning('<think>x</think>\n\n{"title": "a"}')
+        == '{"title": "a"}'
+    )
+    assert provider.strip_model_reasoning('```json\n{"title": "a"}\n```') == '{"title": "a"}'
+    assert provider.strip_model_reasoning("前言 <think>未闭合的推理") == "前言"
+    assert provider.strip_model_reasoning('{"title": "a"}') == '{"title": "a"}'
+
+
+def test_invoke_structured_model_tolerates_reasoning_prefixes():
+    thinking = _FakeChatModel('<think>The user said hi.</think>\n\n{"title": "问候"}')
+    assert provider.invoke_structured_model(thinking, _ReplyModel, []).title == "问候"
+
+    fenced = _FakeChatModel('```json\n{"title": "围栏"}\n```')
+    assert provider.invoke_structured_model(fenced, _ReplyModel, []).title == "围栏"

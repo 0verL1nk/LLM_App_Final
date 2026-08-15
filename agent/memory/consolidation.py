@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from ..llm_provider import invoke_structured_model
 from .repository import (
     apply_memory_consolidation,
     claim_memory_event,
@@ -53,7 +54,7 @@ def _build_model_for_user(user_uuid: str):
         read_base_url_for_user,
         read_model_name_for_user,
     )
-    from agent.llm_provider import build_openai_compatible_chat_model
+    from agent.llm_provider import build_openai_compatible_chat_model, invoke_structured_model
 
     api_key = read_api_key_for_user(uuid=user_uuid)
     model_name = read_model_name_for_user(uuid=user_uuid)
@@ -95,16 +96,13 @@ def process_memory_event(event_uid: str, db_name: str = "./database.sqlite") -> 
                 "assistant": event["answer"],
             },
         }
-        result = llm.with_structured_output(MemoryConsolidation).invoke(
+        consolidation = invoke_structured_model(
+            llm,
+            MemoryConsolidation,
             [
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-            ]
-        )
-        consolidation = (
-            result
-            if isinstance(result, MemoryConsolidation)
-            else MemoryConsolidation.model_validate(result)
+            ],
         )
         apply_memory_consolidation(
             event=event,
