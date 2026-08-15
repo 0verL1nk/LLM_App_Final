@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from ..llm_provider import invoke_structured_model
 from .repository import (
     apply_memory_consolidation,
     claim_memory_event,
@@ -95,16 +96,13 @@ def process_memory_event(event_uid: str, db_name: str = "./database.sqlite") -> 
                 "assistant": event["answer"],
             },
         }
-        result = llm.with_structured_output(MemoryConsolidation).invoke(
+        consolidation = invoke_structured_model(
+            llm,
+            MemoryConsolidation,
             [
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-            ]
-        )
-        consolidation = (
-            result
-            if isinstance(result, MemoryConsolidation)
-            else MemoryConsolidation.model_validate(result)
+            ],
         )
         apply_memory_consolidation(
             event=event,
