@@ -20,8 +20,10 @@ function run(command, args, options = {}) {
 }
 
 // The GPU bundle must not ship both onnxruntime and onnxruntime-gpu: they
-// install the same module and whichever wins by path order is undefined.
-// Build PyInstaller from an isolated venv with onnxruntime-gpu instead.
+// install the same importable module and whichever wins by path order is
+// undefined. fastembed declares onnxruntime as a hard dependency, so the
+// pinned closure is installed with --no-deps (it is already fully resolved
+// by uv export) and the CUDA runtime goes in through a separate resolve.
 function resolvePyinstallerInvocation() {
   if (!gpuBundle) {
     return { command: python, prefix: ["run", "--with", "pyinstaller", "pyinstaller"] }
@@ -36,9 +38,16 @@ function resolvePyinstallerInvocation() {
     .readFileSync(requirementsPath, "utf8")
     .split(/\r?\n/)
     .filter((line) => line && !/^onnxruntime==/.test(line.trim()))
-  lines.push("onnxruntime-gpu[cuda,cudnn]>=1.24.3,<2.0.0")
   fs.writeFileSync(requirementsPath, `${lines.join("\n")}\n`)
-  run(python, ["pip", "install", "--python", venvPython, "-r", requirementsPath, "pyinstaller"])
+  run(python, ["pip", "install", "--python", venvPython, "--no-deps", "-r", requirementsPath])
+  run(python, [
+    "pip",
+    "install",
+    "--python",
+    venvPython,
+    "onnxruntime-gpu[cuda,cudnn]>=1.24.3,<2.0.0",
+    "pyinstaller",
+  ])
   return { command: venvPython, prefix: ["-m", "PyInstaller"] }
 }
 

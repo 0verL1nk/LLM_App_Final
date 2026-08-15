@@ -4,6 +4,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      gpu:
+        description: "Build the Windows package with CUDA-accelerated OCR (+1-2 GB)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -14,6 +19,8 @@ jobs:
   native-package:
     name: Build ${{ matrix.name }} package
     runs-on: ${{ matrix.os }}
+    # GPU test builds only produce a Windows artifact; skip the other legs.
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.gpu == true && matrix.name != 'Windows') }}
     strategy:
       fail-fast: false
       matrix:
@@ -106,6 +113,7 @@ jobs:
           pnpm --dir web run desktop:verify-update-metadata
           pnpm --dir web run desktop:checksums
         env:
+          PAPERSAGE_DESKTOP_GPU: ${{ inputs.gpu == true && '1' || '' }}
           MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
           MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
