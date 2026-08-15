@@ -54,7 +54,7 @@ def _build_model_for_user(user_uuid: str):
         read_base_url_for_user,
         read_model_name_for_user,
     )
-    from agent.llm_provider import build_openai_compatible_chat_model, invoke_structured_model
+    from agent.llm_provider import build_openai_compatible_chat_model
 
     api_key = read_api_key_for_user(uuid=user_uuid)
     model_name = read_model_name_for_user(uuid=user_uuid)
