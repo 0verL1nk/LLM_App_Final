@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from .settings import load_agent_settings
 
@@ -32,17 +32,49 @@ def strip_model_reasoning(text: str) -> str:
     return cleaned.strip()
 
 
+def _coerce_bare_text(schema: type[BaseModel], text: str) -> BaseModel | None:
+    """Rescue single-field schemas when the model answers with the value alone.
+
+    Small OpenAI-compatible models sometimes reply with the bare field value
+    (e.g. just the title) even when asked for JSON.
+    """
+    if "{" in text or not str(text or "").strip():
+        return None
+    field_names = list(schema.model_fields)
+    if len(field_names) != 1:
+        return None
+    try:
+        return schema.model_validate({field_names[0]: text.strip()})
+    except ValidationError:
+        return None
+
+
 def invoke_structured_model(
     llm: Any,
     schema: type[BaseModel],
     messages: list[dict[str, str]],
 ) -> BaseModel:
     """Invoke a chat model and validate its sanitized JSON against ``schema``."""
-    response = llm.invoke(messages)
+    schema_instruction = {
+        "role": "system",
+        "content": (
+            "Respond with exactly one JSON object and no other text. It must "
+            "conform to this JSON schema:\n"
+            f"{json.dumps(schema.model_json_schema(), ensure_ascii=False)}"
+        ),
+    }
+    response = llm.invoke([*messages, schema_instruction])
     content = getattr(response, "content", response)
     if not isinstance(content, str):
         content = json.dumps(content, ensure_ascii=False)
-    return schema.model_validate_json(strip_model_reasoning(content))
+    cleaned = strip_model_reasoning(content)
+    try:
+        return schema.model_validate_json(cleaned)
+    except ValidationError:
+        coerced = _coerce_bare_text(schema, cleaned)
+        if coerced is not None:
+            return coerced
+        raise
 
 
 def _get_model_max_input_tokens(model_name: str) -> int:
