@@ -560,7 +560,10 @@ def _build_local_reranker(model_name: str) -> Any | None:
     try:
         from flashrank import Ranker
 
-        return Ranker(model_name=model_name)
+        return Ranker(
+            model_name=model_name,
+            cache_dir=load_agent_settings().local_rerank_cache_dir,
+        )
     except Exception:
         return None
 

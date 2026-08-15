@@ -26,7 +26,7 @@ BASELINE_OUTPUT_ARG := $(if $(strip $(EVAL_OUTPUT)),--output $(EVAL_OUTPUT),)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install install-dev web-install lock-check run dev serve api-dev web-dev web-build web-test web-lint web-typecheck desktop-dev desktop-package desktop-package-win desktop-package-mac desktop-package-linux browser-cdp \
+.PHONY: help install install-dev web-install lock-check run dev serve api-dev web-dev web-build web-test web-lint web-typecheck desktop-dev desktop-package desktop-package-win desktop-package-win-gpu desktop-package-mac desktop-package-linux browser-cdp \
 	test test-all test-unit test-integration test-evals test-coverage \
 	lint lint-core format format-check typecheck typecheck-core \
 	quality-core quality-full quality-unused check ci spec-validate spec-validate-all \
@@ -82,6 +82,9 @@ desktop-package: ## Build a Windows installer containing the frontend and Python
 
 desktop-package-win: ## Build the Windows NSIS installer.
 	pnpm --dir web run desktop:package:win
+
+desktop-package-win-gpu: ## Build the Windows NSIS installer with CUDA OCR (+1-2 GB of CUDA runtime).
+	PAPERSAGE_DESKTOP_GPU=1 pnpm --dir web run desktop:package:win
 
 desktop-package-mac: ## Build the macOS DMG on macOS.
 	pnpm --dir web run desktop:package:mac

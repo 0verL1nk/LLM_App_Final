@@ -1,7 +1,7 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from agent.adapters.ocr_profile import OcrProfile, paddlex_cache_dir, select_ocr_profile
 from agent.adapters.paddle_ocr import (
-    OcrProfile,
     _office_kind,
     _persist_preview_pages,
     _render_document_pages,
@@ -169,3 +169,82 @@ def test_plain_text_is_typeset_into_a_preview_page(tmp_path):
 
     assert [page.name for page in pages] == ["page-00001.png"]
     assert pages[0].is_file()
+
+
+def _fake_runtime(monkeypatch, providers, memory_gib=16.0, cuda_driver=True):
+    import sys
+    from types import SimpleNamespace
+
+    monkeypatch.setitem(
+        sys.modules,
+        "onnxruntime",
+        SimpleNamespace(get_available_providers=lambda: providers),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "psutil",
+        SimpleNamespace(virtual_memory=lambda: SimpleNamespace(total=memory_gib * 1024**3)),
+    )
+    monkeypatch.setattr("agent.adapters.ocr_profile._cuda_runtime_usable", lambda: cuda_driver)
+
+
+def test_gpu_profile_requires_nvidia_driver(monkeypatch):
+    _fake_runtime(
+        monkeypatch,
+        ["CUDAExecutionProvider", "CPUExecutionProvider"],
+        cuda_driver=False,
+    )
+    assert select_ocr_profile().device == "cpu"
+
+    _fake_runtime(
+        monkeypatch,
+        ["CUDAExecutionProvider", "CPUExecutionProvider"],
+        cuda_driver=True,
+    )
+    assert select_ocr_profile().device == "gpu:0"
+
+
+def test_gpu_pipeline_failure_falls_back_to_cpu(monkeypatch, tmp_path):
+    source = tmp_path / "paper.pdf"
+    source.write_bytes(b"pdf")
+    monkeypatch.setattr(
+        "agent.adapters.paddle_ocr._render_document_pages",
+        lambda _file_path, _output_dir: [tmp_path / "page-1.png"],
+    )
+    monkeypatch.setattr(
+        "agent.adapters.paddle_ocr.select_ocr_profile",
+        lambda: OcrProfile("high_accuracy", "det", "rec", "gpu:0"),
+    )
+    monkeypatch.setattr("agent.adapters.paddle_ocr._can_use_cross_page_vl", lambda _profile: False)
+
+    requested_devices = []
+
+    def factory(profile):
+        requested_devices.append(profile.device)
+        if profile.device.startswith("gpu"):
+            raise RuntimeError("CUDA session creation failed")
+        return _FakePipeline(
+            [
+                {
+                    "rec_texts": ["文本"],
+                    "rec_scores": [0.9],
+                    "rec_polys": [[[0, 0], [10, 0], [10, 10], [0, 10]]],
+                }
+            ]
+        )
+
+    payload = extract_document_with_paddle_ocr(str(source), pipeline_factory=factory)
+
+    assert requested_devices == ["gpu:0", "cpu"]
+    assert payload["text"] == "文本"
+    assert payload["ocr_profile"] == "balanced"
+
+
+def test_cache_dir_prefers_models_root(monkeypatch, tmp_path):
+    monkeypatch.delenv("AGENT_OCR_CACHE_DIR", raising=False)
+    monkeypatch.setenv("LOCAL_MODELS_ROOT", str(tmp_path))
+    assert paddlex_cache_dir() == tmp_path / "paddleocr"
+
+    override = tmp_path / "custom-cache"
+    monkeypatch.setenv("AGENT_OCR_CACHE_DIR", str(override))
+    assert paddlex_cache_dir() == override

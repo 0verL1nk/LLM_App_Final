@@ -387,3 +387,65 @@ def test_ingestion_reports_real_embedding_batches_and_publishes_atomically(
 
     assert len(published["chunks"]) == published["chunk_count"]
     assert len(published["embeddings"]) == published["chunk_count"]
+
+
+def test_failed_ingestion_stores_friendly_error_message(monkeypatch, tmp_path) -> None:
+    db_name = str(tmp_path / "rag.sqlite")
+    _init_project_binding(db_name)
+    init_rag_ingestion_tables(db_name)
+    queue_ingestion(
+        project_uid="p1",
+        doc_uid="d1",
+        uuid="u1",
+        doc_name="paper.pdf",
+        file_path="paper.pdf",
+        db_name=db_name,
+    )
+
+    def _network_failure(*_args, **_kwargs):
+        raise Exception("No available model hosting platforms detected. Please check your network connection.")
+
+    monkeypatch.setattr("agent.application.rag_ingestion.extract_document_payload", _network_failure)
+
+    import pytest
+
+    from agent.application.rag_ingestion import process_document_ingestion
+
+    with pytest.raises(Exception):
+        process_document_ingestion("p1", "d1", "u1", "paper.pdf", "paper.pdf", db_name)
+
+    ingestion = get_ingestion(project_uid="p1", doc_uid="d1", uuid="u1", db_name=db_name)
+    assert ingestion["status"] == "failed"
+    assert ingestion["error_message"] == (
+        "OCR 模型尚未下载，且当前无法连接模型服务器。请检查网络连接后点击「重试」。"
+    )
+
+
+def test_friendly_error_message_covers_known_failures() -> None:
+    from agent.application.rag_ingestion import (
+        _LEGACY_EMPTY_TEXT_ERROR_MESSAGE,
+        EMPTY_TEXT_ERROR_MESSAGE,
+        _friendly_error_message,
+    )
+
+    network = _friendly_error_message(
+        Exception("No available model hosting platforms detected. Please check your network connection.")
+    )
+    assert "模型服务器" in network
+
+    fastembed = _friendly_error_message(
+        ImportError("Could not import 'fastembed' Python package. Please install it with `pip install fastembed`.")
+    )
+    assert "重新安装" in fastembed
+
+    assert _friendly_error_message(ValueError(_LEGACY_EMPTY_TEXT_ERROR_MESSAGE)) == EMPTY_TEXT_ERROR_MESSAGE
+    assert _friendly_error_message(ValueError("文档没有可识别的页面。")) == "文档没有可识别的页面。"
+
+
+def test_should_requeue_accepts_localized_empty_text_error() -> None:
+    from agent.application.rag_ingestion import EMPTY_TEXT_ERROR_MESSAGE
+
+    localized = {"status": "failed", "error_message": EMPTY_TEXT_ERROR_MESSAGE}
+    legacy = {"status": "failed", "error_message": "Document extraction returned empty text"}
+    assert should_requeue_ingestion(localized, get_job_status_fn=lambda _job_id: None) is True
+    assert should_requeue_ingestion(legacy, get_job_status_fn=lambda _job_id: None) is True

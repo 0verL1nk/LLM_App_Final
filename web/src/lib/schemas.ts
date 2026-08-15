@@ -62,10 +62,17 @@ export const settingsSchema = z.object({
   local_rag_project_max_chunks: z.number().nullable().optional(),
 })
 
+export const ocrRuntimeSchema = z.object({
+  profile: z.string(),
+  device: z.string(),
+  gpu_enabled: z.boolean(),
+})
+
 export const documentConversionSchema = z.object({
   microsoft_office: z.boolean(),
   libreoffice: z.boolean(),
   office_preview_ready: z.boolean(),
+  ocr: ocrRuntimeSchema.nullish(),
 })
 
 export const turnResultSchema = z.object({

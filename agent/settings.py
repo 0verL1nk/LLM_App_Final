@@ -2,9 +2,9 @@ import os
 from dataclasses import dataclass
 
 DEFAULT_OPENAI_COMPATIBLE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+DEFAULT_LOCAL_MODELS_ROOT = "./models"
 DEFAULT_LOCAL_EMBEDDING_MODEL = "BAAI/bge-small-zh-v1.5"
 DEFAULT_LOCAL_EMBEDDING_FALLBACK_MODEL = "BAAI/bge-small-en-v1.5"
-DEFAULT_LOCAL_EMBEDDING_CACHE_DIR = "./models/embeddings"
 DEFAULT_RAG_CHUNK_SIZE = 500
 DEFAULT_RAG_CHUNK_OVERLAP = 80
 DEFAULT_RAG_DENSE_CANDIDATE_K = 30
@@ -32,7 +32,9 @@ class AgentSettings:
     openai_compatible_base_url: str
     local_embedding_model: str
     local_embedding_fallback_model: str
+    local_models_root: str
     local_embedding_cache_dir: str
+    local_rerank_cache_dir: str
     rag_chunk_size: int
     rag_chunk_overlap: int
     rag_dense_candidate_k: int
@@ -74,6 +76,7 @@ def _env_float(name: str, default: float) -> float:
 
 
 def load_agent_settings() -> AgentSettings:
+    models_root = os.getenv("LOCAL_MODELS_ROOT", DEFAULT_LOCAL_MODELS_ROOT)
     return AgentSettings(
         openai_compatible_base_url=os.getenv(
             "OPENAI_COMPATIBLE_BASE_URL", DEFAULT_OPENAI_COMPATIBLE_BASE_URL
@@ -83,8 +86,12 @@ def load_agent_settings() -> AgentSettings:
             "LOCAL_RAG_EMBEDDING_FALLBACK_MODEL",
             DEFAULT_LOCAL_EMBEDDING_FALLBACK_MODEL,
         ),
+        local_models_root=models_root,
         local_embedding_cache_dir=os.getenv(
-            "LOCAL_RAG_EMBEDDING_CACHE_DIR", DEFAULT_LOCAL_EMBEDDING_CACHE_DIR
+            "LOCAL_RAG_EMBEDDING_CACHE_DIR", f"{models_root}/embeddings"
+        ),
+        local_rerank_cache_dir=os.getenv(
+            "LOCAL_RAG_RERANK_CACHE_DIR", f"{models_root}/flashrank"
         ),
         rag_chunk_size=_env_int("LOCAL_RAG_CHUNK_SIZE", DEFAULT_RAG_CHUNK_SIZE),
         rag_chunk_overlap=_env_int("LOCAL_RAG_CHUNK_OVERLAP", DEFAULT_RAG_CHUNK_OVERLAP),

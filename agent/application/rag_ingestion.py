@@ -23,6 +23,26 @@ from ..rag.hybrid import build_project_document_index_with_settings
 
 logger = logging.getLogger(__name__)
 
+# Legacy rows recorded before localized messages keep their original text.
+EMPTY_TEXT_ERROR_MESSAGE = "文档内容为空，无法建立索引。"
+_LEGACY_EMPTY_TEXT_ERROR_MESSAGE = "Document extraction returned empty text"
+
+
+def _friendly_error_message(exc: BaseException) -> str:
+    """Translate known ingestion failures into actionable user-facing text.
+
+    The full traceback is preserved in the application log; only the message
+    stored in the ingestion row reaches the document library UI.
+    """
+    message = str(exc) or exc.__class__.__name__
+    if "No available model hosting platforms detected" in message:
+        return "OCR 模型尚未下载，且当前无法连接模型服务器。请检查网络连接后点击「重试」。"
+    if isinstance(exc, ImportError) and "fastembed" in message:
+        return "本地向量组件缺失，请重新安装或更新 PaperSage。"
+    if message == _LEGACY_EMPTY_TEXT_ERROR_MESSAGE:
+        return EMPTY_TEXT_ERROR_MESSAGE
+    return message
+
 
 def should_requeue_ingestion(
     ingestion: dict[str, Any],
@@ -33,7 +53,10 @@ def should_requeue_ingestion(
     """Recover legacy empty-text failures and local jobs lost on process restart."""
     status = str(ingestion.get("status") or "")
     error_message = str(ingestion.get("error_message") or "")
-    if status == "failed" and error_message == "Document extraction returned empty text":
+    if status == "failed" and error_message in {
+        EMPTY_TEXT_ERROR_MESSAGE,
+        _LEGACY_EMPTY_TEXT_ERROR_MESSAGE,
+    }:
         return True
     if status == "ready":
         index_version = str(ingestion.get("index_version") or "")
@@ -177,7 +200,7 @@ def process_document_ingestion(
             uuid=user_uuid,
             status="failed",
             stage="failed",
-            error_message=str(exc),
+            error_message=_friendly_error_message(exc),
             db_name=db_name,
         )
         logger.exception("RAG ingestion failed: project=%s doc=%s", project_uid, doc_uid)
@@ -235,7 +258,7 @@ def enqueue_document_ingestion(
             uuid=user_uuid,
             status="failed",
             stage="failed",
-            error_message=f"Failed to enqueue ingestion: {exc}",
+            error_message=f"无法加入解析队列：{_friendly_error_message(exc)}",
             db_name=db_name,
         )
         raise
