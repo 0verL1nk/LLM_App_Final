@@ -32,17 +32,20 @@ function applyEvent(run: LiveRun, event: AgentEvent): LiveRun {
     const parts = existing?.type === "markdown" || existing?.type === "reasoning"
       ? run.parts.map((part) => part.id === partId && (part.type === "markdown" || part.type === "reasoning") ? { ...part, text: part.text + text } : part)
       : [...run.parts, { id: partId, type: "markdown" as const, text }]
-    return { ...run, parts }
+    // Keep one arrival marker per part so run.events preserves the chronology
+    // between streamed text and tool/item activity.
+    return { ...run, parts, events: existing ? run.events : [...run.events, event] }
   }
   if (event.eventType === "message.part.insert") {
     const partId = String(event.payload.partId ?? "")
     const partType = event.payload.type === "reasoning" ? "reasoning" : "a2ui"
-    const parts = !partId || run.parts.some((part) => part.id === partId)
+    const known = !partId || run.parts.some((part) => part.id === partId)
+    const parts = known
       ? run.parts
       : partType === "reasoning"
         ? [...run.parts, { id: partId, type: "reasoning" as const, text: "" }]
         : [...run.parts, { id: partId, type: "a2ui" as const }]
-    return { ...run, parts }
+    return { ...run, parts, events: known ? run.events : [...run.events, event] }
   }
   if (event.eventType === "presentation.failed") {
     const partId = String(event.payload.partId ?? "")
@@ -86,7 +89,8 @@ function applyItemEvent(run: LiveRun, event: AgentEvent): LiveRun {
     const parts = existing?.type === type
       ? run.parts.map((part) => part.id === partId && part.type === type ? { ...part, text: delta ? part.text + delta : String(payload.text ?? part.text) } : part)
       : [...run.parts, { id: partId, type, text: delta || String(payload.text ?? "") }]
-    return { ...run, items, parts }
+    // One arrival marker per part keeps run.events a usable chronology log.
+    return { ...run, items, parts, events: existing ? run.events : [...run.events, event] }
   }
   if (item.type === "presentation") {
     const partId = String(payload.partId ?? item.id)
