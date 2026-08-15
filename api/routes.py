@@ -1,19 +1,16 @@
-import asyncio
-import json
 import logging
 from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
 
 from agent.adapters.ocr_profile import ocr_runtime_capability
 from agent.adapters.orm.run_repository import (
     append_run_lifecycle_event,
     expire_stalled_runs,
     get_run,
-    list_run_events,
     list_run_items,
     list_session_runs,
 )
@@ -31,7 +28,6 @@ from agent.application.rag_ingestion import (
 from agent.application.research_workspace import research_workspace_service
 from agent.application.task_delivery import dispatch_task
 from agent.application.user_configuration import (
-    read_user_configuration,
     save_user_configuration,
 )
 from agent.application.workspace import (

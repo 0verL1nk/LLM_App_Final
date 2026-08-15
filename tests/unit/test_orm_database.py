@@ -159,7 +159,7 @@ def test_migrations_heal_legacy_events_before_backfill(tmp_path: Path) -> None:
     with create_engine(database).connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "20260815_10"
+            == "20260815_11"
         )
         assert (
             connection.execute(
