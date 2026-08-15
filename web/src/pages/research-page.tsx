@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { A2UIMindmap } from "@/components/a2ui-mindmap";
 import { EvidenceCitations } from "@/components/evidence-citations";
 import { ResearchOrbs } from "@/components/agent-status";
+import { ContextCompositionCard } from "@/components/context-composition";
 import { PageError } from "@/components/page-state";
 import {
   Message as AiMessage,
@@ -38,13 +39,6 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
-import {
-  Context,
-  ContextContent,
-  ContextContentBody,
-  ContextContentHeader,
-  ContextTrigger,
-} from "@/components/ai-elements/context";
 import {
   Queue,
   QueueItem,
@@ -80,8 +74,6 @@ import { agentEventSchema, turnResultSchema } from "@/lib/schemas";
 import type { AgentEvent, Message, TurnResult } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
-
-const CONTEXT_SEGMENT_COLORS = ["bg-chart-1", "bg-chart-2", "bg-chart-3", "bg-chart-4", "bg-chart-5"] as const;
 
 const ResearchInspector = lazy(async () => {
   const module = await import("@/components/research-inspector");
@@ -517,57 +509,7 @@ function ResearchWorkspace({
                     <option value="plan_execute">Plan-Execute</option>
                     <option value="agent_teams">Agent Teams</option>
                   </select>
-                  {contextUsage && (
-                    <Context
-                      maxTokens={contextUsage.maxTokens}
-                      usedTokens={contextUsage.usedTokens}
-                    >
-                      <ContextTrigger aria-label="查看会话上下文容量" />
-                      <ContextContent align="end">
-                        <ContextContentHeader />
-                        <ContextContentBody className="space-y-2 text-xs text-muted-foreground">
-                          <div
-                            className="flex h-2 w-full overflow-hidden rounded-full bg-muted"
-                            role="img"
-                            aria-label="上下文构成"
-                          >
-                            {contextUsage.segments.map((segment, index) => {
-                              const percent = contextUsage.maxTokens > 0
-                                ? Math.min(100, (segment.tokens / contextUsage.maxTokens) * 100)
-                                : 0
-                              if (percent <= 0) return null
-                              return (
-                                <div
-                                  key={segment.key}
-                                  className={cn("h-full", CONTEXT_SEGMENT_COLORS[index % CONTEXT_SEGMENT_COLORS.length])}
-                                  style={{ width: `${percent}%` }}
-                                />
-                              )
-                            })}
-                          </div>
-                          <ul className="space-y-1">
-                            {contextUsage.segments.map((segment, index) => {
-                              const percent = contextUsage.maxTokens > 0
-                                ? Math.round((segment.tokens / contextUsage.maxTokens) * 100)
-                                : 0
-                              return (
-                                <li key={segment.key} className="flex items-center justify-between gap-3">
-                                  <span className="flex min-w-0 items-center gap-1.5">
-                                    <span className={cn("size-2 shrink-0 rounded-[2px]", CONTEXT_SEGMENT_COLORS[index % CONTEXT_SEGMENT_COLORS.length])} />
-                                    <span className="truncate">{segment.label}</span>
-                                  </span>
-                                  <span className="shrink-0 tabular-nums">
-                                    {segment.tokens.toLocaleString()} · {percent}%
-                                  </span>
-                                </li>
-                              )
-                            })}
-                          </ul>
-                          <p>服务端基于当前会话、系统提示和工具定义计算。</p>
-                        </ContextContentBody>
-                      </ContextContent>
-                    </Context>
-                  )}
+                  {contextUsage && <ContextCompositionCard usage={contextUsage} />}
                   <PromptInputSubmit
                   disabled={turn.isPending}
                     status={
