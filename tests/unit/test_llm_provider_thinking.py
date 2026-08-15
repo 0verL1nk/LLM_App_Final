@@ -1,5 +1,6 @@
+import pytest
 from langchain_core.messages import AIMessage
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from agent import llm_provider as provider
 from agent.settings import AgentSettings
@@ -136,3 +137,41 @@ def test_invoke_structured_model_tolerates_reasoning_prefixes():
 
     fenced = _FakeChatModel('```json\n{"title": "围栏"}\n```')
     assert provider.invoke_structured_model(fenced, _ReplyModel, []).title == "围栏"
+
+
+def test_invoke_structured_model_injects_schema_instruction():
+    captured = {}
+
+    class _CapturingModel:
+        def invoke(self, messages):
+            captured["messages"] = messages
+            return AIMessage(content='{"title": "a"}')
+
+    provider.invoke_structured_model(
+        _CapturingModel(),
+        _ReplyModel,
+        [
+            {"role": "system", "content": "s"},
+            {"role": "user", "content": "u"},
+        ],
+    )
+
+    assert [message["content"] for message in captured["messages"][:2]] == ["s", "u"]
+    injected = captured["messages"][-1]
+    assert injected["role"] == "system"
+    assert "JSON" in injected["content"]
+    assert '"title"' in injected["content"]
+
+
+def test_invoke_structured_model_coerces_bare_text_for_single_field_schema():
+    plain = _FakeChatModel("思维导图生成技能测试")
+    assert provider.invoke_structured_model(plain, _ReplyModel, []).title == "思维导图生成技能测试"
+
+
+def test_invoke_structured_model_still_raises_for_unrecoverable_output():
+    class _TwoFields(BaseModel):
+        title: str
+        body: str
+
+    with pytest.raises(ValidationError):
+        provider.invoke_structured_model(_FakeChatModel("没有任何花括号的纯文本"), _TwoFields, [])
