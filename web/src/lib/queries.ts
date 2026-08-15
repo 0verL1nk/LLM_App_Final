@@ -160,7 +160,7 @@ export function useTurn(projectId: string, sessionId: string) {
       void client.invalidateQueries({ queryKey: keys.resumableRuns(projectId, sessionId) })
       let result: z.infer<typeof turnResultSchema> | undefined
       let failure: string | undefined
-      await consumeEventStream(run.stream_url, (rawEvent) => {
+      const handleEvent = (rawEvent: unknown) => {
         const event = agentEventSchema.parse(rawEvent)
         onEvent(event)
         if (event.eventType === "run.completed") {
@@ -171,7 +171,15 @@ export function useTurn(projectId: string, sessionId: string) {
         } else if (event.eventType === "run.failed") {
           failure = String(event.payload.message ?? "Agent 运行失败")
         }
-      })
+      }
+      await consumeEventStream(run.stream_url, handleEvent)
+      if (!result && !failure) {
+        // A transient stream drop (e.g., localhost fetch failure while the
+        // machine is fully loaded) ends the stream without a terminal event.
+        // Reconnect once: the endpoint replays the persisted event log and
+        // closes it after the terminal event.
+        await consumeEventStream(run.stream_url, handleEvent)
+      }
       if (failure) throw new Error(failure)
       if (!result) throw new Error("Run 已结束，但没有返回最终结果")
       return result
