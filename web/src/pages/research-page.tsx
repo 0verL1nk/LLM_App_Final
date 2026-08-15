@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { A2UIMindmap } from "@/components/a2ui-mindmap";
 import { EvidenceCitations } from "@/components/evidence-citations";
 import { ResearchOrbs } from "@/components/agent-status";
+import { ContextCompositionCard } from "@/components/context-composition";
 import { PageError } from "@/components/page-state";
 import {
   Message as AiMessage,
@@ -38,13 +39,6 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
-import {
-  Context,
-  ContextContent,
-  ContextContentBody,
-  ContextContentHeader,
-  ContextTrigger,
-} from "@/components/ai-elements/context";
 import {
   Queue,
   QueueItem,
@@ -515,24 +509,7 @@ function ResearchWorkspace({
                     <option value="plan_execute">Plan-Execute</option>
                     <option value="agent_teams">Agent Teams</option>
                   </select>
-                  {contextUsage && (
-                    <Context
-                      maxTokens={contextUsage.maxTokens}
-                      usedTokens={contextUsage.usedTokens}
-                    >
-                      <ContextTrigger aria-label="查看会话上下文容量" />
-                      <ContextContent align="end">
-                        <ContextContentHeader />
-                        <ContextContentBody className="space-y-1 text-xs text-muted-foreground">
-                          <p>服务端基于当前会话、系统提示和工具定义计算。</p>
-                          {contextUsage.messageTokens !== null && <p>会话消息：{contextUsage.messageTokens.toLocaleString()} tokens</p>}
-                          {contextUsage.segments.map((segment) => (
-                            <p key={segment.key}>{segment.label}：{segment.tokens.toLocaleString()} tokens</p>
-                          ))}
-                        </ContextContentBody>
-                      </ContextContent>
-                    </Context>
-                  )}
+                  {contextUsage && <ContextCompositionCard usage={contextUsage} />}
                   <PromptInputSubmit
                   disabled={turn.isPending}
                     status={
