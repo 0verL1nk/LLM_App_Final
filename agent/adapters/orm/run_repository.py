@@ -385,10 +385,13 @@ def _append_event(connection: Any, *, run_uid: str, event_type: str, payload: di
     return {"event_uid": event_uid, "sequence": sequence, "event_type": event_type, "timestamp": timestamp, "payload": payload, "schema_version": schema_version}
 
 
+_V2_PUBLIC_PAYLOAD_EVENT_TYPES = frozenset({"run.started", "run.completed", "run.failed", "run.cancelled"})
+
+
 def _public_event(event: Any, *, run_uid: str, session_uid: str) -> dict[str, Any]:
     mapping = event if isinstance(event, dict) else event._mapping
     payload = mapping["payload"] if isinstance(mapping.get("payload"), dict) else json.loads(mapping["payload_json"])
-    result: dict[str, Any] = {"version": int(mapping["schema_version"]), "eventId": str(mapping["event_uid"]), "eventType": str(mapping["event_type"]), "sequence": int(mapping["sequence"]), "timestamp": str(mapping["timestamp"]), "threadId": session_uid, "runId": run_uid, "traceId": f"trace_{run_uid.removeprefix('run_')}", "payload": payload if int(mapping["schema_version"]) == 1 else {}}
+    result: dict[str, Any] = {"version": int(mapping["schema_version"]), "eventId": str(mapping["event_uid"]), "eventType": str(mapping["event_type"]), "sequence": int(mapping["sequence"]), "timestamp": str(mapping["timestamp"]), "threadId": session_uid, "runId": run_uid, "traceId": f"trace_{run_uid.removeprefix('run_')}", "payload": payload if int(mapping["schema_version"]) == 1 or str(mapping["event_type"]) in _V2_PUBLIC_PAYLOAD_EVENT_TYPES else {}}
     if int(mapping["schema_version"]) == 2 and isinstance(payload.get("item"), dict):
         result["item"] = payload["item"]
     return result

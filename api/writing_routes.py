@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from agent.adapters.orm.research_artifact_repository import (
     add_research_artifact_revision,
@@ -15,8 +15,10 @@ from agent.adapters.orm.research_artifact_repository import (
     list_research_artifact_revisions,
     list_research_artifacts,
 )
+from agent.adapters.orm.run_repository import get_run
 from agent.adapters.sqlite.project_repository import list_project_sessions
 from agent.application.workspace import require_project
+from agent.domain.writing import DraftRevision, WritingBrief
 
 router = APIRouter(tags=["writing-artifacts"])
 
@@ -34,6 +36,16 @@ class RevisionRequest(BaseModel):
 class RevisionDecisionRequest(BaseModel):
     decision: str
     note: str = ""
+
+
+def _validated_contracts(brief: dict[str, Any], revision: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Enforce the domain writing contracts server-side (422 on violation)."""
+    try:
+        validated_brief = WritingBrief.model_validate(brief)
+        validated_revision = DraftRevision.model_validate(revision)
+    except ValidationError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return validated_brief.model_dump(), validated_revision.model_dump(exclude_none=True)
 
 
 def _scope_evidence_refs(*, project_uid: str, session_uid: str, user_uuid: str) -> set[str]:
@@ -90,8 +102,11 @@ def create_writing_draft(
     sessions = list_project_sessions(project_uid, user_uuid)
     if not any(str(session.get("session_uid")) == session_uid for session in sessions):
         raise HTTPException(status_code=404, detail="Session not found")
+    if payload.source_run_uid and get_run(run_uid=payload.source_run_uid, user_uuid=user_uuid) is None:
+        raise HTTPException(status_code=404, detail="Source Run not found")
     allowed = _scope_evidence_refs(project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid)
     revision, dropped = _validated_revision(payload.revision, allowed)
+    _brief, revision = _validated_contracts(payload.brief, revision)
     artifact = create_scoped_research_artifact(
         project_uid=project_uid,
         session_uid=session_uid,
@@ -120,6 +135,7 @@ def propose_artifact_revision(
         project_uid=str(artifact["project_uid"]), session_uid=str(artifact["session_uid"]), user_uuid=user_uuid
     )
     revision, dropped = _validated_revision(payload.revision, allowed)
+    _brief, revision = _validated_contracts({"audience": "读者", "purpose": "修订"}, revision)
     stored = add_research_artifact_revision(
         artifact_uid=artifact_uid,
         content={"revision": revision, "validation": {"dropped_evidence_refs": dropped}},
@@ -145,6 +161,8 @@ def decide_artifact_revision(
         )
     except LookupError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     return {"data": {**revision, "changed": changed}}
 
 

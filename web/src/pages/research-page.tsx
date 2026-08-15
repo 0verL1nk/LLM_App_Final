@@ -65,8 +65,11 @@ import {
 import { formatEvidenceCitations } from "@/lib/evidence";
 import { sessionContextUsage } from "@/lib/context-usage";
 import { consumeEventStream } from "@/lib/api";
+import { api } from "@/lib/api";
+import { z } from "zod";
 import {
   createLiveRun,
+  hydrateLiveRun,
   liveAnswer,
   reduceLiveRun,
   type LiveRun,
@@ -313,27 +316,73 @@ function ResearchWorkspace({
       return next === run ? current : { ...current, [event.runId]: next };
     });
   }, []);
+  const [taskAction, setTaskAction] = useState<{ taskUid: string; action: "cancel" | "retry" } | null>(null);
+  const runTaskAction = useCallback(
+    (taskUid: string, action: "cancel" | "retry") => {
+      setTaskAction({ taskUid, action });
+      void api(`/tasks/${taskUid}/${action === "cancel" ? "cancel" : "retry"}`, z.unknown(), { method: "POST" })
+        .then(() => {
+          toast.success(action === "cancel" ? "已请求取消任务" : "任务已重新排队");
+          void refetchMessages();
+        })
+        .catch((error: unknown) => {
+          toast.error(error instanceof Error ? error.message : "任务操作失败");
+        })
+        .finally(() => setTaskAction(null));
+    },
+    [refetchMessages],
+  );
   useEffect(() => {
     const controller = new AbortController();
     for (const run of resumableRuns.data ?? []) {
       if (resumedRunIds.current.has(run.run_uid)) continue;
       resumedRunIds.current.add(run.run_uid);
       ensureLiveRun(run.run_uid);
-      void consumeEventStream(
-        `/runs/${run.run_uid}/events?afterSeq=0`,
-        (rawEvent) => {
-          const event = agentEventSchema.parse(rawEvent);
-          handleRunEvent(event);
-          if (event.eventType === "run.completed") {
-            setLastTurn(turnResultSchema.parse(event.payload.result));
-            void refetchMessages().finally(() => discardLiveRun(event.runId));
+      // Hydrate the persisted item snapshot first, then subscribe strictly
+      // after its cursor so replayed events never duplicate hydrated text.
+      void (async () => {
+        let afterSeq = 0;
+        try {
+          const response = await fetch(`/api/v1/runs/${run.run_uid}/items`, {
+            headers: { "X-User-Id": "local-user" },
+            signal: controller.signal,
+          });
+          if (response.ok) {
+            const snapshot = (await response.json()) as {
+              data?: unknown[];
+              lastSequence?: number;
+            };
+            const items = Array.isArray(snapshot.data) ? snapshot.data : [];
+            const cursor = Number(snapshot.lastSequence ?? 0);
+            setLiveRuns((current) => ({
+              ...current,
+              [run.run_uid]: hydrateLiveRun(current[run.run_uid] ?? createLiveRun(), {
+                // The wire item shape matches LiveRunItem for the fields hydration reads.
+                items: items as never[],
+                lastSequence: cursor,
+              }),
+            }));
+            afterSeq = cursor;
           }
-          if (event.eventType === "run.failed") {
-            void refetchMessages().finally(() => discardLiveRun(event.runId));
-          }
-        },
-        controller.signal,
-      ).catch((error: unknown) => {
+        } catch {
+          // Snapshot hydration is best-effort; full replay still works.
+        }
+        await consumeEventStream(
+          `/runs/${run.run_uid}/events?afterSeq=${afterSeq}`,
+          (rawEvent) => {
+            const event = agentEventSchema.parse(rawEvent);
+            handleRunEvent(event);
+            if (event.eventType === "run.completed") {
+              setLastTurn(turnResultSchema.parse(event.payload.result));
+              void refetchMessages().finally(() => discardLiveRun(event.runId));
+            }
+            if (event.eventType === "run.failed") {
+              void refetchMessages().finally(() => discardLiveRun(event.runId));
+            }
+          },
+          controller.signal,
+        )
+      })().catch((error: unknown) => {
         if (controller.signal.aborted) return;
         toast.error(
           error instanceof Error ? error.message : "未能恢复进行中的研究",
@@ -463,7 +512,12 @@ function ResearchWorkspace({
                           })),
                         }}
                         onInspect={openInspector}
-                        activity={<ResearchRunActivity items={Object.values(run.items)} />}
+                        activity={(
+                          <ResearchRunActivity
+                            items={Object.values(run.items)}
+                            controls={{ onAction: runTaskAction, pending: taskAction }}
+                          />
+                        )}
                         timeline={buildLiveTimeline(run)}
                         isStreaming
                       />

@@ -51,6 +51,7 @@ def _setup(monkeypatch, tmp_path: Path) -> tuple[str, str, str]:
         db_name=database,
     )
 
+    original_get_run = writing_routes.get_run
     original_get = writing_routes.get_research_artifact
     original_list = writing_routes.list_research_artifacts
     original_scoped = writing_routes.create_scoped_research_artifact
@@ -65,6 +66,11 @@ def _setup(monkeypatch, tmp_path: Path) -> tuple[str, str, str]:
         lambda project_uid, uuid: (
             [{"session_uid": session_uid}] if uuid == "user-1" else []
         ),
+    )
+    monkeypatch.setattr(
+        writing_routes,
+        "get_run",
+        lambda **kwargs: original_get_run(**kwargs, db_name=database),
     )
     monkeypatch.setattr(
         writing_routes,
