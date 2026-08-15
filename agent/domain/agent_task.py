@@ -6,7 +6,7 @@ import re
 from enum import StrEnum
 from typing import Any, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class AgentTaskStatus(StrEnum):
@@ -93,42 +93,89 @@ class AgentTaskResult(TypedDict, total=False):
     open_questions: list[str]
 
 
-class EvidenceReference(BaseModel):
-    """One evidence coordinate that was retrieved from the task's authorized scope."""
-
-    chunk_id: str = Field(min_length=1, max_length=256)
-    doc_uid: str = Field(min_length=1, max_length=256)
-    page_no: int | None = Field(default=None, ge=1)
-    offset_start: int | None = Field(default=None, ge=0)
-    offset_end: int | None = Field(default=None, ge=0)
-
-
-class AtomicClaim(BaseModel):
-    """A bounded research assertion that may cite one or more packet references."""
-
-    statement: str = Field(min_length=1, max_length=2000)
-    evidence_refs: list[str] = Field(default_factory=list)
-    limitation: str = Field(default="", max_length=1000)
-
-
-class EvidencePacket(BaseModel):
-    """Sanitized child output eligible for a parent continuation."""
-
-    summary: str = Field(min_length=1, max_length=6000)
-    evidence_refs: list[str] = Field(default_factory=list)
-    claims: list[AtomicClaim] = Field(default_factory=list)
-    evidence: list[EvidenceReference] = Field(default_factory=list)
-    limitations: list[str] = Field(default_factory=list)
-    open_questions: list[str] = Field(default_factory=list)
-    metrics: dict[str, float] = Field(default_factory=dict)
-
-
 def is_terminal_task_status(status: str) -> bool:
     """Return whether ``status`` represents a terminal generic task state."""
     try:
         return AgentTaskStatus(status) in TERMINAL_TASK_STATUSES
     except ValueError:
         return False
+
+
+
+class ClaimType(StrEnum):
+    """Kinds of atomic claims a research deliverable may assert."""
+
+    PAPER_FACT = "paper_fact"
+    HYPOTHESIS = "hypothesis"
+    CROSS_PAPER_SYNTHESIS = "cross_paper_synthesis"
+
+
+class EvidenceReference(BaseModel):
+    """One citable location: local chunk coordinates or a web source."""
+
+    chunk_id: str = ""
+    doc_uid: str = ""
+    page_no: int | None = None
+    offset_start: int | None = None
+    offset_end: int | None = None
+    bbox: list[float] | None = None
+    source_url: str = ""
+
+    @model_validator(mode="after")
+    def _bbox_is_four_normalized_numbers(self) -> "EvidenceReference":
+        if self.bbox is None:
+            self.bbox = []
+        if self.bbox and len(self.bbox) != 4:
+            raise ValueError("bbox must contain exactly four normalized coordinates")
+        return self
+
+
+class AtomicClaim(BaseModel):
+    """One falsifiable statement plus the evidence that may support it."""
+
+    statement: str = Field(min_length=1)
+    claim_type: ClaimType = ClaimType.PAPER_FACT
+    evidence_refs: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _paper_facts_require_evidence(self) -> "AtomicClaim":
+        if self.claim_type is ClaimType.PAPER_FACT and not self.evidence_refs:
+            raise ValueError("paper_fact claims must cite at least one evidence reference")
+        return self
+
+
+class PacketLimitation(BaseModel):
+    """A bounded limitation, conflict or caveat attached to a packet."""
+
+    kind: str = "general"
+    statement: str = Field(min_length=1)
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class OpenQuestion(BaseModel):
+    """An unresolved question with the next action that would resolve it."""
+
+    question: str = Field(min_length=1)
+    suggested_action: str = ""
+
+
+class EvidencePacket(BaseModel):
+    """Scope-validated research deliverable: claims, evidence, doubts."""
+
+    summary: str = Field(min_length=1)
+    research_question: str = ""
+    evidence: list[EvidenceReference] = Field(default_factory=list)
+    evidence_refs: list[str] = Field(default_factory=list)
+    claims: list[AtomicClaim] = Field(default_factory=list)
+    limitations: list[str | PacketLimitation] = Field(default_factory=list)
+    open_questions: list[str | OpenQuestion] = Field(default_factory=list)
+    confidence: float | None = Field(default=0.5, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _missing_confidence_defaults_to_half(self) -> "EvidencePacket":
+        if self.confidence is None:
+            self.confidence = 0.5
+        return self
 
 
 __all__ = [
@@ -145,4 +192,10 @@ __all__ = [
     "TERMINAL_TASK_STATUSES",
     "is_terminal_task_status",
     "normalize_task_kind",
+    "AtomicClaim",
+    "ClaimType",
+    "EvidencePacket",
+    "EvidenceReference",
+    "OpenQuestion",
+    "PacketLimitation",
 ]

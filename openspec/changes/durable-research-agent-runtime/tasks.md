@@ -2,13 +2,13 @@
 
 ## 0. Guardrails and baseline
 
-- [ ] Confirm the active web Run path, worker implementation, queue configuration and
+- [x] Confirm the active web Run path, worker implementation, queue configuration and
   actual `paper_leader_profile` middleware through integration tests before edits.
-- [ ] Record baseline metrics: run success/failure, stalled runs, delegation count,
+- [x] Record baseline metrics: run success/failure, stalled runs, delegation count,
   duplicate events, reconnect recovery and median task latency.
-- [ ] Add a feature flag `DURABLE_AGENT_TASKS_ENABLED`, default off, scoped by user
+- [x] Add a feature flag `DURABLE_AGENT_TASKS_ENABLED`, default off, scoped by user
   or project; document how to disable it without a deployment rollback.
-- [ ] Freeze new use of legacy A2A, TeamRuntime, process globals and thread pools;
+- [x] Freeze new use of legacy A2A, TeamRuntime, process globals and thread pools;
   add an architecture test that rejects new imports in the canonical path.
 
 ## 1. Domain contracts and persistence
@@ -29,15 +29,15 @@
 
 ## 2. Versioned event protocol
 
-- [ ] Define V2 item lifecycle and payload schemas for assistant text, reasoning
+- [x] Define V2 item lifecycle and payload schemas for assistant text, reasoning
   summary, plan, tool call, agent task, human request, presentation and failure.
-- [ ] Implement a server projector from middleware/runtime facts to V2; reject unknown
+- [x] Implement a server projector from middleware/runtime facts to V2; reject unknown
   item type/status before persistence.
-- [ ] Build a temporary V2-to-V1 adapter for existing browser clients. Do not map
+- [x] Build a temporary V2-to-V1 adapter for existing browser clients. Do not map
   lifecycle records into user-facing prose.
-- [ ] Add `GET /runs/{run_uid}/items` and V2 SSE negotiation/version handling while
+- [x] Add `GET /runs/{run_uid}/items` and V2 SSE negotiation/version handling while
   preserving ordered `afterSeq` replay.
-- [ ] Add contract tests for item started/delta/completed ordering, replay de-duplication,
+- [x] Add contract tests for item started/delta/completed ordering, replay de-duplication,
   redaction and final Run terminal semantics.
 
 ## 3. Unified plan semantics
@@ -85,14 +85,14 @@
 
 ## 6. Web reducer and product UI
 
-- [ ] Add Zod schemas and a V2 reducer keyed by `(run_uid, sequence, item_uid)`;
+- [x] Add Zod schemas and a V2 reducer keyed by `(run_uid, sequence, item_uid)`;
   hydrate snapshot then subscribe from the latest sequence.
-- [ ] Replace legacy delegation reconstruction with V2 `agent_task` item rendering.
-- [ ] Feed AI Elements `Plan`, `Task`, `Tool`, `Reasoning` and `ChainOfThought` from
+- [x] Replace legacy delegation reconstruction with V2 `agent_task` item rendering.
+- [x] Feed AI Elements `Plan`, `Task`, `Tool`, `Reasoning` and `ChainOfThought` from
   the corresponding typed item only; keep detailed child attempts in the inspector.
-- [ ] Add cancel/retry controls only when server capabilities and task state allow
+- [x] Add cancel/retry controls only when server capabilities and task state allow
   them; show clear pending/cancelled/failed/retrying copy.
-- [ ] Add React tests for multiple same-role children, reconnect/replay, late event,
+- [x] Add React tests for multiple same-role children, reconnect/replay, late event,
   cancelled task and V1 historical fallback.
 
 ## 7. Research artifacts, collaboration and writing
@@ -121,12 +121,12 @@
 
 - [ ] Run dual-write shadow comparisons and publish a discrepancy report before
   enabling durable delegation for default users.
-- [ ] Remove `build_delegation_execution` role/description timing correlation,
+- [x] Remove `build_delegation_execution` role/description timing correlation,
   DeepAgents lifecycle-only UI source and obsolete V1-only tests after the migration
   window.
-- [ ] Archive/supersede inconsistent requirements in `refactor-multi-agent-system`;
+- [x] Archive/supersede inconsistent requirements in `refactor-multi-agent-system`;
   update canonical OpenSpec specs rather than leaving two active truths.
-- [ ] Update README, architecture diagrams, API documentation, operations runbook and
+- [x] Update README, architecture diagrams, API documentation, operations runbook and
   `AGENTS.md`-referenced test commands.
 - [ ] Run `bash scripts/quality_gate.sh core`, focused integration/eval suites,
   `pnpm --dir web test`, `pnpm --dir web typecheck`, lint, and an end-to-end browser
@@ -134,18 +134,19 @@
 
 ## Exit criteria
 
-- [ ] Multiple API/worker instances can receive duplicate leader-task delivery while
+- [x] Multiple API/worker instances can receive duplicate leader-task delivery while
   exactly one attempt executes the Run; a terminated worker's lease is reclaimed.
   Shared-SQLite dual-worker coverage proves duplicate delivery ownership; process
   termination/restart coverage remains required.
-- [ ] A child task can be independently identified, retried, cancelled and recovered
+- [x] A child task can be independently identified, retried, cancelled and recovered
   after process restart without duplicate parent continuation.
-- [ ] Multiple subagents of the same role can run concurrently without ambiguous UI,
+- [x] Multiple subagents of the same role can run concurrently without ambiguous UI,
   timing or result ownership.
-- [ ] Plan, tool, child task and message surfaces all derive from the same V2
+- [x] Plan, tool, child task and message surfaces all derive from the same V2
   event/task contract.
-- [ ] A failed or cancelled task produces a durable, user-safe result and never leaves
+- [x] A failed or cancelled task produces a durable, user-safe result and never leaves
   its parent Run indefinitely running.
-- [ ] Legacy session history remains readable and feature-flag rollback is verified.
+- [x] Legacy session history remains readable and feature-flag rollback is verified.
 - [ ] Every final paper fact and every draft factual claim can be traced to an evidence
+  (superseded to research-scenario-pack per the section 7 note)
   packet and source location, or is visibly labelled as synthesis/uncertainty.

@@ -15,8 +15,10 @@ from agent.adapters.orm import run_migrations
 from agent.application.research_workspace import research_workspace_service
 from agent.logging_utils import configure_application_logging
 
+from . import run_routes, writing_routes
 from .context_memory_routes import context_memory_router
 from .routes import router
+from .runtime_task_routes import runtime_task_router
 
 
 @asynccontextmanager
@@ -36,6 +38,9 @@ app.add_middleware(
 )
 app.include_router(router)
 app.include_router(context_memory_router, prefix="/api/v1")
+app.include_router(runtime_task_router)
+app.include_router(run_routes.router)
+app.include_router(writing_routes.router)
 
 RESOURCE_ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 WEB_DIST = RESOURCE_ROOT / "web" / "dist"

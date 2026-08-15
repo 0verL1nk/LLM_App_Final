@@ -450,6 +450,6 @@ def test_text_item_projection_accumulates_v2_deltas(tmp_path: Path) -> None:
         db_name=database,
     )
 
-    item = list_run_items(run_uid=run_uid, db_name=database)[0]
+    item = list_run_items(run_uid=run_uid, db_name=database)["items"][0]
     assert item["payload"]["text"] == "第一段第二段"
     assert item["payload"]["delta"] == "第二段"

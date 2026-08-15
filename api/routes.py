@@ -50,7 +50,6 @@ from agent.settings import load_agent_settings
 from utils.task_queue import enqueue_background_task, get_job_status
 
 from .dependencies import current_user_id
-from .runtime_task_routes import runtime_task_router
 from .schemas import (
     ProjectCreate,
     ProjectUpdate,
@@ -63,7 +62,7 @@ from .schemas import (
 )
 
 router = APIRouter(prefix="/api/v1")
-router.include_router(runtime_task_router)
+
 logger = logging.getLogger(__name__)
 UserId = Annotated[str, Depends(current_user_id)]
 
@@ -418,7 +417,8 @@ def list_agent_run_items(run_uid: str, user_uuid: UserId) -> dict[str, Any]:
     run = get_run(run_uid=run_uid, user_uuid=user_uuid)
     if run is None:
         raise HTTPException(status_code=404, detail="Run not found")
-    return {"data": list_run_items(run_uid=run_uid)}
+    snapshot = list_run_items(run_uid=run_uid)
+    return {"data": snapshot["items"], "lastSequence": snapshot["lastSequence"]}
 
 
 @router.post("/runs/{run_uid}/cancel")

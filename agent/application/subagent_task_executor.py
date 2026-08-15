@@ -159,16 +159,24 @@ def _sanitize_result(
                 "offset_end": item.get("offset_end"),
             }
         )
-    packet = EvidencePacket.model_validate({
+    EvidencePacket.model_validate({
         "summary": answer[:6000],
         "evidence_refs": evidence_refs,
         "claims": [],
         "evidence": evidence,
         "limitations": [],
         "open_questions": [],
-        "metrics": {"run_latency_ms": float(result.get("run_latency_ms") or 0.0)},
     })
-    return packet.model_dump()
+    return {
+        "summary": answer[:6000],
+        "research_question": str(result.get("research_question") or ""),
+        "evidence_refs": evidence_refs,
+        "evidence": evidence,
+        "claims": [],
+        "limitations": [],
+        "open_questions": [],
+        "metrics": {"run_latency_ms": float(result.get("run_latency_ms") or 0.0)},
+    }
 
 
 __all__ = ["execute_subagent_task_payload"]

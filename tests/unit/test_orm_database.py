@@ -25,7 +25,7 @@ def test_baseline_migration_records_alembic_revision(tmp_path: Path) -> None:
     with create_engine(database).connect() as connection:
         revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         tables = inspect(connection).get_table_names()
-    assert revision == "20260815_10"
+    assert revision == "20260815_11"
     assert {
         "agent_runs",
         "research_artifacts",
@@ -69,7 +69,7 @@ def test_migrations_upgrade_an_existing_database_in_place(tmp_path: Path) -> Non
     with create_engine(database).connect() as connection:
         revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         tables = inspect(connection).get_table_names()
-    assert revision == "20260815_10"
+    assert revision == "20260815_11"
     assert "agent_tasks" in tables
 
 
@@ -115,7 +115,7 @@ def test_migrations_reconcile_drifted_run_events_columns(tmp_path: Path) -> None
     with create_engine(database).connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "20260815_10"
+            == "20260815_11"
         )
 
 
