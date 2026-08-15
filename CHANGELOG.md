@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.3](https://github.com/0verL1nk/PaperSage/compare/v1.4.2...v1.4.3) (2026-08-15)
+
+
+### Bug Fixes
+
+* **desktop:** bundle alembic so packaged backend can start ([eece72b](https://github.com/0verL1nk/PaperSage/commit/eece72bd403bc80f674e8ed21b7be21a37f3f968))
+* **desktop:** bundle alembic with the packaged backend ([f8cba69](https://github.com/0verL1nk/PaperSage/commit/f8cba697a9d64cb7845e76ba20d0929cbe917268))
+
 ## [1.4.2](https://github.com/0verL1nk/PaperSage/compare/v1.4.1...v1.4.2) (2026-08-14)
 
 
