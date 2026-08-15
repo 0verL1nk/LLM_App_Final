@@ -151,6 +151,10 @@ function MessageBubble({
   const timelineSteps =
     timeline ?? (assistant ? buildTraceTimeline(parts, message.trace ?? []) : []);
   const isWaitingForFirstPart = isStreaming && !parts.length;
+  const citationValue = useMemo(
+    () => ({ evidence: message.evidence ?? [], onInspect: () => onInspect("evidence") }),
+    [message.evidence, onInspect],
+  );
   return (
     <div className={cn("flex gap-3", !assistant && "justify-end")}>
       {assistant && (
@@ -188,12 +192,7 @@ function MessageBubble({
               {isWaitingForFirstPart && <ResearchOrbs />}
               <AssistantTimeline steps={timelineSteps} streaming={isStreaming} />
               {activity}
-              <CitationContext.Provider
-                value={useMemo(
-                  () => ({ evidence: message.evidence ?? [], onInspect: () => onInspect("evidence") }),
-                  [message.evidence, onInspect],
-                )}
-              >
+              <CitationContext.Provider value={citationValue}>
               {parts.map((part) => {
                 if (part.type === "markdown") {
                   const content = part.text === message.content ? renderedContent : formatEvidenceCitations(part.text, message.evidence);

@@ -60,14 +60,9 @@ export function buildLiveTimeline(run: LiveRun): AssistantTimelineStep[] {
           status: item.status,
           web: isWebTool(toolName),
         });
-      } else if (item.type === "agent_task") {
-        upsert({
-          kind: "task",
-          id: item.id,
-          label: String(payload.task ?? payload.summary ?? "研究子任务"),
-          status: item.status,
-        });
       }
+      // agent_task stays out of the live timeline: the run-activity panel
+      // renders the richer delegation cards while the run is open.
     } else if (event.eventType === "message.part.insert" && event.payload.type === "reasoning") {
       const partId = String(event.payload.partId ?? "");
       if (partId) upsert({ kind: "reasoning", id: `reasoning:${partId}`, text: "" });
