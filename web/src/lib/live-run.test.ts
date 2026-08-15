@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { buildLiveTimeline } from "@/components/assistant-run-timeline"
 import { createLiveRun, reduceLiveRun } from "@/lib/live-run"
 import type { AgentEvent } from "@/lib/schemas"
 
@@ -27,6 +28,32 @@ function itemEvent(sequence: number, status: string): AgentEvent {
       status,
       taskId: "task-child-1",
       payload: { task: "核验实验结论" },
+    },
+  }
+}
+
+function reasoningItemEvent(sequence: number, partId: string, delta: string): AgentEvent {
+  return {
+    ...event(sequence, "item.delta"),
+    version: 2,
+    item: {
+      id: `item-reasoning-${partId}`,
+      type: "reasoning_summary",
+      status: "in_progress",
+      payload: { partId, delta },
+    },
+  }
+}
+
+function toolEvent(sequence: number, status: string): AgentEvent {
+  return {
+    ...event(sequence, "item.updated"),
+    version: 2,
+    item: {
+      id: "item-tool-1",
+      type: "tool_call",
+      status,
+      payload: { toolName: "search_document", summary: "检索项目资料" },
     },
   }
 }
@@ -93,5 +120,30 @@ describe("reduceLiveRun", () => {
       { id: "text-0", type: "markdown", text: "先核验结论" },
       { id: "reasoning-0", type: "reasoning", text: "证据" },
     ])
+  })
+
+  it("keeps exactly one arrival marker per streamed part", () => {
+    let run = createLiveRun()
+    run = reduceLiveRun(run, textItemEvent(1, "第一"))
+    run = reduceLiveRun(run, textItemEvent(2, "段"))
+    run = reduceLiveRun(run, textItemEvent(3, "更多"))
+
+    expect(run.events).toHaveLength(1)
+    expect(run.events[0]?.sequence).toBe(1)
+  })
+
+  it("interleaves reasoning segments and tool calls in arrival order", () => {
+    let run = createLiveRun()
+    run = reduceLiveRun(run, textItemEvent(1, "先定位", "reasoning_summary"))
+    run = reduceLiveRun(run, toolEvent(2, "in_progress"))
+    run = reduceLiveRun(run, toolEvent(3, "completed"))
+    run = reduceLiveRun(run, reasoningItemEvent(4, "reasoning-1", "再综合"))
+
+    const steps = buildLiveTimeline(run)
+
+    expect(steps.map((step) => step.kind)).toEqual(["reasoning", "tool", "reasoning"])
+    expect(steps[0]).toMatchObject({ id: "reasoning:reasoning-0", text: "先定位" })
+    expect(steps[1]).toMatchObject({ kind: "tool", label: "检索项目资料", status: "completed" })
+    expect(steps[2]).toMatchObject({ id: "reasoning:reasoning-1", text: "再综合" })
   })
 })

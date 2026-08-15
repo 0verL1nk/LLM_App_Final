@@ -8,7 +8,16 @@ import {
 import type { SessionContextUsage } from "@/lib/context-usage";
 import { cn } from "@/lib/utils";
 
-const SEGMENT_COLORS = ["bg-chart-1", "bg-chart-2", "bg-chart-3", "bg-chart-4", "bg-chart-5"] as const;
+// Validated categorical palette (dataviz method): fixed order, distinct hues,
+// separate steps for dark surfaces; legend labels + segment gaps carry identity
+// where light-mode contrast is below 3:1.
+const SEGMENT_COLORS = [
+  "bg-[#2a78d6] dark:bg-[#3987e5]",
+  "bg-[#eb6834] dark:bg-[#d95926]",
+  "bg-[#1baf7a] dark:bg-[#199e70]",
+  "bg-[#eda100] dark:bg-[#c98500]",
+  "bg-[#e87ba4] dark:bg-[#d55181]",
+] as const;
 
 function segmentPercent(segment: { tokens: number }, maxTokens: number): number {
   if (maxTokens <= 0) return 0;
@@ -23,7 +32,7 @@ export function ContextCompositionCard({ usage }: { usage: SessionContextUsage }
         <ContextContentHeader />
         <ContextContentBody className="space-y-2 text-xs text-muted-foreground">
           <div
-            className="flex h-2 w-full overflow-hidden rounded-full bg-muted"
+            className="flex h-2 w-full gap-[2px]"
             role="img"
             aria-label="上下文构成"
           >
@@ -32,8 +41,8 @@ export function ContextCompositionCard({ usage }: { usage: SessionContextUsage }
               if (percent <= 0) return null;
               return (
                 <div
+                  className={cn("h-full flex-none rounded-[3px]", SEGMENT_COLORS[index % SEGMENT_COLORS.length])}
                   key={segment.key}
-                  className={cn("h-full", SEGMENT_COLORS[index % SEGMENT_COLORS.length])}
                   style={{ width: `${percent}%` }}
                 />
               );
@@ -52,7 +61,6 @@ export function ContextCompositionCard({ usage }: { usage: SessionContextUsage }
               </li>
             ))}
           </ul>
-          <p>服务端基于当前会话、系统提示和工具定义计算。</p>
         </ContextContentBody>
       </ContextContent>
     </Context>

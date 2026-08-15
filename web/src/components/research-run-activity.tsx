@@ -1,10 +1,4 @@
 import {
-  ChainOfThought,
-  ChainOfThoughtContent,
-  ChainOfThoughtHeader,
-  ChainOfThoughtStep,
-} from "@/components/ai-elements/chain-of-thought";
-import {
   Task,
   TaskContent,
   TaskItem,
@@ -28,7 +22,7 @@ import {
   QueueSectionTrigger,
 } from "@/components/ai-elements/queue";
 import type { LiveRunItem } from "@/lib/live-run";
-import { CheckCircle2, CircleDashed, Globe2, LoaderCircle } from "lucide-react";
+import { CheckCircle2, CircleDashed, LoaderCircle } from "lucide-react";
 
 function todoStatusLabel(status: string): string {
   const labels: Record<string, string> = {
@@ -49,15 +43,9 @@ function todoStatusIcon(status: string) {
   return <CircleDashed className="size-4 text-muted-foreground" aria-label="待处理" />;
 }
 
-function isWebSearch(item: LiveRunItem): boolean {
-  const toolName = String(item.payload.toolName ?? item.payload.name ?? "").toLowerCase();
-  return toolName.includes("web") || toolName.includes("search") || toolName.includes("browser");
-}
-
 export function ResearchRunActivity({ items = [] }: { items?: LiveRunItem[] }) {
-  const toolItems = items.filter((item) => item.type === "tool_call");
-  const webSearchItems = toolItems.filter(isWebSearch);
-  const otherToolItems = toolItems.filter((item) => !isWebSearch(item));
+  // Tool calls and reasoning render inside the assistant timeline in message
+  // order; this block keeps only the run-level aggregates.
   const plan = [...items].reverse().find((item) => item.type === "plan");
   const todos = Array.isArray(plan?.payload.todos) ? plan.payload.todos : [];
   const childTasks = items.filter((item) => item.type === "agent_task");
@@ -65,7 +53,7 @@ export function ResearchRunActivity({ items = [] }: { items?: LiveRunItem[] }) {
     (item) => item.type === "human_request" && item.status === "in_progress",
   );
 
-  if (!toolItems.length && !todos.length && !childTasks.length && !queuedInputs.length) {
+  if (!todos.length && !childTasks.length && !queuedInputs.length) {
     return null;
   }
 
@@ -93,40 +81,6 @@ export function ResearchRunActivity({ items = [] }: { items?: LiveRunItem[] }) {
             </QueueSectionContent>
           </QueueSection>
         </Queue>
-      )}
-      {webSearchItems.length > 0 && (
-        <Task className="mb-3" defaultOpen>
-          <TaskTrigger title={`联网检索 · ${webSearchItems.length} 项`} />
-          <TaskContent>
-            {webSearchItems.map((item) => (
-              <TaskItem key={item.id} className="flex items-center gap-2">
-                <Globe2 className={item.status === "in_progress" ? "size-4 animate-pulse text-primary" : "size-4"} />
-                <span>{String(item.payload.summary ?? item.payload.query ?? "正在检索来源")}</span>
-                <span className="ml-auto shrink-0 text-xs">{todoStatusLabel(item.status)}</span>
-              </TaskItem>
-            ))}
-          </TaskContent>
-        </Task>
-      )}
-      {otherToolItems.length > 0 && (
-        <ChainOfThought className="space-y-2">
-          <ChainOfThoughtHeader>
-            正在处理资料
-            <span className="text-xs text-muted-foreground">{otherToolItems.length} 项活动</span>
-            {otherToolItems.some((item) => item.status === "in_progress") && (
-              <span className="ml-2 inline-block size-1.5 animate-pulse rounded-full bg-current align-middle" />
-            )}
-          </ChainOfThoughtHeader>
-          <ChainOfThoughtContent>
-            {otherToolItems.map((item) => (
-              <ChainOfThoughtStep
-                key={item.id}
-                label={String(item.payload.summary ?? item.payload.toolName ?? "工具调用")}
-                status={item.status === "in_progress" ? "active" : item.status === "failed" ? "pending" : "complete"}
-              />
-            ))}
-          </ChainOfThoughtContent>
-        </ChainOfThought>
       )}
       {todos.length > 0 && (
         <Task className="mt-3" defaultOpen={plan?.status === "in_progress"}>
