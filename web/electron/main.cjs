@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell, Tray } = require("electron")
+const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, Notification, shell, Tray } = require("electron")
 const { autoUpdater } = require("electron-updater")
 const { spawn } = require("node:child_process")
 const net = require("node:net")
@@ -12,6 +12,14 @@ let backend
 let logDirectory
 let mainWindow
 let trayService
+
+// Updates and long migrations leave a window of seconds where no window
+// exists yet; without the lock a second impatient launch races the first.
+const hasInstanceLock = app.requestSingleInstanceLock()
+if (!hasInstanceLock) {
+  app.quit()
+}
+app.on("second-instance", () => showMainWindow())
 
 function getLogDirectory() {
   if (logDirectory) return logDirectory
@@ -60,17 +68,35 @@ const updates = createUpdateService({
   autoUpdater,
   logger: { error: (message, error) => reportMainError(message, error) },
   notify: (status) => BrowserWindow.getAllWindows().forEach((window) => window.webContents.send("updates:status", status)),
+  notifySystem: () => {
+    if (!Notification.isSupported()) return
+    new Notification({ title: "PaperSage", body: "更新已就绪,正在重启应用,请稍候……" }).show()
+  },
 })
 
-function waitForPort(port, timeoutMs = 30000) {
+function waitForPort(port, timeoutMs = 30000, childProcess) {
   const startedAt = Date.now()
   return new Promise((resolve, reject) => {
+    // A dead backend will never bind the port; surface its exit instead of
+    // letting the user stare at the splash until the timeout.
+    let rejected = false
+    const onExit = (code, signal) => {
+      rejected = true
+      reject(new Error(`PaperSage 服务意外退出：code=${code ?? "-"} signal=${signal ?? "-"}`))
+    }
+    if (childProcess) childProcess.once("exit", onExit)
+    const finish = (action) => {
+      if (childProcess) childProcess.removeListener("exit", onExit)
+      action()
+    }
     const probe = () => {
+      if (rejected) return
       const socket = net.connect({ host: "127.0.0.1", port })
-      socket.once("connect", () => { socket.end(); resolve() })
+      socket.once("connect", () => { socket.end(); finish(resolve) })
       socket.once("error", () => {
         socket.destroy()
-        if (Date.now() - startedAt >= timeoutMs) reject(new Error("PaperSage 服务启动超时"))
+        if (rejected) return
+        if (Date.now() - startedAt >= timeoutMs) finish(() => reject(new Error("PaperSage 服务启动超时")))
         else setTimeout(probe, 250)
       })
     }
@@ -110,7 +136,6 @@ function startBackend() {
 
 async function createWindow() {
   startBackend()
-  await waitForPort(apiPort)
   const window = new BrowserWindow({
     width: 1440,
     height: 920,
@@ -136,6 +161,11 @@ async function createWindow() {
     writeDesktopLog("main.log", `渲染进程异常退出：reason=${details.reason} exitCode=${details.exitCode}`)
   })
   window.once("ready-to-show", () => window.show())
+  // Show the splash before the port wait: post-update launches can spend
+  // tens of seconds in migrations while the backend port stays closed, and
+  // an invisible app invites a second launch.
+  await window.loadFile(path.join(__dirname, "splash.html"))
+  await waitForPort(apiPort, 120_000, backend)
   const frontendPort = Number(process.env.PAPERSAGE_ELECTRON_DEV ? 5173 : apiPort)
   await waitForPort(frontendPort)
   await window.loadURL(`http://127.0.0.1:${frontendPort}`)
@@ -165,23 +195,25 @@ ipcMain.handle("logs:open", async () => shell.openPath(getLogDirectory()))
 process.on("uncaughtException", (error) => reportMainError("桌面应用发生未捕获错误", error))
 process.on("unhandledRejection", (reason) => reportMainError("桌面应用发生未处理异常", reason))
 
-app.whenReady().then(async () => {
-  trayService = createTrayService({
-    Tray,
-    Menu,
-    nativeImage,
-    app,
-    iconPath: path.join(__dirname, "tray-icon.png"),
-    showWindow: showMainWindow,
-    reportError: (message) => writeDesktopLog("main.log", message),
+if (hasInstanceLock) {
+  app.whenReady().then(async () => {
+    trayService = createTrayService({
+      Tray,
+      Menu,
+      nativeImage,
+      app,
+      iconPath: path.join(__dirname, "tray-icon.png"),
+      showWindow: showMainWindow,
+      reportError: (message) => writeDesktopLog("main.log", message),
+    })
+    await createWindow()
+    updates.scheduleCheck()
+  }).catch((error) => {
+    reportMainError("桌面应用无法启动", error)
+    dialog.showErrorBox("PaperSage 无法启动", "应用启动失败。请在安装目录的 logs 文件夹中查看 main.log。")
+    app.quit()
   })
-  await createWindow()
-  updates.scheduleCheck()
-}).catch((error) => {
-  reportMainError("桌面应用无法启动", error)
-  dialog.showErrorBox("PaperSage 无法启动", "应用启动失败。请在安装目录的 logs 文件夹中查看 main.log。")
-  app.quit()
-})
+}
 app.on("window-all-closed", () => { if (process.platform !== "darwin" && (!trayService || trayService.isQuitting())) app.quit() })
 app.on("activate", showMainWindow)
 app.on("before-quit", () => {

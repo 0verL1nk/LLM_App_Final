@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'" />
+  <title>PaperSage</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #09090b;
+      color: #d4d4d8;
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      user-select: none;
+      cursor: default;
+    }
+    .stage {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+    }
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .brand .name {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #fafafa;
+    }
+    .brand .mark {
+      font-size: 15px;
+      color: #71717a;
+    }
+    .spinner {
+      width: 26px;
+      height: 26px;
+      border: 3px solid #27272a;
+      border-top-color: #a1a1aa;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .hint {
+      font-size: 13px;
+      color: #71717a;
+      line-height: 1.7;
+      text-align: center;
+      max-width: 420px;
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="brand"><span class="name">PaperSage</span><span class="mark">研究伙伴</span></div>
+    <div class="spinner" role="status" aria-label="正在启动"></div>
+    <p class="hint">正在启动本地服务……<br />首次启动或安装更新后,可能需要一点时间准备数据。</p>
+  </div>
+</body>
+</html>

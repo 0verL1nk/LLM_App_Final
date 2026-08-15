@@ -138,3 +138,29 @@ test("downloads silently and schedules installation for the next app exit", asyn
     { status: "ready" },
   ])
 })
+
+test("installUpdate announces the restart before the window disappears", async () => {
+  const listeners = {}
+  const events = []
+  const updater = {
+    autoDownload: true,
+    autoInstallOnAppQuit: true,
+    checkForUpdates: async () => ({ updateInfo: { version: "1.2.0" } }),
+    downloadUpdate: async () => undefined,
+    quitAndInstall: () => { events.push("install") },
+    on: (event, listener) => { listeners[event] = listener },
+  }
+  const service = createUpdateService({
+    app: { isPackaged: true, getVersion: () => "1.1.8" },
+    autoUpdater: updater,
+    logger: { error: () => undefined },
+    notifySystem: () => { events.push("notify") },
+    platform: "win32",
+  })
+
+  await listeners["update-available"]({ version: "1.2.0" })
+  await listeners["update-downloaded"]()
+
+  assert.deepEqual(service.installUpdate(), { supported: true, status: "installing" })
+  assert.deepEqual(events, ["notify", "install"])
+})
