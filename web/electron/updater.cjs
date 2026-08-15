@@ -23,10 +23,10 @@ function unsupportedUpdateReason({ isPackaged, platform, appImage }) {
 }
 
 /**
- * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, platform?: NodeJS.Platform, appImage?: string, checkIntervalMs?: number }} dependencies
+ * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, notifySystem?: () => void, platform?: NodeJS.Platform, appImage?: string, checkIntervalMs?: number }} dependencies
  * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string, reason?: "development" | "system-managed" | "unavailable" }>, installUpdate: () => { supported: boolean, status: "unsupported" | "not-ready" | "installing", reason?: "development" | "system-managed" | "unavailable" }, scheduleCheck: () => void }}
  */
-function createUpdateService({ app, autoUpdater, logger = console, notify = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE, checkIntervalMs = 6 * 60 * 60 * 1000 }) {
+function createUpdateService({ app, autoUpdater, logger = console, notify = () => undefined, notifySystem = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE, checkIntervalMs = 6 * 60 * 60 * 1000 }) {
   const supported = supportsAutomaticUpdates({ isPackaged: app.isPackaged, platform, appImage })
   let checking = false
   let downloading = false
@@ -51,7 +51,9 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
     if (!supported) return { supported: false, status: "unsupported", reason: unsupportedUpdateReason({ isPackaged: app.isPackaged, platform, appImage }) }
     if (!readyToInstall) return { supported: true, status: "not-ready" }
     // Silent install plus relaunch: the app comes back on the new version,
-    // so the user never waits in the dark after quitting.
+    // so the user never waits in the dark after quitting. Tell them first —
+    // the window closes immediately and the install gap is otherwise silent.
+    notifySystem()
     autoUpdater.quitAndInstall(true, true)
     return { supported: true, status: "installing" }
   }
