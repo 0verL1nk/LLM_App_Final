@@ -18,8 +18,12 @@ RUNTIME_TABLES = frozenset(
         "agent_task_attempts",
         "agent_task_outbox",
         "agent_steering_inputs",
+        "agent_feature_flags",
     }
 )
+
+# Columns legacy databases may predate before the reconciling 20260815_10 step.
+EVENT_COLUMNS = frozenset({"schema_version", "item_uid", "task_uid"})
 
 
 def ensure_runtime_schema(db_name: str = "./database.sqlite") -> None:
@@ -27,8 +31,14 @@ def ensure_runtime_schema(db_name: str = "./database.sqlite") -> None:
     engine = create_engine(db_name)
     try:
         with engine.connect() as connection:
-            if RUNTIME_TABLES.issubset(inspect(connection).get_table_names()):
+            inspector = inspect(connection)
+            if not RUNTIME_TABLES.issubset(inspector.get_table_names()):
+                run_migrations(db_name)
                 return
+            item_columns = {column["name"] for column in inspector.get_columns("agent_run_items")}
+            event_columns = {column["name"] for column in inspector.get_columns("agent_run_events")}
+            drifted = "last_sequence" not in item_columns or not EVENT_COLUMNS.issubset(event_columns)
+            if drifted:
+                run_migrations(db_name)
     finally:
         engine.dispose()
-    run_migrations(db_name)
