@@ -7,6 +7,7 @@ const fs = require("node:fs")
 const { createUpdateService } = require("./updater.cjs")
 const { createTrayService } = require("./tray.cjs")
 const { createGpuPackService } = require("./gpu-pack.cjs")
+const { acquireSingleInstanceLockWithRetry } = require("./instance-lock.cjs")
 
 const apiPort = Number(process.env.PAPERSAGE_DESKTOP_PORT || 18765)
 let backend
@@ -17,10 +18,15 @@ let trayService
 
 // Updates and long migrations leave a window of seconds where no window
 // exists yet; without the lock a second impatient launch races the first.
-const hasInstanceLock = app.requestSingleInstanceLock()
-if (!hasInstanceLock) {
-  app.quit()
-}
+// quitAndInstall also relaunches while the previous instance may still be
+// tearing down its tray and backend, so retry the lock briefly instead of
+// quitting in silence — a silent quit reads as "the update broke the app".
+acquireSingleInstanceLockWithRetry({
+  requestLock: () => app.requestSingleInstanceLock(),
+  log: (message) => writeDesktopLog("main.log", message),
+  quit: () => app.quit(),
+  onAcquired: startWhenReady,
+})
 app.on("second-instance", () => showMainWindow())
 
 function getLogDirectory() {
@@ -338,7 +344,7 @@ ipcMain.handle("gpu-pack:disable", () => {
 process.on("uncaughtException", (error) => reportMainError("桌面应用发生未捕获错误", error))
 process.on("unhandledRejection", (reason) => reportMainError("桌面应用发生未处理异常", reason))
 
-if (hasInstanceLock) {
+function startWhenReady() {
   app.whenReady().then(async () => {
     trayService = createTrayService({
       Tray,
