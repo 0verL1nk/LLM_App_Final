@@ -102,15 +102,29 @@ for (const packageName of ocrMetadataPackages) pyinstallerArgs.splice(-1, 0, "--
 // The DLL hook ships in every bundle: it is a no-op without the nvidia tree,
 // and it is what makes a GPU pack extracted into _internal work later.
 pyinstallerArgs.splice(-1, 0, "--runtime-hook", path.join(root, "web", "scripts", "gpu_dll_runtime_hook.py"))
-if (gpuBundle) {
-  pyinstallerArgs.splice(-1, 0,
-    "--copy-metadata", "onnxruntime-gpu",
-    "--collect-binaries", "nvidia.cudnn",
-    "--collect-binaries", "nvidia.cublas",
-    "--collect-binaries", "nvidia.cuda_runtime",
-  )
-}
+// resolvePyinstallerInvocation must run first: it creates the GPU venv whose
+// NVIDIA DLLs the arguments below reference.
 const invocation = resolvePyinstallerInvocation()
+if (gpuBundle) {
+  pyinstallerArgs.splice(-1, 0, "--copy-metadata", "onnxruntime-gpu")
+  // Most nvidia wheels are plain directories, not importable packages, so
+  // --collect-binaries skips them; move the DLLs explicitly instead. The
+  // destination mirrors the wheel layout the runtime hook scans.
+  const venvSitePackages = path.join(root, "web", ".pyinstaller-gpu-venv", "Lib", "site-packages")
+  for (const nvidiaPackage of ["cudnn", "cublas", "cuda_runtime", "cuda_nvrtc"]) {
+    const binDir = path.join(venvSitePackages, "nvidia", nvidiaPackage, "bin")
+    if (!fs.existsSync(binDir)) {
+      process.stderr.write(`GPU venv is missing ${binDir}; the CUDA DLLs were not installed.\n`)
+      process.exit(1)
+    }
+    pyinstallerArgs.splice(
+      -1,
+      0,
+      "--add-binary",
+      `${path.join(binDir, "*.dll")}${separator}nvidia/${nvidiaPackage}/bin`,
+    )
+  }
+}
 run(invocation.command, [...invocation.prefix, ...pyinstallerArgs])
 // The backend runs Alembic migrations at startup; a bundle without the
 // alembic tree bricks the desktop app with "No 'script_location'".
