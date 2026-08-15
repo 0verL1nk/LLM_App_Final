@@ -117,6 +117,9 @@ function startBackend() {
     windowsHide: true,
     env: {
       ...process.env,
+      // Piped stdio on Windows defaults to the ANSI codepage, which garbles
+      // Chinese log lines when decoded as UTF-8 below.
+      PYTHONUTF8: "1",
       APP_LOG_FILE: path.join(getLogDirectory(), "backend.log"),
       APP_LOG_LEVEL: "DEBUG",
       PAPERSAGE_PORT: String(apiPort),
