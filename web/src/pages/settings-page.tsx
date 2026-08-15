@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ArrowLeft, CheckCircle2, Database, Download, FileWarning, FolderOpen, LockKeyhole, RotateCw, Save, ServerCog } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Database, Download, FileWarning, FolderOpen, Gauge, LockKeyhole, RotateCw, Save, ServerCog } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -92,6 +92,13 @@ function DocumentPreviewCard() {
   return <Card><CardHeader><CardTitle className="flex items-center gap-2"><FileWarning className="size-4 text-primary" />Office 文件预览</CardTitle><CardDescription>{ready ? "此设备已具备 Office 文件转 PDF 与定位所需的本地转换器。" : "PDF、图片与 TXT 可直接预览；DOCX、PPTX、XLSX 需要本地转换器。"}</CardDescription></CardHeader><CardContent className="flex flex-wrap items-center gap-2"><Badge variant={ready ? "secondary" : "outline"}>{ready ? "已就绪" : "需要安装"}</Badge>{capability.data?.microsoft_office && <Badge variant="outline">Microsoft Office</Badge>}{capability.data?.libreoffice && <Badge variant="outline">LibreOffice</Badge>}{!ready && <p className="w-full text-xs leading-5 text-muted-foreground">安装 Microsoft 365/Office 桌面版或 LibreOffice 后，重新打开此页即可自动检测；文件和资料库内容不会丢失。</p>}</CardContent></Card>
 }
 
+function OcrAccelerationCard() {
+  const capability = useDocumentConversion()
+  const ocr = capability.data?.ocr
+  const gpu = ocr?.gpu_enabled === true
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Gauge className="size-4 text-primary" />本地识别加速</CardTitle><CardDescription>{gpu ? "文档识别正在使用 NVIDIA GPU 加速。" : "文档识别当前使用 CPU；GPU 加速需要 GPU 版安装包。"}</CardDescription></CardHeader><CardContent className="flex flex-wrap items-center gap-2"><Badge variant={gpu ? "secondary" : "outline"}>{gpu ? "GPU 已启用" : "CPU 模式"}</Badge>{ocr && <Badge variant="outline">{ocr.device.startsWith("gpu") ? `NVIDIA ${ocr.device}` : ocr.profile}</Badge>}</CardContent></Card>
+}
+
 export function SettingsPage() {
   const currentProjectId = useUiStore((state) => state.currentProjectId)
   const query = useSettings()
@@ -157,6 +164,7 @@ export function SettingsPage() {
       <DesktopUpdatesCard />
       <DesktopDiagnosticsCard />
       <DocumentPreviewCard />
+      <OcrAccelerationCard />
 
       <div className="sticky bottom-0 z-20 -mx-5 border-t bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:-mx-8 lg:px-8"><div className="mx-auto flex max-w-3xl items-center justify-between gap-4"><p className="hidden text-xs text-muted-foreground sm:block">配置变更不会中断已经开始的研究。</p><Button type="submit" className="ml-auto" disabled={save.isPending || !form.formState.isDirty}><Save className="size-4" />{save.isPending ? "保存中…" : "保存设置"}</Button></div></div>
     </form>

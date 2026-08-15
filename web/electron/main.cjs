@@ -10,6 +10,7 @@ const { createTrayService } = require("./tray.cjs")
 const apiPort = Number(process.env.PAPERSAGE_DESKTOP_PORT || 18765)
 let backend
 let logDirectory
+let modelsDirectory
 let mainWindow
 let trayService
 
@@ -50,6 +51,41 @@ function writeDesktopLog(fileName, message) {
     fs.appendFileSync(logPath, `${new Date().toISOString()} | ${message}\n`, "utf8")
   } catch (error) {
     console.error("无法写入 PaperSage 诊断日志", error)
+  }
+}
+
+function getModelsDirectory() {
+  if (modelsDirectory) return modelsDirectory
+  const installationDirectory = app.isPackaged
+    ? path.dirname(process.execPath)
+    : path.resolve(__dirname, "..", "..")
+  const preferredDirectory = path.join(installationDirectory, "models")
+  try {
+    fs.mkdirSync(preferredDirectory, { recursive: true })
+    fs.accessSync(preferredDirectory, fs.constants.W_OK)
+    modelsDirectory = preferredDirectory
+  } catch {
+    // Per-machine installations can be read-only. Model downloads must stay
+    // possible, so fall back to the user profile like the logs do.
+    modelsDirectory = path.join(app.getPath("userData"), "models")
+    fs.mkdirSync(modelsDirectory, { recursive: true })
+  }
+  return modelsDirectory
+}
+
+function migrateLegacyModelCache() {
+  // Releases before the install-directory cache kept OCR models under
+  // <userData>/.cache/paddleocr. Copy them forward once so an upgrade does
+  // not force a fresh model download on a weak network.
+  const legacyCache = path.join(app.getPath("userData"), ".cache", "paddleocr")
+  const targetCache = path.join(getModelsDirectory(), "paddleocr")
+  try {
+    if (fs.existsSync(legacyCache) && !fs.existsSync(targetCache)) {
+      fs.cpSync(legacyCache, targetCache, { recursive: true })
+      writeDesktopLog("main.log", "已迁移历史 OCR 模型缓存到 models 目录")
+    }
+  } catch (error) {
+    writeDesktopLog("main.log", `迁移历史 OCR 模型缓存失败：${errorMessage(error)}`)
   }
 }
 
@@ -112,19 +148,22 @@ function startBackend() {
     : process.platform === "win32" ? "uv.exe" : "uv"
   const args = isPackaged ? [] : ["run", "python", "-m", "api.main"]
   if (isPackaged && !fs.existsSync(command)) throw new Error(`未找到内置服务：${command}`)
+  if (isPackaged) migrateLegacyModelCache()
+  const backendEnv = {
+    ...process.env,
+    // Piped stdio on Windows defaults to the ANSI codepage, which garbles
+    // Chinese log lines when decoded as UTF-8 below.
+    PYTHONUTF8: "1",
+    APP_LOG_FILE: path.join(getLogDirectory(), "backend.log"),
+    APP_LOG_LEVEL: "DEBUG",
+    PAPERSAGE_PORT: String(apiPort),
+    PAPERSAGE_DESKTOP: "1",
+  }
+  if (isPackaged) backendEnv.LOCAL_MODELS_ROOT = getModelsDirectory()
   backend = spawn(command, args, {
     cwd: isPackaged ? app.getPath("userData") : path.resolve(__dirname, "..", ".."),
     windowsHide: true,
-    env: {
-      ...process.env,
-      // Piped stdio on Windows defaults to the ANSI codepage, which garbles
-      // Chinese log lines when decoded as UTF-8 below.
-      PYTHONUTF8: "1",
-      APP_LOG_FILE: path.join(getLogDirectory(), "backend.log"),
-      APP_LOG_LEVEL: "DEBUG",
-      PAPERSAGE_PORT: String(apiPort),
-      PAPERSAGE_DESKTOP: "1",
-    },
+    env: backendEnv,
     stdio: "pipe",
   })
   backend.stdout.on("data", (buffer) => writeDesktopLog("backend-process.log", buffer.toString().trimEnd()))

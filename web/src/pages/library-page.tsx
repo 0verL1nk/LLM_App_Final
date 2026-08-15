@@ -186,7 +186,10 @@ export function LibraryPage() {
                             <XCircle />
                             解析失败
                           </Badge>
-                          <p className="mt-1 line-clamp-1 text-xs text-destructive">
+                          <p
+                            className="mt-1 line-clamp-2 text-xs leading-5 text-destructive"
+                            title={doc.ingestion?.error_message ?? undefined}
+                          >
                             {doc.ingestion?.error_message}
                           </p>
                         </div>

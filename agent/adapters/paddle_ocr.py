@@ -8,10 +8,10 @@ import subprocess
 import tempfile
 import textwrap
 from collections.abc import Callable
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .ocr_profile import OcrProfile, configure_paddlex_cache, select_ocr_profile
 from .paddle_structure import create_cross_page_pipeline, reconstruct_cross_page_document
 
 logger = logging.getLogger(__name__)
@@ -19,67 +19,6 @@ logger = logging.getLogger(__name__)
 
 class PaddleOcrError(RuntimeError):
     """Raised when a document cannot be rendered or recognized locally."""
-
-
-@dataclass(frozen=True)
-class OcrProfile:
-    """A hardware-compatible PP-OCRv6 model pair."""
-
-    name: str
-    detection_model: str
-    recognition_model: str
-    device: str
-
-
-def select_ocr_profile() -> OcrProfile:
-    """Choose a local PP-OCRv6 tier from actual runtime capabilities."""
-    try:
-        import onnxruntime
-
-        providers = set(onnxruntime.get_available_providers())
-    except Exception:
-        providers = set()
-    try:
-        import psutil
-
-        memory_gib = psutil.virtual_memory().total / 1024**3
-    except Exception:
-        memory_gib = 0.0
-    cpu_count = os.cpu_count() or 1
-    if "CUDAExecutionProvider" in providers:
-        return OcrProfile(
-            name="high_accuracy",
-            detection_model="PP-OCRv6_medium_det",
-            recognition_model="PP-OCRv6_medium_rec",
-            device="gpu:0",
-        )
-    if memory_gib >= 8 and cpu_count >= 4:
-        return OcrProfile(
-            name="balanced",
-            detection_model="PP-OCRv6_small_det",
-            recognition_model="PP-OCRv6_small_rec",
-            device="cpu",
-        )
-    return OcrProfile(
-        name="lightweight",
-        detection_model="PP-OCRv6_tiny_det",
-        recognition_model="PP-OCRv6_tiny_rec",
-        device="cpu",
-    )
-
-
-def _cache_dir() -> Path:
-    configured = os.getenv("AGENT_OCR_CACHE_DIR", "").strip()
-    if configured:
-        return Path(configured)
-    app_data = os.getenv("AGENT_APP_DATA_DIR", "").strip()
-    return Path(app_data) / "models" / "paddleocr" if app_data else Path(".cache/paddleocr")
-
-
-def _configure_paddlex_cache() -> None:
-    cache_dir = _cache_dir().resolve()
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    os.environ.setdefault("PADDLE_PDX_CACHE_HOME", str(cache_dir))
 
 
 def _render_pdf_pages(file_path: Path, output_dir: Path) -> list[Path]:
@@ -300,7 +239,7 @@ def _polygon(value: Any) -> list[list[float]]:
 
 
 def _new_pipeline(profile: OcrProfile) -> Any:
-    _configure_paddlex_cache()
+    configure_paddlex_cache()
     from paddleocr import PaddleOCR
 
     return PaddleOCR(
@@ -424,7 +363,21 @@ def extract_document_with_paddle_ocr(
                 # The normal OCR pipeline remains the stable fallback when the
                 # optional VLM cannot be initialized on a given machine.
                 logger.exception("Cross-page PaddleOCR-VL reconstruction failed; falling back to OCR")
-        pipeline = pipeline_factory(profile)
+        try:
+            pipeline = pipeline_factory(profile)
+        except Exception:
+            if not profile.device.startswith("gpu"):
+                raise
+            # A driver mismatch can make CUDA session creation fail even when
+            # nvidia-smi exists; parsing must degrade to CPU instead of dying.
+            logger.exception("GPU OCR pipeline failed to initialize; retrying on CPU")
+            profile = OcrProfile(
+                name="balanced",
+                detection_model="PP-OCRv6_small_det",
+                recognition_model="PP-OCRv6_small_rec",
+                device="cpu",
+            )
+            pipeline = pipeline_factory(profile)
         page_texts: list[str] = []
         spans: list[dict[str, Any]] = []
         offset = 0
@@ -478,8 +431,7 @@ def extract_document_with_paddle_ocr(
 
 
 __all__ = [
-    "OcrProfile",
     "PaddleOcrError",
+    "document_conversion_capability",
     "extract_document_with_paddle_ocr",
-    "select_ocr_profile",
 ]

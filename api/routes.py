@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, StreamingResponse
 
+from agent.adapters.ocr_profile import ocr_runtime_capability
 from agent.adapters.orm.run_repository import (
     append_run_lifecycle_event,
     expire_stalled_runs,
@@ -90,8 +91,7 @@ def health() -> dict[str, str]:
 
 @router.get("/document-conversion")
 def document_conversion(_user_uuid: UserId) -> dict[str, Any]:
-    """Expose local Office preview readiness without disclosing host paths."""
-    return {"data": document_conversion_capability()}
+    return {"data": {**document_conversion_capability(), "ocr": ocr_runtime_capability()}}
 
 
 @router.get("/projects")

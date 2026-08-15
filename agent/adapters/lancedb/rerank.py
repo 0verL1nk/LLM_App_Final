@@ -6,6 +6,8 @@ import logging
 from functools import lru_cache
 from typing import Any
 
+from ...settings import load_agent_settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +15,10 @@ logger = logging.getLogger(__name__)
 def _ranker(model_name: str) -> Any:
     from flashrank import Ranker
 
-    return Ranker(model_name=model_name)
+    return Ranker(
+        model_name=model_name,
+        cache_dir=load_agent_settings().local_rerank_cache_dir,
+    )
 
 
 def rerank_rows(

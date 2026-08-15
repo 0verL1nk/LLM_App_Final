@@ -9,9 +9,11 @@ from agent.settings import AgentSettings
 def _settings(*, enable_thinking: bool, reasoning_effort: str) -> AgentSettings:
     return AgentSettings(
         openai_compatible_base_url="https://example.com/v1",
+        local_models_root="./models",
         local_embedding_model="m1",
         local_embedding_fallback_model="m2",
         local_embedding_cache_dir="./cache",
+        local_rerank_cache_dir="./models/flashrank",
         rag_chunk_size=500,
         rag_chunk_overlap=80,
         rag_dense_candidate_k=30,

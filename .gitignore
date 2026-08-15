@@ -41,6 +41,8 @@ web/*.tsbuildinfo
 web/release/
 web/.desktop-backend/
 web/.pyinstaller-work/
+web/.pyinstaller-gpu-venv/
+web/.pyinstaller-gpu-requirements.txt
 tmp/pdfs/
 
 # 其他
