@@ -9,7 +9,11 @@ from typing import Annotated, Any, AsyncIterator
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
-from agent.adapters.orm.run_repository import get_run, list_run_events
+from agent.adapters.orm.run_repository import (
+    get_run,
+    list_run_events,
+    list_run_items,
+)
 
 from .dependencies import current_user_id
 
@@ -52,3 +56,17 @@ async def stream_agent_run_events(
         media_type="text/event-stream",
         headers={"X-Run-Events-Version": "2", "Cache-Control": "no-store"},
     )
+
+
+@router.get("/runs/{run_uid}/items")
+def read_agent_run_items(
+    run_uid: str,
+    user_uuid: UserId,
+    afterSeq: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
+    """Return the owned V2 item snapshot and the replay cursor."""
+    run = get_run(run_uid=run_uid, user_uuid=user_uuid)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    snapshot = list_run_items(run_uid=run_uid, after_sequence=afterSeq)
+    return {"data": snapshot["items"], "lastSequence": snapshot["lastSequence"]}

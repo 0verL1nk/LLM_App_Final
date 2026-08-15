@@ -300,7 +300,7 @@ def update_run_status(*, run_uid: str, status: str, error_message: str = "", db_
         with begin_runtime_write(engine) as connection:
             updated = connection.execute(
                 update(agent_runs)
-                .where(and_(agent_runs.c.run_uid == run_uid, agent_runs.c.status.in_(("queued", "running"))))
+                .where(and_(agent_runs.c.run_uid == run_uid, agent_runs.c.status.in_(("queued", "running", "waiting_children"))))
                 .values(status=status, error_message=error_message[:1000], updated_at=_now())
             )
             return updated.rowcount == 1

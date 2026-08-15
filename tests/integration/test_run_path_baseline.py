@@ -141,12 +141,7 @@ def _prepare_workspace(monkeypatch, tmp_path: Path, database: str) -> list[dict[
     monkeypatch.setattr(research_workspace, "search_project_memory_items", lambda **_kwargs: [])
     monkeypatch.setattr(research_workspace, "enqueue_turn_memory_consolidation", lambda **_kwargs: None)
     monkeypatch.setattr(research_workspace, "enqueue_session_title_generation", lambda **_kwargs: None)
-    monkeypatch.setattr(research_workspace, "durable_agent_tasks_enabled", lambda **_kwargs: False)
-    from agent.middlewares import builder as middleware_builder
 
-    # Production default: the flag is off, so leader sessions build without
-    # delegation; keep the disposable database away from the default one.
-    monkeypatch.setattr(middleware_builder, "durable_agent_tasks_enabled", lambda **_kwargs: False)
     import agent.adapters as agent_adapters
 
     monkeypatch.setattr(
@@ -174,7 +169,7 @@ def test_web_run_path_surface_and_paper_leader_profile_middleware() -> None:
     assert profile_for_execution_mode("agent_teams") is paper_leader_profile
     assert paper_leader_profile.middleware_ids == ("trace", "llm_logger", "subagent", "plan")
 
-    # Delegation middleware is cohort-gated by DURABLE_AGENT_TASKS_ENABLED.
+    # Delegation middleware is always installed; durable is the only runtime path.
     middleware = build_middleware_list(
         model=_BindableFakeChatModel(responses=["ok"]),
         profile=paper_leader_profile,
@@ -182,7 +177,7 @@ def test_web_run_path_surface_and_paper_leader_profile_middleware() -> None:
         enable_auto_summarization=False,
         enable_tool_selector=False,
     )
-    assert not any(isinstance(item, DurableDelegationMiddleware) for item in middleware)
+    assert any(isinstance(item, DurableDelegationMiddleware) for item in middleware)
     assert any(isinstance(item, TraceMiddleware) for item in middleware)
     assert plan_middleware in middleware
     assert middleware[-1] is llm_logger_middleware

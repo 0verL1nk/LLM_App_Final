@@ -24,7 +24,7 @@ def test_run_items_route_returns_only_owned_projection(monkeypatch, tmp_path) ->
         db_name=database,
     )
 
-    from api import routes
+    from api import run_routes as routes
 
     original_get_run = routes.get_run
     original_list_items = routes.list_run_items

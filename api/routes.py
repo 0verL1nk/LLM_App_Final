@@ -11,7 +11,6 @@ from agent.adapters.orm.run_repository import (
     append_run_lifecycle_event,
     expire_stalled_runs,
     get_run,
-    list_run_items,
     list_session_runs,
 )
 from agent.adapters.orm.task_query_repository import request_run_cancel
@@ -407,14 +406,6 @@ def read_agent_run(run_uid: str, user_uuid: UserId) -> dict[str, Any]:
     return {"data": run}
 
 
-@router.get("/runs/{run_uid}/items")
-def list_agent_run_items(run_uid: str, user_uuid: UserId) -> dict[str, Any]:
-    """Return owned V2 run-item projections for recovery and inspector views."""
-    run = get_run(run_uid=run_uid, user_uuid=user_uuid)
-    if run is None:
-        raise HTTPException(status_code=404, detail="Run not found")
-    snapshot = list_run_items(run_uid=run_uid)
-    return {"data": snapshot["items"], "lastSequence": snapshot["lastSequence"]}
 
 
 @router.post("/runs/{run_uid}/cancel")

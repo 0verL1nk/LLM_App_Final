@@ -339,8 +339,11 @@ class ResearchWorkspaceService:
         on_event: EventCallback | None = None,
         run_uid: str | None = None,
         resolved_mode: str = "agent_teams",
+        part_scope: str = "",
     ) -> dict[str, Any]:
         """Resume the original Leader thread with validated child ToolMessages."""
+        # part_scope namespaces item ids so a resumed turn never collides
+        # with terminal items written by the turn that delegated.
         messages = [
             build_continuation_tool_message(item, evidence_merge=evidence_merge if index == 0 else None)
             for index, item in enumerate(tool_results)

@@ -8,8 +8,9 @@ Maintainer decision (2026-08-15): the DURABLE_AGENT_TASKS_ENABLED cohort flag
 was removed; durable delegation is the only runtime path and is always on.
 """
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "20260815_12"
 down_revision = "20260815_11"
