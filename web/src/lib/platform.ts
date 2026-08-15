@@ -5,8 +5,21 @@ export interface DesktopWindowControls {
   checkForUpdates: () => Promise<{ supported: boolean; status: "unsupported" | "up-to-date" | "available" | "failed"; version?: string; reason?: "development" | "system-managed" | "unavailable" }>
   installUpdate: () => Promise<{ supported: boolean; status: "unsupported" | "not-ready" | "installing"; reason?: "development" | "system-managed" | "unavailable" }>
   appVersion: () => Promise<string>
+  relaunchApp: () => Promise<void>
   openLogs: () => Promise<string>
+  gpuPackStatus: () => Promise<DesktopGpuPackStatus>
+  enableGpuPack: () => Promise<{ ok: boolean; phase: string }>
+  disableGpuPack: () => Promise<{ ok: boolean }>
+  onGpuPackStatus: (listener: (status: DesktopGpuPackStatus) => void) => () => void
   onUpdateStatus: (listener: (status: DesktopUpdateStatus) => void) => () => void
+}
+
+export interface DesktopGpuPackStatus {
+  phase: "cpu-active" | "downloading" | "extracting" | "gpu-active" | "error"
+  percent?: number
+  received?: number
+  total?: number
+  error?: string
 }
 
 export interface DesktopUpdateStatus {

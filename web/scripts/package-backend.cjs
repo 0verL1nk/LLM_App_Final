@@ -40,17 +40,30 @@ function resolvePyinstallerInvocation() {
     .readFileSync(requirementsPath, "utf8")
     .split(/\r?\n/)
     .filter((line) => line && !/^onnxruntime==/.test(line.trim()))
+  // The CPU bundle bakes the onnxruntime Python wrapper into its PYZ archive,
+  // so a GPU pack that swaps only the package directory is only safe when the
+  // GPU runtime is the exact same version as the CPU one.
+  const onnxruntimeVersion = (fs
+    .readFileSync(requirementsPath, "utf8")
+    .match(/^onnxruntime==(\S+)/m) || [])[1]
+  if (!onnxruntimeVersion) {
+    process.stderr.write("Unable to resolve the pinned onnxruntime version for the GPU bundle.\n")
+    process.exit(1)
+  }
   fs.writeFileSync(requirementsPath, `${lines.join("\n")}\n`)
   run(python, ["pip", "install", "--python", venvPython, "--no-deps", "-r", requirementsPath])
+  // nvidia-*-cu13 metapackages are sdists that fail to build in the bare
+  // venv; the real distribution names install as wheels directly.
   run(python, [
     "pip",
     "install",
     "--python",
     venvPython,
-    "onnxruntime-gpu>=1.24.3,<2.0.0",
+    `onnxruntime-gpu==${onnxruntimeVersion}`,
     "nvidia-cudnn-cu13",
-    "nvidia-cublas-cu13",
-    "nvidia-cuda-runtime-cu13",
+    "nvidia-cublas",
+    "nvidia-cuda-runtime",
+    "nvidia-cuda-nvrtc",
     "pyinstaller",
   ])
   return { command: venvPython, prefix: ["-m", "PyInstaller"] }
@@ -86,13 +99,15 @@ const pyinstallerArgs = [
   path.join(root, "scripts", "desktop_api.py"),
 ]
 for (const packageName of ocrMetadataPackages) pyinstallerArgs.splice(-1, 0, "--copy-metadata", packageName)
+// The DLL hook ships in every bundle: it is a no-op without the nvidia tree,
+// and it is what makes a GPU pack extracted into _internal work later.
+pyinstallerArgs.splice(-1, 0, "--runtime-hook", path.join(root, "web", "scripts", "gpu_dll_runtime_hook.py"))
 if (gpuBundle) {
   pyinstallerArgs.splice(-1, 0,
     "--copy-metadata", "onnxruntime-gpu",
     "--collect-binaries", "nvidia.cudnn",
     "--collect-binaries", "nvidia.cublas",
     "--collect-binaries", "nvidia.cuda_runtime",
-    "--runtime-hook", path.join(root, "web", "scripts", "gpu_dll_runtime_hook.py"),
   )
 }
 const invocation = resolvePyinstallerInvocation()
@@ -131,9 +146,9 @@ if (gpuBundle) {
     }
   }
   walk(internal)
-  for (const requiredDll of ["cudnn64_9.dll", "cublas64_13.dll", "cublaslt64_13.dll"]) {
-    if (!bundledFiles.has(requiredDll)) {
-      process.stderr.write(`GPU bundle is missing ${requiredDll}; the CUDA provider would fail at startup.\n`)
+  for (const requiredDll of [/^cudnn64_\d+\.dll$/, /^cublas64_\d+\.dll$/, /^cublaslt64_\d+\.dll$/]) {
+    if (![...bundledFiles].some((name) => requiredDll.test(name))) {
+      process.stderr.write(`GPU bundle has no DLL matching ${requiredDll}; the CUDA provider would fail at startup.\n`)
       process.exit(1)
     }
   }

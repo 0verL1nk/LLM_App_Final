@@ -6,6 +6,7 @@ const path = require("node:path")
 const fs = require("node:fs")
 const { createUpdateService } = require("./updater.cjs")
 const { createTrayService } = require("./tray.cjs")
+const { createGpuPackService } = require("./gpu-pack.cjs")
 
 const apiPort = Number(process.env.PAPERSAGE_DESKTOP_PORT || 18765)
 let backend
@@ -232,7 +233,107 @@ ipcMain.handle("window:close", (event) => BrowserWindow.fromWebContents(event.se
 ipcMain.handle("updates:check", () => updates.checkForUpdates())
 ipcMain.handle("updates:install", () => updates.installUpdate())
 ipcMain.handle("app:version", () => (app.isPackaged ? app.getVersion() : require("../package.json").version))
+ipcMain.handle("app:relaunch", () => {
+  app.relaunch()
+  app.exit(0)
+})
 ipcMain.handle("logs:open", async () => shell.openPath(getLogDirectory()))
+
+let gpuPackService
+function getGpuPackService() {
+  if (gpuPackService) return gpuPackService
+  gpuPackService = createGpuPackService({
+    internalDir: app.isPackaged
+      ? path.join(process.resourcesPath, "backend", "papersage-api", "_internal")
+      : path.resolve(__dirname, "..", ".desktop-backend", "papersage-api", "_internal"),
+    workDir: path.join(app.getPath("userData"), "gpu-pack"),
+    download: downloadWithResume,
+    extract: extractZip,
+    report: (status) =>
+      BrowserWindow.getAllWindows().forEach((window) => window.webContents.send("gpu-pack:status", status)),
+    logger: { error: (message, error) => reportMainError(message, error) },
+  })
+  return gpuPackService
+}
+
+function downloadWithResume(url, destination, onProgress, remainingAttempts = 5) {
+  return new Promise((resolve, reject) => {
+    const attempt = () => {
+      const alreadyReceived = fs.existsSync(destination) ? fs.statSync(destination).size : 0
+      const request = net.request({
+        url,
+        headers: alreadyReceived ? { Range: `bytes=${alreadyReceived}-` } : {},
+        redirect: "follow",
+      })
+      request.on("response", (response) => {
+        const status = response.statusCode
+        if (status !== 200 && status !== 206) {
+          request.abort()
+          retryOrReject(new Error(`GPU 加速包下载失败：HTTP ${status}`))
+          return
+        }
+        const resumed = status === 206
+        const contentRange = String(response.headers["content-range"] || "")
+        const totalFromRange = Number(contentRange.split("/")[1] || 0)
+        const total = totalFromRange || Number(response.headers["content-length"] || 0) + (resumed ? alreadyReceived : 0)
+        const stream = fs.createWriteStream(destination, { flags: resumed ? "a" : "w" })
+        let received = alreadyReceived
+        response.on("data", (chunk) => {
+          received += chunk.length
+          stream.write(chunk)
+          onProgress(received, total)
+        })
+        response.on("end", () => stream.end(resolve))
+        response.on("error", (error) => {
+          stream.end()
+          retryOrReject(error)
+        })
+      })
+      request.on("error", retryOrReject)
+      request.end()
+    }
+    const retryOrReject = (error) => {
+      if (remainingAttempts > 0) {
+        remainingAttempts -= 1
+        writeDesktopLog("main.log", `GPU 加速包下载中断，剩余重试 ${remainingAttempts} 次：${errorMessage(error)}`)
+        setTimeout(attempt, 2000)
+      } else {
+        reject(error)
+      }
+    }
+    attempt()
+  })
+}
+
+function extractZip(zipPath, destination) {
+  return new Promise((resolve, reject) => {
+    const result = require("node:child_process").spawnSync(
+      "powershell",
+      ["-NoProfile", "-Command", `Expand-Archive -LiteralPath "${zipPath}" -DestinationPath "${destination}" -Force`],
+      { stdio: "ignore" },
+    )
+    if (result.status === 0) resolve()
+    else reject(new Error("GPU 加速包解压失败。"))
+  })
+}
+
+ipcMain.handle("gpu-pack:status", () => {
+  if (!app.isPackaged) return { phase: "cpu-active" }
+  return getGpuPackService().status()
+})
+ipcMain.handle("gpu-pack:enable", async () => {
+  if (!app.isPackaged) return { ok: false, phase: "cpu-active" }
+  const version = app.getVersion()
+  await getGpuPackService().enable(
+    `https://github.com/0verL1nk/PaperSage/releases/download/v${version}/PaperSage-GPU-Pack-${version}.zip`,
+  )
+  const { phase } = getGpuPackService().status()
+  return { ok: phase === "gpu-active", phase }
+})
+ipcMain.handle("gpu-pack:disable", () => {
+  if (!app.isPackaged) return { ok: false }
+  return { ok: getGpuPackService().disable() }
+})
 
 process.on("uncaughtException", (error) => reportMainError("桌面应用发生未捕获错误", error))
 process.on("unhandledRejection", (reason) => reportMainError("桌面应用发生未处理异常", reason))
