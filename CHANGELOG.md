@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0](https://github.com/0verL1nk/PaperSage/compare/v1.4.4...v1.5.0) (2026-08-15)
+
+
+### Features
+
+* **skills:** user-overlay skill directory with priority resolution ([#111](https://github.com/0verL1nk/PaperSage/issues/111)) ([8c866f4](https://github.com/0verL1nk/PaperSage/commit/8c866f4b73746908eb5f9487ddb76eefafdbbdd0))
+* **web:** visualize session context composition ([#113](https://github.com/0verL1nk/PaperSage/issues/113)) ([13dac58](https://github.com/0verL1nk/PaperSage/commit/13dac5892648e4699ca2da104702aa8ac7cdfd66))
+
+
+### Bug Fixes
+
+* **desktop:** bundle agent skills and tolerate reasoning-wrapped JSON ([#109](https://github.com/0verL1nk/PaperSage/issues/109)) ([f7ced2d](https://github.com/0verL1nk/PaperSage/commit/f7ced2dd7a9f14cd0ee920cf9a17ba0fe8ce989f))
+* **desktop:** keep the launch window visible through backend boot ([#110](https://github.com/0verL1nk/PaperSage/issues/110)) ([12b408d](https://github.com/0verL1nk/PaperSage/commit/12b408d18227cb3c81fb16f1f35839c2a780fe31))
+* **orm:** reconcile legacy event columns before run-item backfill ([#107](https://github.com/0verL1nk/PaperSage/issues/107)) ([fe3c16c](https://github.com/0verL1nk/PaperSage/commit/fe3c16caa0a4216922d3af6e2155e01c34f2e96c))
+* **web:** compact response indicator and null terminal result tolerance ([#112](https://github.com/0verL1nk/PaperSage/issues/112)) ([a6a48f1](https://github.com/0verL1nk/PaperSage/commit/a6a48f1bd735138c130760e49c7ca6300a3c53ed))
+
+
+### Documentation
+
+* **design:** add OpenPencil design workflow and account-menu v1.4.4 artifacts ([#105](https://github.com/0verL1nk/PaperSage/issues/105)) ([dd3eb5b](https://github.com/0verL1nk/PaperSage/commit/dd3eb5b8962b8c59e48cefc4a4a910b7df81bd9d))
+
 ## [1.4.4](https://github.com/0verL1nk/PaperSage/compare/v1.4.3...v1.4.4) (2026-08-15)
 
 
