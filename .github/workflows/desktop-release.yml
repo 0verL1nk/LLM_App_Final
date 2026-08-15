@@ -117,7 +117,9 @@ jobs:
       - name: Upload installer artifact
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: ${{ matrix.artifact }}-${{ github.ref_name }}
+          # Branch names can contain "/" which artifact names reject; fall
+          # back to the run id for workflow_dispatch test builds.
+          name: ${{ matrix.artifact }}-${{ github.ref_type == 'tag' && github.ref_name || github.run_id }}
           path: ${{ matrix.files }}
           if-no-files-found: error
           retention-days: 14
