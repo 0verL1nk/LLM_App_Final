@@ -164,7 +164,10 @@ export function useTurn(projectId: string, sessionId: string) {
         const event = agentEventSchema.parse(rawEvent)
         onEvent(event)
         if (event.eventType === "run.completed") {
-          result = turnResultSchema.parse(event.payload.result)
+          // Some terminal paths emit a null result; surface it through the
+          // "no final answer" branch instead of a raw ZodError message.
+          const raw = event.payload.result
+          result = raw == null ? undefined : turnResultSchema.parse(raw)
         } else if (event.eventType === "run.failed") {
           failure = String(event.payload.message ?? "Agent 运行失败")
         }
