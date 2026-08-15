@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.2](https://github.com/0verL1nk/PaperSage/compare/v1.4.1...v1.4.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* **desktop:** repair tray icon, add restart-to-update and visible version ([c4729a5](https://github.com/0verL1nk/PaperSage/commit/c4729a5fdce2aa22576a07d40963500bcbd200b2))
+* **desktop:** repair tray icon, add restart-to-update and visible version ([f0d835b](https://github.com/0verL1nk/PaperSage/commit/f0d835b6ac5038b70dcf1298925ff53d775c3d1d))
+* **web:** keep code-block async tokens fresh without render-phase refs ([1aafbb1](https://github.com/0verL1nk/PaperSage/commit/1aafbb1278a76aa176324d175da4682eb24d9b99))
+
 ## [1.4.1](https://github.com/0verL1nk/PaperSage/compare/v1.4.0...v1.4.1) (2026-08-14)
 
 
