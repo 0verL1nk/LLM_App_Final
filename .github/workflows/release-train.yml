@@ -50,7 +50,7 @@ jobs:
           PR_NUMBER: ${{ steps.release-pr.outputs.number }}
         shell: bash
         run: |
-          gh pr merge "$PR_NUMBER" --merge
+          gh pr merge "$PR_NUMBER" --squash
           merge_sha="$(gh pr view "$PR_NUMBER" --json mergeCommit --jq '.mergeCommit.oid')"
           echo "merge_sha=$merge_sha" >> "$GITHUB_OUTPUT"
 
