@@ -1,3 +1,4 @@
+import { Loader } from "@/components/ai-elements/loader";
 import { cn } from "@/lib/utils";
 
 export function ThinkingState({ className }: { className?: string }) {
@@ -15,15 +16,9 @@ export function ThinkingState({ className }: { className?: string }) {
 
 export function ResearchOrbs() {
   return (
-    <div className="flex h-14 items-center gap-1.5" aria-label="研究任务正在启动" role="status">
-      {[0, 1, 2].map((index) => (
-        <span
-          className="size-2.5 rounded-full bg-primary/70 motion-safe:animate-bounce"
-          key={index}
-          style={{ animationDelay: `${index * 140}ms` }}
-        />
-      ))}
-      <ThinkingState className="ml-2" />
+    <div className="flex h-6 items-center gap-2" aria-label="研究任务正在启动" role="status">
+      <Loader />
+      <ThinkingState />
     </div>
   );
 }
