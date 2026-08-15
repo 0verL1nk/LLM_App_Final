@@ -188,8 +188,7 @@ def test_web_run_path_surface_and_paper_leader_profile_middleware() -> None:
     assert middleware[-1] is llm_logger_middleware
 
 
-def test_paper_leader_delegation_middleware_requires_feature_flag(monkeypatch) -> None:
-    monkeypatch.setenv("DURABLE_AGENT_TASKS_ENABLED", "true")
+def test_paper_leader_delegation_middleware_is_always_installed() -> None:
     middleware = build_middleware_list(
         model=_BindableFakeChatModel(responses=["ok"]),
         profile=paper_leader_profile,

@@ -6,7 +6,8 @@
   actual `paper_leader_profile` middleware through integration tests before edits.
 - [x] Record baseline metrics: run success/failure, stalled runs, delegation count,
   duplicate events, reconnect recovery and median task latency.
-- [x] Add a feature flag `DURABLE_AGENT_TASKS_ENABLED`, default off, scoped by user
+- [x] ~~Add a feature flag `DURABLE_AGENT_TASKS_ENABLED`, default off, scoped by user~~
+  (built, then removed by maintainainer decision 2026-08-15: no switch, durable is always on; migration 12 drops the table)
   or project; document how to disable it without a deployment rollback.
 - [x] Freeze new use of legacy A2A, TeamRuntime, process globals and thread pools;
   add an architecture test that rejects new imports in the canonical path.

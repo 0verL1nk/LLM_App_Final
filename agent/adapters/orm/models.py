@@ -113,17 +113,6 @@ research_artifacts = Table(
 )
 Index("idx_research_artifacts_project", research_artifacts.c.project_uid, research_artifacts.c.session_uid, research_artifacts.c.created_at)
 
-feature_flags = Table(
-    "agent_feature_flags",
-    metadata,
-    Column("flag_name", String, primary_key=True),
-    Column("scope_type", String, primary_key=True),
-    Column("scope_id", String, primary_key=True),
-    Column("enabled", String, nullable=False, server_default="false"),
-    Column("created_at", String, nullable=False),
-    Column("updated_at", String, nullable=False),
-)
-Index("idx_agent_feature_flags_lookup", feature_flags.c.flag_name, feature_flags.c.scope_type, feature_flags.c.scope_id)
 
 research_artifact_revisions = Table(
     "research_artifact_revisions",

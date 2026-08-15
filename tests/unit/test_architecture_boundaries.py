@@ -33,7 +33,6 @@ TASK_QUEUE_ALLOWED_IMPORTERS = frozenset(
 NO_MODULE_GLOBAL_CONTAINERS = frozenset(
     {
         "agent/application/delegation_service.py",
-        "agent/application/feature_flags.py",
         "agent/application/leader_task_executor.py",
         "agent/application/research_workspace.py",
         "agent/application/steering_inputs.py",

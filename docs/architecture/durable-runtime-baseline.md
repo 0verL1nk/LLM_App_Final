@@ -3,7 +3,6 @@
 This document records the pre-migration baseline for the
 `durable-research-agent-runtime` change (task section 0). It captures the
 confirmed active Run path, the recorded fixture metrics, the
-`DURABLE_AGENT_TASKS_ENABLED` feature flag contract, and the architecture
 freeze that guards the canonical path.
 
 ## Confirmed Run path, worker, queue and middleware
@@ -83,7 +82,6 @@ Fixture record (deterministic fixture asserted by
 - task_latency_ms: {'samples': 3, 'median': 200.0, 'p95': 300.0}
 ```
 
-## DURABLE_AGENT_TASKS_ENABLED feature flag
 
 Default: **off**. The flag gates *new delegation capability*: while disabled,
 `build_middleware_list` does not register `DurableDelegationMiddleware`, so the
@@ -93,7 +91,6 @@ creating the LEADER task and outbox row) keep working.
 
 Resolution order (`agent/application/feature_flags.durable_agent_tasks_enabled`):
 
-1. Environment `DURABLE_AGENT_TASKS_ENABLED=true|1|yes|on` — enabled for every
    scope; `false|0|no|off` — disabled for every scope (kill switch that
    overrides stored overrides).
 2. Otherwise stored overrides in the `agent_feature_flags` table
@@ -102,7 +99,6 @@ Resolution order (`agent/application/feature_flags.durable_agent_tasks_enabled`)
 
    ```python
    from agent.adapters.orm.feature_flag_repository import set_feature_flag
-   set_feature_flag(flag_name="DURABLE_AGENT_TASKS_ENABLED",
                     scope_type="project", scope_id="<project_uid>", enabled=True)
    ```
 
@@ -114,7 +110,6 @@ started with.
 
 ### Disabling without a deployment rollback
 
-- **Global:** set `DURABLE_AGENT_TASKS_ENABLED=false` (or remove a truthy
   setting) in the process environment and restart API/worker processes. This
   overrides any stored override.
 - **Cohort:** `set_feature_flag(..., enabled=False)` (or `clear_feature_flag`)
