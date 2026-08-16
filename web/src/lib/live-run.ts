@@ -1,5 +1,5 @@
 import { applyA2UIEnvelope, applyA2UISurfaceMetadata, type A2UISurface } from "@/lib/a2ui"
-import type { AgentEvent } from "@/lib/schemas"
+import type { AgentEvent, Message } from "@/lib/schemas"
 
 export type RenderedMessagePart =
   | { id: string; type: "markdown"; text: string }
@@ -106,10 +106,12 @@ function applyItemEvent(run: LiveRun, event: AgentEvent): LiveRun {
       : null
     const surfaces = { ...run.surfaces }
     if (nextSurface) surfaces[nextSurface.surfaceId] = nextSurface
-    const parts = run.parts.some((part) => part.id === partId)
-      ? run.parts.map((part) => part.id === partId && part.type === "a2ui" && nextSurface ? { ...part, surfaceId: nextSurface.surfaceId } : part)
-      : item.status === "failed"
-        ? run.parts
+    // A failed presentation never receives envelopes; dropping its placeholder
+    // part keeps a skeleton from pulsing until the run refetches.
+    const parts = item.status === "failed"
+      ? run.parts.filter((part) => part.id !== partId)
+      : run.parts.some((part) => part.id === partId)
+        ? run.parts.map((part) => part.id === partId && part.type === "a2ui" && nextSurface ? { ...part, surfaceId: nextSurface.surfaceId } : part)
         : [...run.parts, { id: partId, type: "a2ui" as const, surfaceId: nextSurface?.surfaceId }]
     return { ...run, items, surfaces, parts }
   }
@@ -136,4 +138,30 @@ export function reduceLiveRun(run: LiveRun, event: AgentEvent): LiveRun {
 
 export function liveAnswer(parts: RenderedMessagePart[]): string {
   return parts.reduce((answer, part) => part.type === "markdown" ? answer + part.text : answer, "")
+}
+
+export function assistantParts(message: Message): RenderedMessagePart[] {
+  const stored: RenderedMessagePart[] = []
+  message.parts?.forEach((part, index) => {
+    const type = part.type
+    if (type === "markdown" && typeof part.text === "string") {
+      stored.push({ id: typeof part.id === "string" ? part.id : `text-${index}`, type, text: part.text })
+      return
+    }
+    if (type === "reasoning" && typeof part.text === "string") {
+      stored.push({ id: typeof part.id === "string" ? part.id : `reasoning-${index}`, type, text: part.text })
+      return
+    }
+    if (type === "a2ui") {
+      stored.push({ id: typeof part.id === "string" ? part.id : `surface-${index}`, type, surfaceId: typeof part.surfaceId === "string" ? part.surfaceId : undefined })
+    }
+  })
+  if (stored.length) return stored
+  const legacySurfaces = Array.isArray(message.a2ui) ? message.a2ui : [message.a2ui]
+  return [
+    ...(message.content ? [{ id: "text-0", type: "markdown" as const, text: message.content }] : []),
+    ...legacySurfaces.flatMap((surface, index) => typeof surface?.surfaceId === "string"
+      ? [{ id: `surface-${index}`, type: "a2ui" as const, surfaceId: surface.surfaceId }]
+      : []),
+  ]
 }

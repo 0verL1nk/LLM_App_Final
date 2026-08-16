@@ -88,6 +88,7 @@ export const turnResultSchema = z.object({
   phase_path: z.string().default(""),
   used_document_rag: z.boolean().default(false),
   a2ui_surface: z.record(z.string(), z.unknown()).nullable().optional(),
+  response_parts: z.array(z.record(z.string(), z.unknown())).optional(),
   context_snapshot: z.record(z.string(), z.unknown()).optional(),
 })
 
