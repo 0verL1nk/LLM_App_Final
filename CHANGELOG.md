@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.4](https://github.com/0verL1nk/PaperSage/compare/v1.8.3...v1.8.4) (2026-08-16)
+
+
+### Bug Fixes
+
+* **agent:** salvage unterminated UI fragments and repair update_plan tool dispatch ([#142](https://github.com/0verL1nk/PaperSage/issues/142)) ([956ec13](https://github.com/0verL1nk/PaperSage/commit/956ec13ee92c17a7d5f5ffa01332787c99c32072))
+
 ## [1.8.3](https://github.com/0verL1nk/PaperSage/compare/v1.8.2...v1.8.3) (2026-08-16)
 
 
