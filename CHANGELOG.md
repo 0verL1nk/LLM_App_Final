@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.2](https://github.com/0verL1nk/PaperSage/compare/v1.8.1...v1.8.2) (2026-08-16)
+
+
+### Bug Fixes
+
+* **desktop:** use the Electron net module for the GPU pack download ([#138](https://github.com/0verL1nk/PaperSage/issues/138)) ([a51ddd6](https://github.com/0verL1nk/PaperSage/commit/a51ddd6c2657783a18d0c7c99a27b83ced8c1de7))
+
 ## [1.8.1](https://github.com/0verL1nk/PaperSage/compare/v1.8.0...v1.8.1) (2026-08-16)
 
 
