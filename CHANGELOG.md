@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.9.0](https://github.com/0verL1nk/PaperSage/compare/v1.8.4...v1.9.0) (2026-08-16)
+
+
+### Features
+
+* **agent:** builtin research subagents with agentic search and paper ingestion ([#144](https://github.com/0verL1nk/PaperSage/issues/144)) ([2703028](https://github.com/0verL1nk/PaperSage/commit/2703028fdbb9769af47e049b83e92aca2d0e3772))
+
 ## [1.8.4](https://github.com/0verL1nk/PaperSage/compare/v1.8.3...v1.8.4) (2026-08-16)
 
 
