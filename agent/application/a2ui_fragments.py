@@ -66,6 +66,7 @@ class A2UIFragmentStreamParser:
         self._text_buffer = ""
         self._fragment_buffer = ""
         self._fragment_type = ""
+        self._fragment_open_tag = ""
         self._in_code_fence = False
 
     def feed(self, token: str) -> None:
@@ -91,6 +92,7 @@ class A2UIFragmentStreamParser:
         if match.start():
             self._emit_text(self._text_buffer[:match.start()])
         self._fragment_type = match.group("type")
+        self._fragment_open_tag = match.group(0)
         if self._on_fragment_start is not None:
             self._on_fragment_start(self._fragment_type)
         self._fragment_buffer = self._text_buffer[match.end():]
@@ -98,10 +100,16 @@ class A2UIFragmentStreamParser:
         self._consume_fragment("")
 
     def finish(self) -> None:
-        """Flush plain text and discard an incomplete private fragment."""
+        """Flush plain text and fail an unterminated private fragment.
+
+        The swallowed fragment text is salvaged back into the markdown stream:
+        models sometimes reference the tag in prose (e.g. inside inline code),
+        and discarding the buffer would truncate the answer mid-sentence.
+        """
         if self._fragment_type:
             self._on_error("UI fragment ended before its closing tag")
-            self._fragment_buffer = self._fragment_type = ""
+            self._emit_text(self._fragment_open_tag + self._fragment_buffer)
+            self._fragment_buffer = self._fragment_type = self._fragment_open_tag = ""
         if self._text_buffer:
             self._emit_text(self._text_buffer)
             self._text_buffer = ""
@@ -125,7 +133,7 @@ class A2UIFragmentStreamParser:
         self._fragment_buffer += token
         if len(self._fragment_buffer.encode("utf-8")) > _MAX_FRAGMENT_BYTES:
             self._on_error("UI fragment exceeded the size limit")
-            self._fragment_buffer = self._fragment_type = ""
+            self._fragment_buffer = self._fragment_type = self._fragment_open_tag = ""
             return
         close = self._fragment_buffer.find(_CLOSE_UI)
         if close < 0:
@@ -133,7 +141,7 @@ class A2UIFragmentStreamParser:
         raw_xml = self._fragment_buffer[:close]
         remainder = self._fragment_buffer[close + len(_CLOSE_UI):]
         fragment = parse_ui_fragment(self._fragment_type, raw_xml)
-        self._fragment_buffer = self._fragment_type = ""
+        self._fragment_buffer = self._fragment_type = self._fragment_open_tag = ""
         if fragment is None:
             self._on_error("UI fragment did not match its registered schema")
         else:

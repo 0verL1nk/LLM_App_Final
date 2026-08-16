@@ -28,6 +28,11 @@ class UpdatePlanInput(BaseModel):
     revision: int = Field(ge=0)
     goal: str = Field(min_length=1, max_length=1000)
     steps: list[PlanStep] = Field(default_factory=list, max_length=64)
+    # Injected args live in the schema (not just the signature) so the
+    # ToolNode both injects them and hides them from the model-facing contract.
+    # Defaults keep args_schema validation usable with model-only arguments.
+    tool_call_id: Annotated[str, InjectedToolCallId] = ""
+    state: Annotated[dict[str, Any], InjectedState] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_dependencies(self) -> "UpdatePlanInput":
