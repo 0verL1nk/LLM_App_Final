@@ -111,10 +111,11 @@ describe("expandSkillDirective", () => {
 })
 
 describe("builtin registry", () => {
-  it("ships skills and compact with unique names", () => {
+  it("ships the full builtin command set with unique names", () => {
     const names = BUILTIN_COMMANDS.map((item) => item.name)
     expect(new Set(names).size).toBe(names.length)
-    expect(BUILTIN_COMMAND_NAMES.has("skills")).toBe(true)
-    expect(BUILTIN_COMMAND_NAMES.has("compact")).toBe(true)
+    for (const expected of ["skills", "compact", "help", "documents", "memory", "model", "new", "rename"]) {
+      expect(BUILTIN_COMMAND_NAMES.has(expected)).toBe(true)
+    }
   })
 })

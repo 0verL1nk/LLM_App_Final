@@ -254,6 +254,20 @@ export function useSteeringInput(projectId: string, sessionId: string) {
   })
 }
 
+export function useRenameSession(projectId: string, sessionId: string) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (sessionName: string) => api(
+      `/projects/${projectId}/sessions/${sessionId}`,
+      z.unknown(),
+      { method: "PATCH", body: JSON.stringify({ session_name: sessionName }) },
+    ),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.sessions(projectId) })
+    },
+  })
+}
+
 export function useSkills() {
   return useQuery({
     queryKey: keys.skills,

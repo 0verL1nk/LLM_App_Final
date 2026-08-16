@@ -9,6 +9,12 @@ export interface SlashCommandDef {
 export const BUILTIN_COMMANDS: readonly SlashCommandDef[] = [
   { name: "skills", description: "列出可用技能及其用途", kind: "builtin" },
   { name: "compact", description: "压缩会话上下文，保留近期消息与摘要", kind: "builtin" },
+  { name: "help", description: "查看全部命令与用法", kind: "builtin" },
+  { name: "documents", description: "查看项目资料清单与处理状态", kind: "builtin" },
+  { name: "memory", description: "查看项目记忆与稳定偏好", kind: "builtin" },
+  { name: "model", description: "查看当前模型配置", kind: "builtin" },
+  { name: "new", description: "新建探索会话并切换过去", kind: "builtin" },
+  { name: "rename", description: "重命名当前会话（/rename 新名称）", kind: "builtin" },
 ] as const
 
 export const BUILTIN_COMMAND_NAMES: ReadonlySet<string> = new Set(
