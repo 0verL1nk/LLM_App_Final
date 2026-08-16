@@ -106,6 +106,10 @@ const pyinstallerArgs = [
   "--add-data", `${path.join(root, "alembic.ini")}${separator}.`,
   "--add-data", `${path.join(root, "alembic")}${separator}alembic`,
   "--add-data", `${path.join(root, "agent", "skills")}${separator}agent/skills`,
+  // Subagent agent.md definitions resolve next to their loader module; without
+  // the data directory the desktop app ships an empty 子代理清单 and every
+  // delegate_task call answers "unknown_role".
+  "--add-data", `${path.join(root, "agent", "subagent")}${separator}agent/subagent`,
   "--collect-data", "paddlex", "--collect-binaries", "paddle",
   // --collect-all does not copy package metadata; the dist-info directory is
   // what the post-build assertion below checks.
@@ -149,6 +153,8 @@ for (const required of [
   // The use_skill tool resolves skills next to its loader module; without
   // the data directory every skill call answers "Available skills: none".
   path.join(internal, "agent", "skills", "summary", "SKILL.md"),
+  // Same resolution rule for subagent definitions (see pyinstallerArgs).
+  path.join(internal, "agent", "subagent", "researcher", "agent.md"),
 ]) {
   if (!fs.existsSync(required)) {
     process.stderr.write(`Packaged backend is missing ${required}; migrations would fail at startup.\n`)
