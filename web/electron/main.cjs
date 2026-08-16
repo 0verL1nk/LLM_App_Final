@@ -204,8 +204,15 @@ async function createWindow() {
       window.hide()
     }
   })
-  window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
-    if (level >= 2) writeDesktopLog("renderer.log", `${sourceId}:${line} | ${message}`)
+  window.webContents.on("console-message", (_event, levelOrDetails, message, line, sourceId) => {
+    // Electron 43 passes a single details object; older versions passed the
+    // fields positionally. Compare naively and nothing ever gets logged.
+    const details = typeof levelOrDetails === "object" ? levelOrDetails : null
+    const level = details ? details.level : levelOrDetails
+    const text = details ? details.message : message
+    const source = details ? details.sourceId : sourceId
+    const atLine = details ? details.line : line
+    if (level >= 2 && text) writeDesktopLog("renderer.log", `${source}:${atLine} | ${text}`)
   })
   window.webContents.on("render-process-gone", (_event, details) => {
     writeDesktopLog("main.log", `渲染进程异常退出：reason=${details.reason} exitCode=${details.exitCode}`)
