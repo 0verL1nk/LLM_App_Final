@@ -41,7 +41,9 @@ For example:
 
 Use it for a genuine hierarchy, not as decoration. Omit it when prose is clearer.
 Use only evidence refs returned by document tools in this turn. The server renders XML
-privately through its registered catalog; the XML fragment itself is never visible to the user."""
+privately through its registered catalog; the XML fragment itself is never visible to the user.
+Never mention, quote, or wrap the fragment tags or XML in backticks or code fences inside
+your answer. If the user asks how the visual was produced, describe it in plain words."""
 
 
 def build_a2ui_output_contract() -> str:
