@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.1](https://github.com/0verL1nk/PaperSage/compare/v1.8.0...v1.8.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* dangling a2ui placeholders, dead renderer logging, context card design ([#136](https://github.com/0verL1nk/PaperSage/issues/136)) ([9f346e1](https://github.com/0verL1nk/PaperSage/commit/9f346e1b0e7324e1255bf4d023840fc2b684fd41))
+
 ## [1.8.0](https://github.com/0verL1nk/PaperSage/compare/v1.7.0...v1.8.0) (2026-08-16)
 
 
