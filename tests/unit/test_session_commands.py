@@ -137,6 +137,103 @@ def test_skills_command_appends_user_and_assistant_messages(monkeypatch: pytest.
     assert result["stats"] is None
 
 
+def test_help_command_lists_every_builtin_command(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_membership(monkeypatch)
+    state = _patch_storage(monkeypatch, _history(2))
+
+    result = execute_session_command(
+        project_uid=PROJECT, session_uid=SESSION, user_uuid=USER, command="help"
+    )
+
+    content = result["message"]["content"]
+    for name in ("/skills", "/compact", "/help", "/documents", "/memory", "/model", "/new", "/rename"):
+        assert name in content
+    assert state["saves"][0][-2] == {"role": "user", "content": "/help"}
+
+
+def test_documents_command_lists_files_with_ingestion_status(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_membership(monkeypatch)
+    state = _patch_storage(monkeypatch, _history(2))
+    monkeypatch.setattr(
+        session_commands,
+        "list_project_files",
+        lambda **_kwargs: [
+            {"uid": "d1", "file_name": "attention.pdf", "is_active": 1},
+            {"uid": "d2", "file_name": "旧版本.docx", "is_active": 0},
+        ],
+    )
+    monkeypatch.setattr(
+        session_commands,
+        "list_project_ingestions",
+        lambda **_kwargs: [{"doc_uid": "d1", "status": "published", "stage": "done"}],
+    )
+
+    result = execute_session_command(
+        project_uid=PROJECT, session_uid=SESSION, user_uuid=USER, command="documents"
+    )
+
+    content = result["message"]["content"]
+    assert "attention.pdf" in content
+    assert "published" in content
+    assert "旧版本.docx" in content
+    assert state["saves"][0][-1]["role"] == "assistant"
+
+
+def test_documents_command_handles_empty_library(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_membership(monkeypatch)
+    _patch_storage(monkeypatch, [])
+    monkeypatch.setattr(session_commands, "list_project_files", lambda **_kwargs: [])
+    monkeypatch.setattr(session_commands, "list_project_ingestions", lambda **_kwargs: [])
+
+    result = execute_session_command(
+        project_uid=PROJECT, session_uid=SESSION, user_uuid=USER, command="documents"
+    )
+
+    assert "尚未上传资料" in result["message"]["content"]
+
+
+def test_memory_command_lists_l3_and_l4_items(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_membership(monkeypatch)
+    state = _patch_storage(monkeypatch, _history(2))
+
+    def _memory_items(*, level: str, **_kwargs: Any) -> list[dict[str, Any]]:
+        if level == "L3":
+            return [{"title": "方法偏好", "content": "优先对比实验设计", "memory_type": "semantic"}]
+        return [{"title": "输出语言", "content": "中文回答", "memory_type": "preference"}]
+
+    monkeypatch.setattr(session_commands, "list_memory_items", _memory_items)
+
+    result = execute_session_command(
+        project_uid=PROJECT, session_uid=SESSION, user_uuid=USER, command="memory"
+    )
+
+    content = result["message"]["content"]
+    assert "方法偏好" in content
+    assert "中文回答" in content
+    assert state["saves"][0][-1]["role"] == "assistant"
+
+
+def test_model_command_reports_configuration_without_leaking_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_membership(monkeypatch)
+    state = _patch_storage(monkeypatch, _history(2))
+    monkeypatch.setattr(session_commands, "read_api_key_for_user", lambda **_kwargs: "sk-secret")
+    monkeypatch.setattr(session_commands, "read_model_name_for_user", lambda **_kwargs: "qwen-max")
+    monkeypatch.setattr(
+        session_commands, "read_base_url_for_user", lambda **_kwargs: "https://dashscope.example.com/v1"
+    )
+
+    result = execute_session_command(
+        project_uid=PROJECT, session_uid=SESSION, user_uuid=USER, command="model"
+    )
+
+    content = result["message"]["content"]
+    assert "qwen-max" in content
+    assert "dashscope.example.com" in content
+    assert "已配置" in content
+    assert "sk-secret" not in content
+    assert state["saves"][0][-1]["role"] == "assistant"
+
+
 def test_compact_below_threshold_is_noop_without_model_call(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_membership(monkeypatch)
     state = _patch_storage(monkeypatch, _history(3))

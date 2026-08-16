@@ -9,12 +9,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from ..adapters.orm.memory_repository import list_memory_items
 from ..adapters.orm.run_repository import list_session_runs
 from ..adapters.sqlite.project_repository import (
+    list_project_files,
     list_project_session_messages,
     list_project_sessions,
     save_project_session_messages,
 )
+from ..adapters.sqlite.rag_ingestion_repository import list_project_ingestions
 from ..adapters.user_settings import (
     read_api_key_for_user,
     read_base_url_for_user,
@@ -40,6 +43,25 @@ _SUMMARY_SYSTEM_PROMPT = (
 )
 
 _ROLE_LABELS = {"user": "用户", "assistant": "助手"}
+
+# Command surface reference: keep in sync with web/src/lib/slash-commands.ts.
+HELP_TEXT = "\n".join(
+    [
+        "可用命令：",
+        "",
+        "- `/skills` — 列出可用技能及其用途",
+        "- `/技能名 任务` — 显式调用指定技能，例如 `/summary 总结这篇论文`",
+        "- `/compact` — 压缩会话上下文：较早历史归纳为摘要，近期消息保留原文",
+        "- `/documents` — 查看项目资料清单与处理状态",
+        "- `/memory` — 查看项目记忆与稳定偏好",
+        "- `/model` — 查看当前模型配置",
+        "- `/new` — 新建一个探索会话并切换过去",
+        "- `/rename 新名称` — 重命名当前会话",
+        "- `/help` — 显示本帮助",
+        "",
+        "输入框中键入 `/` 会自动弹出命令列表：↑↓ 选择、Tab 补全、Enter 执行、Esc 关闭。",
+    ]
+)
 
 
 class SessionCommandError(ValueError):
@@ -80,10 +102,17 @@ def execute_session_command(
 ) -> dict[str, Any]:
     """Run one slash command against the session and persist its transcript."""
     normalized = str(command or "").strip().lower()
-    handlers = {"skills": _execute_skills, "compact": _execute_compact}
+    handlers = {
+        "skills": _execute_skills,
+        "compact": _execute_compact,
+        "help": _execute_help,
+        "documents": _execute_documents,
+        "memory": _execute_memory,
+        "model": _execute_model,
+    }
     handler = handlers.get(normalized)
     if handler is None:
-        raise SessionCommandError(f"未知命令：/{command or '?'}（可用命令：/skills、/compact）")
+        raise SessionCommandError(f"未知命令：/{command or '?'}。输入 /help 查看全部命令。")
     _require_session(project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid)
     logger.info(
         "session command: user=%s project=%s session=%s command=%s",
@@ -128,6 +157,111 @@ def _execute_skills(*, project_uid: str, session_uid: str, user_uuid: str, args:
         user_uuid=user_uuid,
         user_text="/skills",
         assistant_text=format_skills_reply(list_skill_catalog()),
+    )
+    return {"message": message, "stats": None}
+
+
+def _execute_help(*, project_uid: str, session_uid: str, user_uuid: str, args: str) -> dict[str, Any]:
+    message = _append_command_messages(
+        project_uid=project_uid,
+        session_uid=session_uid,
+        user_uuid=user_uuid,
+        user_text="/help",
+        assistant_text=HELP_TEXT,
+    )
+    return {"message": message, "stats": None}
+
+
+def _format_ingestion_status(ingestion: dict[str, Any] | None) -> str:
+    if not isinstance(ingestion, dict):
+        return "未处理"
+    status = str(ingestion.get("status") or "").strip()
+    stage = str(ingestion.get("stage") or "").strip()
+    if not status:
+        return "未处理"
+    return f"{status}（{stage}）" if stage else status
+
+
+def _execute_documents(*, project_uid: str, session_uid: str, user_uuid: str, args: str) -> dict[str, Any]:
+    documents = list_project_files(project_uid=project_uid, uuid=user_uuid, active_only=False)
+    if not documents:
+        body = "项目资料库为空：尚未上传资料。上传后可在此查看处理状态。"
+    else:
+        ingestions = {
+            str(item.get("doc_uid") or ""): item
+            for item in list_project_ingestions(project_uid=project_uid, uuid=user_uuid)
+        }
+        lines = [f"项目资料（{len(documents)} 份）：", ""]
+        for document in documents:
+            name = str(document.get("file_name") or document.get("name") or "未命名")
+            availability = "在库" if int(document.get("is_active") or 0) else "已移出"
+            status = _format_ingestion_status(ingestions.get(str(document.get("uid") or "")))
+            lines.append(f"- {name} — {status} · {availability}")
+        body = "\n".join(lines)
+    message = _append_command_messages(
+        project_uid=project_uid,
+        session_uid=session_uid,
+        user_uuid=user_uuid,
+        user_text="/documents",
+        assistant_text=body,
+    )
+    return {"message": message, "stats": None}
+
+
+def _format_memory_section(title: str, items: list[dict[str, Any]]) -> list[str]:
+    if not items:
+        return [f"**{title}**：暂无", ""]
+    lines = [f"**{title}**（{len(items)} 条）：", ""]
+    for item in items:
+        entry_title = str(item.get("title") or "").strip()
+        content = str(item.get("content") or "").strip()
+        prefix = f"- **{entry_title}**：" if entry_title else "- "
+        lines.append(f"{prefix}{content}")
+    lines.append("")
+    return lines
+
+
+def _execute_memory(*, project_uid: str, session_uid: str, user_uuid: str, args: str) -> dict[str, Any]:
+    project_memory = list_memory_items(uuid=user_uuid, project_uid=project_uid, level="L3")
+    stable_preferences = list_memory_items(uuid=user_uuid, project_uid=project_uid, level="L4")
+    body = "\n".join(
+        [
+            *_format_memory_section("项目记忆（L3）", project_memory),
+            *_format_memory_section("稳定偏好（L4）", stable_preferences),
+            "以上内容由系统在对话后整理，可在「详情」面板中编辑或删除。",
+        ]
+    )
+    message = _append_command_messages(
+        project_uid=project_uid,
+        session_uid=session_uid,
+        user_uuid=user_uuid,
+        user_text="/memory",
+        assistant_text=body,
+    )
+    return {"message": message, "stats": None}
+
+
+def _execute_model(*, project_uid: str, session_uid: str, user_uuid: str, args: str) -> dict[str, Any]:
+    model_name = str(read_model_name_for_user(uuid=user_uuid) or "").strip() or "未配置"
+    base_url = str(read_base_url_for_user(uuid=user_uuid) or "").strip() or "默认（OpenAI 官方）"
+    api_key_configured = "已配置" if read_api_key_for_user(uuid=user_uuid) else "未配置"
+    body = "\n".join(
+        [
+            "当前模型配置：",
+            "",
+            f"- 模型：{model_name}",
+            f"- 接入点：{base_url}",
+            f"- API Key：{api_key_configured}",
+            "",
+            "可在「设置」页修改模型与密钥。",
+        ]
+    )
+    message = _append_command_messages(
+        project_uid=project_uid,
+        session_uid=session_uid,
+        user_uuid=user_uuid,
+        user_text="/model",
+        assistant_text=body,
     )
     return {"message": message, "stats": None}
 
