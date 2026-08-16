@@ -9,6 +9,7 @@ PaperSage is a project-oriented workspace for paper reading, evidence retrieval,
 - Full document indexes persist in LanceDB with native dense + FTS + RRF hybrid retrieval.
 - Uploads expose real extraction, OCR, embedding, publishing, ready, and failure progress.
 - Completed turns enqueue model-driven long-term memory consolidation.
+- Slash commands in the chat input offer `/skills` catalog listing, `/compact` history summarization, and explicit `/skill-name task` invocations.
 - SQLite persists workspace state while LangGraph checkpoints persist Agent execution state.
 
 ## Stack
