@@ -8,6 +8,7 @@ const { createUpdateService } = require("./updater.cjs")
 const { createTrayService } = require("./tray.cjs")
 const { createGpuPackService } = require("./gpu-pack.cjs")
 const { acquireSingleInstanceLockWithRetry } = require("./instance-lock.cjs")
+const { shutdownBackendTree } = require("./backend-shutdown.cjs")
 
 const apiPort = Number(process.env.PAPERSAGE_DESKTOP_PORT || 18765)
 let backend
@@ -367,5 +368,7 @@ app.on("window-all-closed", () => { if (process.platform !== "darwin" && (!trayS
 app.on("activate", showMainWindow)
 app.on("before-quit", () => {
   trayService?.beginQuit()
-  if (backend && !backend.killed) backend.kill()
+  // Kill the whole backend tree: plain kill() leaves OCR grandchildren
+  // running with the API port still bound after the app exits.
+  shutdownBackendTree(backend)
 })

@@ -52,14 +52,17 @@ if (WEB_DIST / "assets").is_dir():
 
 @app.get("/{path:path}", include_in_schema=False)
 def spa_fallback(path: str) -> FileResponse:
+    # The SPA entry must never come from a heuristic browser cache: after an
+    # in-place desktop update a stale entry references chunk hashes the new
+    # backend no longer ships, breaking lazy imports until the cache clears.
     candidate = ROOT_STATIC_FILES.get(path)
     if candidate and candidate.is_file():
-        return FileResponse(candidate)
+        return FileResponse(candidate, headers={"Cache-Control": "no-store"})
     if path == "index.html":
         candidate = WEB_DIST / "index.html"
         if candidate.is_file():
-            return FileResponse(candidate)
-    return FileResponse(WEB_DIST / "index.html")
+            return FileResponse(candidate, headers={"Cache-Control": "no-store"})
+    return FileResponse(WEB_DIST / "index.html", headers={"Cache-Control": "no-store"})
 
 
 def run() -> None:
