@@ -19,6 +19,20 @@ function run(command, args, options = {}) {
   return result
 }
 
+function listFilesRecursively(rootDir) {
+  const files = []
+  if (!fs.existsSync(rootDir)) return files
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const entryPath = path.join(dir, entry.name)
+      if (entry.isDirectory()) walk(entryPath)
+      else files.push(entryPath)
+    }
+  }
+  walk(rootDir)
+  return files
+}
+
 // The GPU bundle must not ship both onnxruntime and onnxruntime-gpu: they
 // install the same importable module and whichever wins by path order is
 // undefined. fastembed declares onnxruntime as a hard dependency, so the
@@ -107,22 +121,22 @@ pyinstallerArgs.splice(-1, 0, "--runtime-hook", path.join(root, "web", "scripts"
 const invocation = resolvePyinstallerInvocation()
 if (gpuBundle) {
   pyinstallerArgs.splice(-1, 0, "--copy-metadata", "onnxruntime-gpu")
-  // Most nvidia wheels are plain directories, not importable packages, so
-  // --collect-binaries skips them; move the DLLs explicitly instead. The
-  // destination mirrors the wheel layout the runtime hook scans.
+  // The cu13 wheels scatter their DLLs across several trees below
+  // site-packages/nvidia (cu13/bin/x86_64, cudnn/bin, ...). Gather every
+  // DLL into the single directory gpu_dll_runtime_hook.py exposes to the
+  // Windows loader; collecting packages does not work here because most of
+  // these trees are not importable packages at all.
   const venvSitePackages = path.join(root, "web", ".pyinstaller-gpu-venv", "Lib", "site-packages")
-  for (const nvidiaPackage of ["cudnn", "cublas", "cuda_runtime", "cuda_nvrtc"]) {
-    const binDir = path.join(venvSitePackages, "nvidia", nvidiaPackage, "bin")
-    if (!fs.existsSync(binDir)) {
-      process.stderr.write(`GPU venv is missing ${binDir}; the CUDA DLLs were not installed.\n`)
+  const nvidiaRoot = path.join(venvSitePackages, "nvidia")
+  const cudaDlls = listFilesRecursively(nvidiaRoot).filter((file) => file.toLowerCase().endsWith(".dll"))
+  for (const requiredDll of [/^cudnn64_\d+\.dll$/, /^cublas64_\d+\.dll$/, /^cublaslt64_\d+\.dll$/, /^cudart64_\d+\.dll$/, /^nvrtc64_[\d_]+\.dll$/]) {
+    if (!cudaDlls.some((file) => requiredDll.test(path.basename(file).toLowerCase()))) {
+      process.stderr.write(`GPU venv has no DLL matching ${requiredDll}; the CUDA wheels did not install.\n`)
       process.exit(1)
     }
-    pyinstallerArgs.splice(
-      -1,
-      0,
-      "--add-binary",
-      `${path.join(binDir, "*.dll")}${separator}nvidia/${nvidiaPackage}/bin`,
-    )
+  }
+  for (const dll of cudaDlls) {
+    pyinstallerArgs.splice(-1, 0, "--add-binary", `${dll}${separator}nvidia/cu13/bin/x86_64`)
   }
 }
 run(invocation.command, [...invocation.prefix, ...pyinstallerArgs])
