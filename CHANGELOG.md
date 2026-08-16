@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.3](https://github.com/0verL1nk/PaperSage/compare/v1.8.2...v1.8.3) (2026-08-16)
+
+
+### Bug Fixes
+
+* **desktop:** use the Electron net module for the GPU pack download ([#140](https://github.com/0verL1nk/PaperSage/issues/140)) ([17219e2](https://github.com/0verL1nk/PaperSage/commit/17219e2e186650d8b838005a46b9e476c7d06d5d))
+* **web:** keep a2ui mindmaps inline after a turn completes ([#139](https://github.com/0verL1nk/PaperSage/issues/139)) ([abc0f10](https://github.com/0verL1nk/PaperSage/commit/abc0f103828dce74d47ec9528e2e3224c3a919f3))
+
 ## [1.8.2](https://github.com/0verL1nk/PaperSage/compare/v1.8.1...v1.8.2) (2026-08-16)
 
 
