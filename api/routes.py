@@ -46,7 +46,6 @@ from agent.application.workspace import (
     update_user_project,
     update_workspace_session,
 )
-from agent.application.session_suggestions import generate_session_suggestions
 from agent.settings import load_agent_settings
 from utils.task_queue import enqueue_background_task, get_job_status
 
@@ -285,43 +284,6 @@ def messages(
         }
     except LookupError as exc:
         raise _not_found(exc) from exc
-
-
-@router.get("/projects/{project_uid}/sessions/{session_uid}/suggestions")
-def suggestions(
-    project_uid: str,
-    session_uid: str,
-    user_uuid: UserId,
-) -> dict[str, Any]:
-    """Model-generated follow-up prompts for the session's current state."""
-    try:
-        messages = list_workspace_messages(
-            project_uid=project_uid,
-            session_uid=session_uid,
-            user_uuid=user_uuid,
-            offset=0,
-            limit=200,
-        )
-        documents = list_project_documents(project_uid=project_uid, user_uuid=user_uuid)
-    except LookupError as exc:
-        raise _not_found(exc) from exc
-    document_names = [
-        name
-        for name in (
-            str(item.get("file_name") or item.get("name") or item.get("doc_name") or "").strip()
-            for item in documents
-        )
-        if name
-    ]
-    return {
-        "suggestions": generate_session_suggestions(
-            user_uuid=user_uuid,
-            project_uid=project_uid,
-            session_uid=session_uid,
-            messages=messages,
-            document_names=document_names[:12],
-        )
-    }
 
 
 @router.post("/projects/{project_uid}/sessions/{session_uid}/turns")
