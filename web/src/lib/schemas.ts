@@ -91,6 +91,10 @@ export const turnResultSchema = z.object({
   context_snapshot: z.record(z.string(), z.unknown()).optional(),
 })
 
+export const sessionSuggestionsSchema = z.object({
+  suggestions: z.array(z.string()),
+});
+
 export const runCreatedSchema = z.object({
   run_id: z.string(),
   status: z.string(),

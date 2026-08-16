@@ -57,6 +57,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   useMessages,
+  useSessionSuggestions,
   useProject,
   useResumableRuns,
   useSteeringInput,
@@ -268,6 +269,9 @@ function ResearchWorkspace({
 }) {
   const project = useProject(projectId);
   const messages = useMessages(projectId, sessionId);
+  const suggestionCount = messages.data?.length ?? 0;
+  const suggestions = useSessionSuggestions(projectId, sessionId, suggestionCount);
+  const suggestionItems = suggestions.data?.suggestions ?? [];
   const refetchMessages = messages.refetch;
   const resumableRuns = useResumableRuns(projectId, sessionId);
   const turn = useTurn(projectId, sessionId);
@@ -476,13 +480,9 @@ function ResearchWorkspace({
             <ConversationScrollButton />
           </Conversation>
           <div className="shrink-0 border-t bg-background p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:p-5">
-            {!messages.data?.length && !turn.isPending && !activeRuns.length && (
+            {!turn.isPending && !activeRuns.length && suggestionItems.length > 0 && (
               <Suggestions className="mx-auto mb-3 max-w-3xl">
-                {[
-                  "概括这组论文的核心问题与结论",
-                  "比较不同方法的假设、数据集和局限",
-                  "找出当前证据不足、需要进一步核对的结论",
-                ].map((suggestion) => (
+                {suggestionItems.map((suggestion) => (
                   <Suggestion key={suggestion} suggestion={suggestion} onClick={submit} />
                 ))}
               </Suggestions>
