@@ -67,7 +67,7 @@ export const AgentInstructions = memo(
   ({ className, children, ...props }: AgentInstructionsProps) => (
     <div className={cn("space-y-2", className)} {...props}>
       <span className="font-medium text-muted-foreground text-sm">
-        Instructions
+        任务说明
       </span>
       <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-sm">
         <p>{children}</p>
