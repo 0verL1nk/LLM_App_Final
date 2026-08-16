@@ -64,6 +64,7 @@ agent_run_items = Table(
     Column("payload_json", Text, nullable=False),
     Column("created_at", String, nullable=False),
     Column("updated_at", String, nullable=False),
+    Column("last_sequence", Integer, nullable=False, server_default="0"),
 )
 Index("idx_agent_run_items_run", agent_run_items.c.run_uid, agent_run_items.c.created_at)
 
@@ -99,15 +100,38 @@ research_artifacts = Table(
     Column("artifact_uid", String, primary_key=True),
     Column("project_uid", String, nullable=False),
     Column("session_uid", String, nullable=False),
-    Column("run_uid", String, ForeignKey("agent_runs.run_uid", ondelete="CASCADE"), nullable=False),
-    Column("task_uid", String, ForeignKey("agent_tasks.task_uid", ondelete="CASCADE"), nullable=False, unique=True),
+    Column("uuid", String, nullable=False, server_default=""),
+    Column("run_uid", String, ForeignKey("agent_runs.run_uid", ondelete="CASCADE"), nullable=True),
+    Column("task_uid", String, ForeignKey("agent_tasks.task_uid", ondelete="CASCADE"), nullable=True),
     Column("artifact_type", String, nullable=False),
+    Column("validity_scope", Text, nullable=False, server_default=""),
+    Column("update_policy", Text, nullable=False, server_default=""),
     Column("content_json", Text, nullable=False),
     Column("evidence_refs_json", Text, nullable=False, server_default="[]"),
     Column("created_at", String, nullable=False),
     Column("updated_at", String, nullable=False),
 )
 Index("idx_research_artifacts_project", research_artifacts.c.project_uid, research_artifacts.c.session_uid, research_artifacts.c.created_at)
+
+
+research_artifact_revisions = Table(
+    "research_artifact_revisions",
+    metadata,
+    Column("revision_uid", String, primary_key=True),
+    Column("artifact_uid", String, ForeignKey("research_artifacts.artifact_uid", ondelete="CASCADE"), nullable=False),
+    Column("revision", Integer, nullable=False),
+    Column("status", String, nullable=False, server_default="proposed"),
+    Column("content_json", Text, nullable=False),
+    Column("evidence_refs_json", Text, nullable=False, server_default="[]"),
+    Column("source_run_uid", String, nullable=False, server_default=""),
+    Column("source_task_uid", String, nullable=False, server_default=""),
+    Column("based_on_revision_uid", String, nullable=False, server_default=""),
+    Column("decision_note", Text, nullable=False, server_default=""),
+    Column("decided_at", String, nullable=False, server_default=""),
+    Column("created_at", String, nullable=False),
+    UniqueConstraint("artifact_uid", "revision", name="uq_research_artifact_revisions_number"),
+)
+Index("idx_research_artifact_revisions_artifact", research_artifact_revisions.c.artifact_uid, research_artifact_revisions.c.revision)
 
 research_plans = Table(
     "research_plans",

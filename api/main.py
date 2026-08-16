@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import AsyncIterator
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -15,8 +15,10 @@ from agent.adapters.orm import run_migrations
 from agent.application.research_workspace import research_workspace_service
 from agent.logging_utils import configure_application_logging
 
+from . import run_routes, writing_routes
 from .context_memory_routes import context_memory_router
 from .routes import router
+from .runtime_task_routes import runtime_task_router
 
 
 @asynccontextmanager
@@ -36,6 +38,9 @@ app.add_middleware(
 )
 app.include_router(router)
 app.include_router(context_memory_router, prefix="/api/v1")
+app.include_router(runtime_task_router, prefix="/api/v1")
+app.include_router(run_routes.router, prefix="/api/v1")
+app.include_router(writing_routes.router, prefix="/api/v1")
 
 RESOURCE_ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 WEB_DIST = RESOURCE_ROOT / "web" / "dist"
@@ -50,6 +55,8 @@ if (WEB_DIST / "assets").is_dir():
 
 @app.get("/{path:path}", include_in_schema=False)
 def spa_fallback(path: str) -> FileResponse:
+    if not (WEB_DIST / "index.html").is_file():
+        raise HTTPException(status_code=404, detail="Web bundle not built")
     candidate = ROOT_STATIC_FILES.get(path)
     if candidate and candidate.is_file():
         return FileResponse(candidate)

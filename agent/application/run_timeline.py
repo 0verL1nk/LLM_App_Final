@@ -100,6 +100,26 @@ def project_presentation_item_event(
     )
 
 
+def presentation_item_uid(part_id: str, surface: dict[str, Any]) -> str:
+    """Stable item id for one presentation surface stream."""
+    return f"item_presentation_{part_id or surface.get('surfaceId', 'default')}"
+
+
+def project_presentation_completion_event(
+    *,
+    part_id: str,
+    surface: dict[str, Any],
+) -> dict[str, Any]:
+    """Close one presentation item; carries the surface for data-only streams."""
+    return _item_event(
+        item_uid=presentation_item_uid(part_id, surface),
+        item_type="presentation",
+        status="completed",
+        event_type="item.completed",
+        payload={"partId": part_id, "surface": _safe_value(surface)},
+    )
+
+
 def _item_event(
     *,
     item_uid: str,

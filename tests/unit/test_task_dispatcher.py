@@ -50,7 +50,7 @@ def test_lease_worker_persists_executor_result_without_global_state(tmp_path: Pa
     assert persisted is not None
     assert persisted["status"] == "completed"
     assert persisted["result"] == {"summary": f"完成 {task_uid}"}
-    items = list_run_items(run_uid=str(persisted["run_uid"]), db_name=database)
+    items = list_run_items(run_uid=str(persisted["run_uid"]), db_name=database)["items"]
     assert items[-1]["taskId"] == task_uid
     assert items[-1]["status"] == "completed"
     assert items[-1]["payload"]["summary"] == f"完成 {task_uid}"
@@ -72,7 +72,7 @@ def test_lease_worker_turns_executor_exception_into_failed_task(tmp_path: Path) 
     assert persisted is not None
     assert persisted["status"] == "failed"
     assert persisted["error_message"] == "provider unavailable"
-    items = list_run_items(run_uid=str(persisted["run_uid"]), db_name=database)
+    items = list_run_items(run_uid=str(persisted["run_uid"]), db_name=database)["items"]
     assert items[-1]["status"] == "failed"
     assert items[-1]["payload"]["summary"] == "Agent 任务执行失败"
 
@@ -109,7 +109,7 @@ def test_lease_worker_projects_a_safe_boundary_cancellation(tmp_path: Path) -> N
 
     assert outcome.status == "cancelled"
     persisted = get_agent_task(task_uid=task_uid, db_name=database)
-    items = list_run_items(run_uid=str(persisted["run_uid"]), db_name=database) if persisted else []
+    items = list_run_items(run_uid=str(persisted["run_uid"]), db_name=database)["items"] if persisted else []
     assert persisted is not None and persisted["status"] == "cancelled"
     assert items[-1]["status"] == "cancelled"
     assert items[-1]["payload"]["summary"] == "Agent 任务已取消"
@@ -202,6 +202,7 @@ def test_subagent_result_persists_only_the_validated_evidence_packet() -> None:
     )
 
     assert result == {
+        "research_question": "",
         "summary": "结论 <evidence>paper:chunk_1|p1</evidence>",
         "evidence_refs": ["paper:chunk_1"],
         "claims": [],

@@ -6,7 +6,7 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-from .agent_task import EvidencePacket
+from .agent_task import EvidencePacket, OpenQuestion, PacketLimitation
 
 
 def merge_evidence_packets(child_results: Iterable[dict[str, Any]]) -> dict[str, Any]:
@@ -35,8 +35,8 @@ def merge_evidence_packets(child_results: Iterable[dict[str, Any]]) -> dict[str,
             evidence.setdefault(reference.chunk_id, reference.model_dump(mode="json"))
         for index, claim in enumerate(packet.claims):
             claims.append({"claim_id": f"{task_uid}:claim:{index}", "task_uid": task_uid, "role": role, **claim.model_dump(mode="json")})
-        limitations.extend(item.strip() for item in packet.limitations if item.strip())
-        open_questions.extend(item.strip() for item in packet.open_questions if item.strip())
+        limitations.extend(text for item in packet.limitations if (text := _limitation_text(item)))
+        open_questions.extend(text for item in packet.open_questions if (text := _question_text(item)))
     return {
         "schema_version": 1,
         "evidence_refs": sorted(evidence),
@@ -48,6 +48,14 @@ def merge_evidence_packets(child_results: Iterable[dict[str, Any]]) -> dict[str,
         "failed_tasks": failed_tasks,
         "packet_summaries": summaries,
     }
+
+
+def _limitation_text(item: str | PacketLimitation) -> str:
+    return item if isinstance(item, str) else item.statement
+
+
+def _question_text(item: str | OpenQuestion) -> str:
+    return item if isinstance(item, str) else item.question
 
 
 def _find_explicit_negation_conflicts(claims: list[dict[str, Any]]) -> list[dict[str, Any]]:

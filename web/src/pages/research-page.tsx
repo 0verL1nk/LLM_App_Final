@@ -64,15 +64,15 @@ import {
 } from "@/lib/queries";
 import { formatEvidenceCitations } from "@/lib/evidence";
 import { sessionContextUsage } from "@/lib/context-usage";
-import { consumeEventStream } from "@/lib/api";
+import { postTaskAction, useRunRecovery } from "@/lib/run-recovery";
 import {
   createLiveRun,
+  hydrateLiveRun,
   liveAnswer,
   reduceLiveRun,
   type LiveRun,
   type RenderedMessagePart,
 } from "@/lib/live-run";
-import { agentEventSchema, turnResultSchema } from "@/lib/schemas";
 import type { AgentEvent, Message, TurnResult } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
@@ -313,41 +313,41 @@ function ResearchWorkspace({
       return next === run ? current : { ...current, [event.runId]: next };
     });
   }, []);
-  useEffect(() => {
-    const controller = new AbortController();
-    for (const run of resumableRuns.data ?? []) {
-      if (resumedRunIds.current.has(run.run_uid)) continue;
-      resumedRunIds.current.add(run.run_uid);
-      ensureLiveRun(run.run_uid);
-      void consumeEventStream(
-        `/runs/${run.run_uid}/events?afterSeq=0`,
-        (rawEvent) => {
-          const event = agentEventSchema.parse(rawEvent);
-          handleRunEvent(event);
-          if (event.eventType === "run.completed") {
-            setLastTurn(turnResultSchema.parse(event.payload.result));
-            void refetchMessages().finally(() => discardLiveRun(event.runId));
-          }
-          if (event.eventType === "run.failed") {
-            void refetchMessages().finally(() => discardLiveRun(event.runId));
-          }
-        },
-        controller.signal,
-      ).catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        toast.error(
-          error instanceof Error ? error.message : "未能恢复进行中的研究",
-        );
-      });
-    }
-    return () => controller.abort();
-  }, [
-    discardLiveRun,
-    ensureLiveRun,
-    handleRunEvent,
-    refetchMessages,
-    resumableRuns.data,
-  ]);
+  const [taskAction, setTaskAction] = useState<{ taskUid: string; action: "cancel" | "retry" } | null>(null);
+  const runTaskAction = useCallback(
+    (taskUid: string, action: "cancel" | "retry") => {
+      setTaskAction({ taskUid, action });
+      void postTaskAction(taskUid, action)
+        .then(() => {
+          toast.success(action === "cancel" ? "已请求取消任务" : "任务已重新排队");
+          void refetchMessages();
+        })
+        .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "任务操作失败"))
+        .finally(() => setTaskAction(null));
+    },
+    [refetchMessages],
+  );
+  useRunRecovery({
+    runs: resumableRuns.data,
+    ensureRun: ensureLiveRun,
+    applyEvent: handleRunEvent,
+    hydrateSnapshot: (runId, snapshot) =>
+      setLiveRuns((current) => ({
+        ...current,
+        [runId]: hydrateLiveRun(current[runId] ?? createLiveRun(), {
+          items: snapshot.items as never[],
+          lastSequence: snapshot.lastSequence,
+        }),
+      })),
+    stalledRunIds: () =>
+      Object.entries(liveRuns)
+        .filter(([, run]) => Object.keys(run.pendingBySequence).length > 0)
+        .map(([runId]) => runId),
+    onCompleted: setLastTurn,
+    onTerminalCleanup: (runId) => void refetchMessages().finally(() => discardLiveRun(runId)),
+    onRecoveryError: (error) =>
+      toast.error(error instanceof Error ? error.message : "未能恢复进行中的研究"),
+  });
   useEffect(() => {
     if (!messages.data) return;
     const frame = requestAnimationFrame(() =>
@@ -463,7 +463,12 @@ function ResearchWorkspace({
                           })),
                         }}
                         onInspect={openInspector}
-                        activity={<ResearchRunActivity items={Object.values(run.items)} />}
+                        activity={(
+                          <ResearchRunActivity
+                            items={Object.values(run.items)}
+                            controls={{ onAction: runTaskAction, pending: taskAction }}
+                          />
+                        )}
                         timeline={buildLiveTimeline(run)}
                         isStreaming
                       />

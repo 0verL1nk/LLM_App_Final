@@ -123,6 +123,10 @@ def _model_for_user(user_uuid: str) -> Any:
     )
 
 
+# EvidencePacket.summary is bounded by the wire contract (domain field max_length).
+_SUMMARY_MAX_CHARS = 6000
+
+
 def _sanitize_result(
     result: dict[str, Any],
     *,
@@ -159,16 +163,24 @@ def _sanitize_result(
                 "offset_end": item.get("offset_end"),
             }
         )
-    packet = EvidencePacket.model_validate({
-        "summary": answer[:6000],
+    EvidencePacket.model_validate({
+        "summary": answer[:_SUMMARY_MAX_CHARS],
         "evidence_refs": evidence_refs,
         "claims": [],
         "evidence": evidence,
         "limitations": [],
         "open_questions": [],
-        "metrics": {"run_latency_ms": float(result.get("run_latency_ms") or 0.0)},
     })
-    return packet.model_dump()
+    return {
+        "summary": answer[:_SUMMARY_MAX_CHARS],
+        "research_question": str(result.get("research_question") or ""),
+        "evidence_refs": evidence_refs,
+        "evidence": evidence,
+        "claims": [],
+        "limitations": [],
+        "open_questions": [],
+        "metrics": {"run_latency_ms": float(result.get("run_latency_ms") or 0.0)},
+    }
 
 
 __all__ = ["execute_subagent_task_payload"]

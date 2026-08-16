@@ -11,6 +11,7 @@ from agent.adapters.orm.run_repository import get_run
 from agent.adapters.orm.runtime_metrics_repository import get_runtime_metrics
 from agent.adapters.orm.task_query_repository import (
     get_agent_task,
+    list_agent_task_attempts,
     request_task_cancel,
     retry_agent_task,
 )
@@ -46,8 +47,10 @@ def list_session_research_artifacts(
 
 @runtime_task_router.get("/tasks/{task_uid}")
 def read_agent_task(task_uid: str, user_uuid: UserId) -> dict[str, Any]:
-    """Read one owned durable task and its current attempt projection."""
-    return {"data": _owned_task(task_uid, user_uuid)}
+    """Read one owned durable task with its execution attempts."""
+    task = _owned_task(task_uid, user_uuid)
+    task["attempts"] = list_agent_task_attempts(task_uid=task_uid)
+    return {"data": task}
 
 
 @runtime_task_router.post("/tasks/{task_uid}/cancel")

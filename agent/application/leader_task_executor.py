@@ -8,7 +8,7 @@ from typing import Any
 
 from ..adapters.orm.research_artifact_repository import create_research_artifact
 from ..adapters.orm.task_query_repository import get_agent_task_run_context
-from .research_workspace import execute_research_continuation, execute_research_run
+from .run_execution import execute_research_continuation, execute_research_run
 from .task_dispatcher import LeaseTaskWorker, TaskExecutorRegistry
 
 

@@ -18,7 +18,6 @@ RUNTIME_TABLES = frozenset(
         "agent_task_attempts",
         "agent_task_outbox",
         "agent_steering_inputs",
-        "agent_feature_flags",
     }
 )
 
