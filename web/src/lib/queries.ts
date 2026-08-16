@@ -11,6 +11,7 @@ import {
   runCreatedSchema,
   runSchema,
   researchArtifactSchema,
+  sessionSuggestionsSchema,
   steeringInputSchema,
   sessionSchema,
   settingsSchema,
@@ -27,6 +28,20 @@ export const keys = {
   resumableRuns: (projectId: string, sessionId: string) => ["runs", projectId, sessionId, "resumable"] as const,
   researchArtifacts: (projectId: string, sessionId: string) => ["research-artifacts", projectId, sessionId] as const,
   settings: ["settings"] as const,
+  sessionSuggestions: (projectId: string, sessionId: string, messageCount: number) =>
+    ["session-suggestions", projectId, sessionId, messageCount] as const,
+}
+
+export function useSessionSuggestions(projectId: string, sessionId: string, messageCount: number) {
+  return useQuery({
+    queryKey: keys.sessionSuggestions(projectId, sessionId, messageCount),
+    queryFn: () => api(
+      `/projects/${projectId}/sessions/${sessionId}/suggestions`,
+      sessionSuggestionsSchema,
+    ),
+    enabled: Boolean(projectId && sessionId),
+    staleTime: 300_000,
+  });
 }
 
 export function useProjects() {
