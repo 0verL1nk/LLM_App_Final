@@ -17,7 +17,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "node --test electron/updater.node.cjs electron/tray.node.cjs electron/gpu-pack.node.cjs electron/instance-lock.node.cjs scripts/verify-update-metadata.node.cjs && vitest run",
+    "test": "node --test electron/updater.node.cjs electron/tray.node.cjs electron/gpu-pack.node.cjs electron/instance-lock.node.cjs electron/backend-shutdown.node.cjs scripts/verify-update-metadata.node.cjs && vitest run",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview",
     "desktop:dev": "node electron/dev.cjs",
