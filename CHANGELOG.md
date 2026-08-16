@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.7.0](https://github.com/0verL1nk/PaperSage/compare/v1.6.0...v1.7.0) (2026-08-16)
+
+
+### Features
+
+* **research:** model-generated follow-up suggestions per session ([#131](https://github.com/0verL1nk/PaperSage/issues/131)) ([476f5c3](https://github.com/0verL1nk/PaperSage/commit/476f5c397ec86165e5319b27d612618ad1109104))
+* **web:** interleaved reasoning/tool timeline with inline citations ([#130](https://github.com/0verL1nk/PaperSage/issues/130)) ([64b5e23](https://github.com/0verL1nk/PaperSage/commit/64b5e2352800a5bc4b217e770b3643b8c20d5fda))
+
+
+### Bug Fixes
+
+* **desktop:** copy NVIDIA DLLs explicitly in GPU bundles ([#126](https://github.com/0verL1nk/PaperSage/issues/126)) ([5f9761b](https://github.com/0verL1nk/PaperSage/commit/5f9761b199d1f8024ba2f6925c0e9cb58e2ec69b))
+* **desktop:** gather scattered cu13 CUDA DLLs into one loader directory ([#129](https://github.com/0verL1nk/PaperSage/issues/129)) ([eb9f9ab](https://github.com/0verL1nk/PaperSage/commit/eb9f9ab4041c894cac1c54d0aa3d0153e89b9684))
+* **desktop:** retry the single-instance lock across update relaunches ([#127](https://github.com/0verL1nk/PaperSage/issues/127)) ([ce5e047](https://github.com/0verL1nk/PaperSage/commit/ce5e04743407e29f7d125006fd7e811636c38c4a))
+
 ## [1.6.0](https://github.com/0verL1nk/PaperSage/compare/v1.5.1...v1.6.0) (2026-08-15)
 
 
