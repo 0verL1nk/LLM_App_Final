@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.0](https://github.com/0verL1nk/PaperSage/compare/v1.7.0...v1.8.0) (2026-08-16)
+
+
+### Features
+
+* **web:** pop the mode switch from a compact active-mode indicator ([#134](https://github.com/0verL1nk/PaperSage/issues/134)) ([5da1301](https://github.com/0verL1nk/PaperSage/commit/5da1301ba375c40c86b1a9ed4cea1877fa91f267))
+
+
+### Bug Fixes
+
+* **desktop:** heal silent updates over legacy installs and exit cleanly ([#133](https://github.com/0verL1nk/PaperSage/issues/133)) ([19610bb](https://github.com/0verL1nk/PaperSage/commit/19610bb50620282a9e53aaf1a4d8fb7c5053f292))
+
 ## [1.7.0](https://github.com/0verL1nk/PaperSage/compare/v1.6.0...v1.7.0) (2026-08-16)
 
 
