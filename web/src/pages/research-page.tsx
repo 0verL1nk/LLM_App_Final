@@ -15,6 +15,7 @@ import { A2UIMindmap } from "@/components/a2ui-mindmap";
 import { EvidenceCitations } from "@/components/evidence-citations";
 import { ResearchOrbs } from "@/components/agent-status";
 import { ContextCompositionCard } from "@/components/context-composition";
+import { ModeSelector, type ExecutionMode } from "@/components/mode-selector";
 import { PageError } from "@/components/page-state";
 import {
   Message as AiMessage,
@@ -77,13 +78,6 @@ import { agentEventSchema, turnResultSchema } from "@/lib/schemas";
 import type { AgentEvent, Message, TurnResult } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
-
-const EXECUTION_MODES = [
-  { value: "auto", label: "自动" },
-  { value: "react", label: "ReAct" },
-  { value: "plan_execute", label: "计划执行" },
-  { value: "agent_teams", label: "团队协作" },
-] as const;
 
 const ResearchInspector = lazy(async () => {
   const module = await import("@/components/research-inspector");
@@ -276,7 +270,7 @@ function ResearchWorkspace({
   const resumableRuns = useResumableRuns(projectId, sessionId);
   const turn = useTurn(projectId, sessionId);
   const steeringInput = useSteeringInput(projectId, sessionId);
-  const [executionMode, setExecutionMode] = useState<"auto" | "react" | "plan_execute" | "agent_teams">("auto");
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>("auto");
   const [lastTurn, setLastTurn] = useState<TurnResult>();
   const [liveRuns, setLiveRuns] = useState<Record<string, LiveRun>>({});
   const resumedRunIds = useRef(new Set<string>());
@@ -502,33 +496,11 @@ function ResearchWorkspace({
                   Enter 发送 · Shift + Enter 换行 · 回答可能需要核对原始证据
                 </span>
                 <div className="flex items-center gap-1">
-                  <div
-                    aria-label="本轮研究模式"
-                    className="relative grid h-7 grid-cols-4 rounded-md bg-muted p-0.5"
-                    role="radiogroup"
-                  >
-                    <span
-                      aria-hidden
-                      className="absolute inset-y-0.5 left-0.5 w-[calc(25%-0.25rem)] rounded-[5px] bg-background shadow-sm transition-transform duration-200"
-                      style={{ transform: `translateX(${EXECUTION_MODES.findIndex((mode) => mode.value === executionMode) * 100}%)` }}
-                    />
-                    {EXECUTION_MODES.map((mode) => (
-                      <button
-                        aria-checked={executionMode === mode.value}
-                        className={cn(
-                          "relative z-10 rounded-[5px] px-2 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-                          executionMode === mode.value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-                        )}
-                        disabled={turn.isPending || activeRuns.length > 0}
-                        key={mode.value}
-                        onClick={() => setExecutionMode(mode.value)}
-                        role="radio"
-                        type="button"
-                      >
-                        {mode.label}
-                      </button>
-                    ))}
-                  </div>
+                  <ModeSelector
+                    value={executionMode}
+                    onChange={setExecutionMode}
+                    disabled={turn.isPending || activeRuns.length > 0}
+                  />
                   {contextUsage && <ContextCompositionCard usage={contextUsage} />}
                   <PromptInputSubmit
                   disabled={turn.isPending}
