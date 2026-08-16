@@ -1,5 +1,6 @@
 ---
 name: reviewer
+display_name: 审阅研究员
 description: 证据审查代理:逐条核验结论与证据的对应性、充分性与一致性,输出分级判定与修正建议
 capabilities: document_pack, paper_pack, skill_pack
 ---
