@@ -14,6 +14,35 @@ function isGpuPackApplied(internalDir) {
 }
 
 /**
+ * rename(2) cannot cross volume boundaries (EXDEV), and the pack is staged
+ * under userData while the backend lives in the installation directory,
+ * which are regularly on different drives. Fall back to copy+delete then.
+ * @param {string} source
+ * @param {string} destination
+ */
+function moveDirectory(source, destination) {
+  try {
+    fs.renameSync(source, destination)
+  } catch (error) {
+    const code = error && error.code
+    if (code !== "EXDEV" && code !== "EPERM") throw error
+    fs.cpSync(source, destination, { recursive: true })
+    fs.rmSync(source, { recursive: true, force: true })
+  }
+}
+
+/** Put the backed-up CPU onnxruntime tree back and drop the NVIDIA tree. */
+function restoreBackup(internalDir) {
+  const backup = path.join(internalDir, BACKUP_DIR)
+  if (!fs.existsSync(backup)) {
+    throw new Error("未找到 CPU 版备份，无法还原；请重新安装 PaperSage。")
+  }
+  fs.rmSync(path.join(internalDir, "onnxruntime"), { recursive: true, force: true })
+  fs.rmSync(path.join(internalDir, "nvidia"), { recursive: true, force: true })
+  moveDirectory(backup, path.join(internalDir, "onnxruntime"))
+}
+
+/**
  * Swap the CPU onnxruntime tree for the CUDA one from the downloaded pack.
  * The runtime hook baked into every bundle puts the nvidia bin directories
  * on the DLL search path, so no bootloader change is needed.
@@ -31,8 +60,8 @@ function applyPack(internalDir, stagingDir) {
     fs.renameSync(path.join(internalDir, "onnxruntime"), backup)
   }
   fs.rmSync(path.join(internalDir, "onnxruntime"), { recursive: true, force: true })
-  fs.renameSync(stagedOnnxruntime, path.join(internalDir, "onnxruntime"))
-  fs.renameSync(stagedNvidia, path.join(internalDir, "nvidia"))
+  moveDirectory(stagedOnnxruntime, path.join(internalDir, "onnxruntime"))
+  moveDirectory(stagedNvidia, path.join(internalDir, "nvidia"))
 }
 
 /**
@@ -70,19 +99,22 @@ function createGpuPackService({ internalDir, workDir, download, extract, report 
       setPhase("gpu-active")
     } catch (error) {
       logger.error("PaperSage GPU pack installation failed", error)
+      // A half-applied pack leaves the backend without onnxruntime at all;
+      // restore the CPU tree so the next launch still parses documents.
+      if (!fs.existsSync(path.join(internalDir, "onnxruntime"))) {
+        try {
+          restoreBackup(internalDir)
+        } catch (restoreError) {
+          logger.error("PaperSage GPU pack rollback failed", restoreError)
+        }
+      }
       setPhase("error", { error: error instanceof Error ? error.message : String(error) })
     }
   }
 
   const disable = () => {
     try {
-      const backup = path.join(internalDir, BACKUP_DIR)
-      if (!fs.existsSync(backup)) {
-        throw new Error("未找到 CPU 版备份，无法还原；请重新安装 PaperSage。")
-      }
-      fs.rmSync(path.join(internalDir, "onnxruntime"), { recursive: true, force: true })
-      fs.rmSync(path.join(internalDir, "nvidia"), { recursive: true, force: true })
-      fs.renameSync(backup, path.join(internalDir, "onnxruntime"))
+      restoreBackup(internalDir)
       setPhase("cpu-active")
       return true
     } catch (error) {
@@ -95,4 +127,4 @@ function createGpuPackService({ internalDir, workDir, download, extract, report 
   return { enable, disable, status: () => ({ phase }) }
 }
 
-module.exports = { BACKUP_DIR, applyPack, createGpuPackService, isGpuPackApplied }
+module.exports = { BACKUP_DIR, applyPack, createGpuPackService, isGpuPackApplied, moveDirectory, restoreBackup }
