@@ -1,5 +1,6 @@
 ---
 name: researcher
+display_name: 检索研究员
 description: 自主迭代检索的研究代理:子问题拆解、多轮查询工程、引文链追踪、开放获取论文载入资料库,交付可溯源证据包
 capabilities: document_pack, paper_pack, web_pack, skill_pack
 ---

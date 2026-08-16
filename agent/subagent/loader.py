@@ -15,6 +15,8 @@ class SubAgentDefinition:
     system_prompt: str
     capability_ids: tuple[str, ...]
     model: str | None = None
+    display_name: str = ""
+    """Human-readable label; falls back to ``name`` when absent."""
 
 
 def load_subagent_definitions(base_dir: str | Path | None = None) -> list[SubAgentDefinition]:
@@ -79,6 +81,7 @@ def _parse_agent_md(file_path: Path) -> SubAgentDefinition:
         system_prompt=system_prompt,
         capability_ids=capability_ids,
         model=metadata.get("model", "").strip() or None,
+        display_name=metadata.get("display_name", "").strip(),
     )
 
 

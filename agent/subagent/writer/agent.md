@@ -1,5 +1,6 @@
 ---
 name: writer
+display_name: 写作研究员
 description: 综合写作代理:把已核验证据整合为结构化、断言强度校准、逐点溯源的最终文稿,不引入新事实
 capabilities: skill_pack
 ---

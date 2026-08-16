@@ -51,6 +51,8 @@ def execute_subagent_task_payload(
     objective = str(task_input.get("objective") or "").strip()
     if not objective:
         raise ValueError("Subagent task objective is required")
+    context_note = str(task_input.get("context_note") or "").strip()
+    prompt = f"{objective}\n\n[背景上下文]\n{context_note}" if context_note else objective
 
     project_uid = str(context["project_uid"])
     session_uid = str(context["session_uid"])
@@ -74,15 +76,16 @@ def execute_subagent_task_payload(
             user_uuid=user_uuid,
         ),
         options=AgentRuntimeOptions(
-            llm=_model_for_user(user_uuid),
+            llm=_model_for_user(user_uuid, preferred_model=definition.model),
             project_name=str(project.get("project_name") or "未命名项目"),
             scope_summary="项目资料库可用；需要查看文件目录时调用 list_document",
             thread_id=f"subagent:{task_uid}",
+            max_turn_tokens=subagent_token_budget(),
         ),
     )
     try:
         result = execute_agent_center_turn(
-            request=AgentCenterTurnRequest(prompt=objective),
+            request=AgentCenterTurnRequest(prompt=prompt),
             deps=AgentCenterRuntimeDeps(
                 leader_agent=session.agent,
                 leader_runtime_config={"configurable": {**session.runtime_config["configurable"], "task_uid": task_uid}},
@@ -110,10 +113,10 @@ def _profile_for(definition: SubAgentDefinition) -> AgentProfile:
     )
 
 
-def _model_for_user(user_uuid: str) -> Any:
-    """Build the user-configured provider model without persisting credentials."""
+def _model_for_user(user_uuid: str, *, preferred_model: str | None = None) -> Any:
+    """Build the provider model; role-declared models override the user default."""
     api_key = read_api_key_for_user(uuid=user_uuid)
-    model_name = read_model_name_for_user(uuid=user_uuid)
+    model_name = (preferred_model or "").strip() or read_model_name_for_user(uuid=user_uuid)
     if not api_key or not model_name:
         raise ValueError("Model provider is not configured")
     return build_openai_compatible_chat_model(
@@ -121,6 +124,22 @@ def _model_for_user(user_uuid: str) -> Any:
         model_name=model_name,
         base_url=read_base_url_for_user(uuid=user_uuid),
     )
+
+
+# Codex-style hard per-thread budget: when provider usage crosses it the agent
+# loses its tools on the next call and must deliver what it has gathered.
+DEFAULT_SUBAGENT_TOKEN_BUDGET = 150_000
+
+
+def subagent_token_budget() -> int:
+    import os
+
+    configured = str(os.getenv("PAPERSAGE_SUBAGENT_TOKEN_BUDGET", "") or "").strip()
+    try:
+        value = int(configured)
+    except ValueError:
+        return DEFAULT_SUBAGENT_TOKEN_BUDGET
+    return value if value > 0 else DEFAULT_SUBAGENT_TOKEN_BUDGET
 
 
 def _sanitize_result(

@@ -11,6 +11,7 @@ from openai import RateLimitError
 
 from ..context_governance import compact_trigger_ratio, model_context_window_tokens
 from ..subagent.loader import load_subagent_definitions
+from .budget import TokenBudgetMiddleware
 from .durable_delegation import DurableDelegationMiddleware
 from .llm_logger import llm_logger_middleware
 from .model_output_validation import (
@@ -42,9 +43,13 @@ def build_middleware_list(
     deps: Any | None = None,
     enable_auto_summarization: bool = True,
     enable_tool_selector: bool = True,
+    max_turn_tokens: int | None = None,
 ) -> list[AgentMiddleware[Any, Any, Any]]:
     """Build complete middleware list for agent runtime."""
     middleware_list: list[AgentMiddleware[Any, Any, Any]] = []
+
+    if max_turn_tokens is not None:
+        middleware_list.append(TokenBudgetMiddleware(max_turn_tokens))
 
     if _is_enabled(profile, "trace"):
         middleware_list.append(TraceMiddleware())

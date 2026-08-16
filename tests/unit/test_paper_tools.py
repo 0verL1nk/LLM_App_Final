@@ -39,6 +39,7 @@ def test_builtin_subagent_definitions_load_with_paper_capability() -> None:
     assert "paper_pack" in definitions["researcher"].capability_ids
     for definition in definitions.values():
         assert len(definition.system_prompt) > 200
+        assert definition.display_name, f"{definition.name} needs a display_name"
 
 
 def test_get_paper_citations_rejects_unknown_direction() -> None:

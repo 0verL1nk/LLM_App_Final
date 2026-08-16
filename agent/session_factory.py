@@ -41,6 +41,8 @@ class AgentRuntimeOptions:
     system_prompt: str | None = None
     enable_tool_selector: bool | None = None
     thread_id: str | None = None
+    max_turn_tokens: int | None = None
+    """Hard per-thread model-token budget; finalize instead of failing when hit."""
 
 
 @dataclass(frozen=True)
@@ -91,6 +93,7 @@ def create_agent_session(
         profile=profile,
         deps=deps,
         enable_tool_selector=enable_tool_selector,
+        max_turn_tokens=options.max_turn_tokens,
     )
     tool_specs = _build_tool_specs([*tools, *_collect_middleware_tools(middleware)])
     checkpointer, checkpoint_connection = _build_checkpointer()
