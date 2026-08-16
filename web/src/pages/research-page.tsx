@@ -197,8 +197,12 @@ function MessageBubble({
                 const surface = part.surfaceId ? surfaces[part.surfaceId] : undefined;
                 return surface ? (
                   <A2UIMindmap key={part.id} surface={surface} onInspectEvidence={() => onInspect("evidence")} />
-                ) : (
+                ) : isStreaming ? (
                   <div key={part.id} className="my-3 h-20 animate-pulse rounded-xl border bg-background/60" aria-label="正在生成可视化梳理" />
+                ) : (
+                  <p key={part.id} className="my-2 text-xs text-muted-foreground">
+                    这条回复包含一张思维导图，但生成时未通过校验；正文中的文字版仍然可用。
+                  </p>
                 );
               })}
               </CitationContext.Provider>

@@ -526,6 +526,13 @@ def execute_turn_core(
     for part in response_parts:
         if part.get("type") == "a2ui" and part.get("id") in surface_ids_by_part:
             part["surfaceId"] = surface_ids_by_part[part["id"]]
+    # A fragment that failed validation leaves its placeholder part behind;
+    # persisting it renders an eternal empty skeleton after reload.
+    response_parts = [
+        part
+        for part in response_parts
+        if part.get("type") != "a2ui" or part.get("id") in surface_ids_by_part
+    ]
     mindmap_data = (
         cast(dict[str, Any], a2ui_surface["mindmap"])
         if isinstance(a2ui_surface, dict) and isinstance(a2ui_surface.get("mindmap"), dict)
