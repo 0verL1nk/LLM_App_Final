@@ -14,8 +14,7 @@ import { toast } from "sonner";
 import { A2UIMindmap } from "@/components/a2ui-mindmap";
 import { EvidenceCitations } from "@/components/evidence-citations";
 import { ResearchOrbs } from "@/components/agent-status";
-import { ContextCompositionCard } from "@/components/context-composition";
-import { ModeSelector, type ExecutionMode } from "@/components/mode-selector";
+import type { ExecutionMode } from "@/components/mode-selector";
 import { PageError } from "@/components/page-state";
 import {
   Message as AiMessage,
@@ -36,13 +35,6 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import {
-  PromptInput,
-  PromptInputBody,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-} from "@/components/ai-elements/prompt-input";
-import {
   Queue,
   QueueItem,
   QueueItemContent,
@@ -53,11 +45,12 @@ import {
   QueueSectionLabel,
   QueueSectionTrigger,
 } from "@/components/ai-elements/queue";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { ResearchComposer } from "@/components/research-composer";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   useMessages,
+  useSessionCommand,
   useSessionSuggestions,
   useProject,
   useResumableRuns,
@@ -248,6 +241,7 @@ function ResearchWorkspace({
   const resumableRuns = useResumableRuns(projectId, sessionId);
   const turn = useTurn(projectId, sessionId);
   const steeringInput = useSteeringInput(projectId, sessionId);
+  const sessionCommand = useSessionCommand(projectId, sessionId);
   const [executionMode, setExecutionMode] = useState<ExecutionMode>("auto");
   const [lastTurn, setLastTurn] = useState<TurnResult>();
   const [liveRuns, setLiveRuns] = useState<Record<string, LiveRun>>({});
@@ -365,6 +359,17 @@ function ResearchWorkspace({
       toast.error(error instanceof Error ? error.message : "发送失败");
     }
   };
+  const executeCommand = async (command: string, args: string) => {
+    if (command === "compact" && activeRuns.length > 0) {
+      toast.error("有进行中的研究运行，请等待完成后再压缩会话上下文");
+      return;
+    }
+    try {
+      await sessionCommand.mutateAsync({ command, args });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "命令执行失败");
+    }
+  };
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden md:h-full">
       <div className="min-h-0 flex flex-1 overflow-hidden">
@@ -452,45 +457,18 @@ function ResearchWorkspace({
             <ConversationScrollButton />
           </Conversation>
           <div className="shrink-0 border-t bg-background p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:p-5">
-            {!turn.isPending && !activeRuns.length && suggestionItems.length > 0 && (
-              <Suggestions className="mx-auto mb-3 max-w-3xl">
-                {suggestionItems.map((suggestion) => (
-                  <Suggestion key={suggestion} suggestion={suggestion} onClick={submit} />
-                ))}
-              </Suggestions>
-            )}
-            <PromptInput
-              className="mx-auto max-w-3xl"
-              onSubmit={({ text }) => submit(text)}
-            >
-              <PromptInputBody>
-                <PromptInputTextarea
-                  disabled={turn.isPending}
-                  placeholder="询问论文、比较方法，或开展一项研究任务…"
-                />
-              </PromptInputBody>
-              <PromptInputFooter>
-                <span className="text-[11px] text-muted-foreground">
-                  Enter 发送 · Shift + Enter 换行 · 回答可能需要核对原始证据
-                </span>
-                <div className="flex items-center gap-1">
-                  <ModeSelector
-                    value={executionMode}
-                    onChange={setExecutionMode}
-                    disabled={turn.isPending || activeRuns.length > 0}
-                  />
-                  {contextUsage && <ContextCompositionCard usage={contextUsage} />}
-                  <PromptInputSubmit
-                  disabled={turn.isPending}
-                    status={
-                      turn.isPending
-                        ? "submitted"
-                        : "ready"
-                    }
-                  />
-                </div>
-              </PromptInputFooter>
-            </PromptInput>
+            <ResearchComposer
+              inputDisabled={turn.isPending}
+              submitStatus={turn.isPending ? "submitted" : "ready"}
+              suggestions={suggestionItems}
+              showSuggestions={!turn.isPending && activeRuns.length === 0}
+              executionMode={executionMode}
+              onExecutionModeChange={setExecutionMode}
+              modeDisabled={turn.isPending || activeRuns.length > 0}
+              contextUsage={contextUsage}
+              onPromptSubmit={submit}
+              onCommand={executeCommand}
+            />
           </div>
         </main>
       </div>
