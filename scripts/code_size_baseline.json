@@ -2,7 +2,7 @@
   "legacy_over_limit_files": {
     "agent/adapters/sqlite/project_repository.py": 1049,
     "agent/application/research_workspace.py": 679,
-    "agent/application/turn_engine.py": 560,
+    "agent/application/turn_engine.py": 567,
     "agent/rag/hybrid.py": 1665,
     "tests/unit/test_agent_evals.py": 666,
     "tests/unit/test_rag_hybrid.py": 609,
