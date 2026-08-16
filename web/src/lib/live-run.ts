@@ -7,7 +7,7 @@ export type RenderedMessagePart =
   | { id: string; type: "reasoning"; text: string }
   | { id: string; type: "a2ui"; surfaceId?: string }
 
-export type LiveRunItem = NonNullable<AgentEvent["item"]>
+export type LiveRunItem = NonNullable<AgentEvent["item"]> & { sequence?: number; order?: number; updatedAt?: string }
 
 export type LiveRun = {
   events: AgentEvent[]
@@ -77,7 +77,8 @@ function applyEvent(run: LiveRun, event: AgentEvent): LiveRun {
       : run.parts
     return { ...run, surfaces, parts }
   }
-  return { ...run, events: [...run.events, event] }
+  const runStatus = _runStatusFrom(event.eventType)
+  return runStatus ? { ...run, status: runStatus, events: [...run.events, event] } : { ...run, events: [...run.events, event] }
 }
 
 function applyItemEvent(run: LiveRun, event: AgentEvent): LiveRun {
