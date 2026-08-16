@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.10.0](https://github.com/0verL1nk/PaperSage/compare/v1.9.0...v1.10.0) (2026-08-16)
+
+
+### Features
+
+* **agent:** Codex-parity subagent controls ([#147](https://github.com/0verL1nk/PaperSage/issues/147)) ([9dde03e](https://github.com/0verL1nk/PaperSage/commit/9dde03e93f113e8cee93e49195a5a2e0779572c1))
+
 ## [1.9.0](https://github.com/0verL1nk/PaperSage/compare/v1.8.4...v1.9.0) (2026-08-16)
 
 
