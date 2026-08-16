@@ -5,7 +5,7 @@
     "agent/application/turn_engine.py": 560,
     "agent/rag/hybrid.py": 1665,
     "tests/unit/test_agent_evals.py": 666,
-    "tests/unit/test_rag_hybrid.py": 602,
+    "tests/unit/test_rag_hybrid.py": 609,
     "tools/mindmap-cli/main.go": 589,
     "utils/utils.py": 1772,
     "web/src/components/ai-elements/code-block.tsx": 562,
