@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.10.1](https://github.com/0verL1nk/PaperSage/compare/v1.10.0...v1.10.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* **agent:** propagate mid-stream model failures instead of leaking them into answers ([#150](https://github.com/0verL1nk/PaperSage/issues/150)) ([0fbe799](https://github.com/0verL1nk/PaperSage/commit/0fbe799591fed8cb8d867e8a9508b5ca54b8142d))
+* **web:** readable tool rows in the assistant timeline with expandable detail ([#151](https://github.com/0verL1nk/PaperSage/issues/151)) ([aaf9730](https://github.com/0verL1nk/PaperSage/commit/aaf973042e43179dbcd9a022321083bd35ec5605))
+
 ## [1.10.0](https://github.com/0verL1nk/PaperSage/compare/v1.9.0...v1.10.0) (2026-08-16)
 
 
