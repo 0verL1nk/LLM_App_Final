@@ -62,7 +62,10 @@ def build_middleware_list(
             initial_delay=1.0,
             max_delay=60.0,
             jitter=True,
-            on_failure="raise",
+            # Valid values are "error" (re-raise) or a callable; anything else
+            # silently converts the exception into an AIMessage, which the
+            # stream then renders as answer text (seen live on 2026-08-17).
+            on_failure="error",
         )
     )
 
