@@ -201,6 +201,52 @@ def _build_native_web_search_client():
     return _NativeDuckDuckGoSearch()
 
 
+def _build_firecrawl_web_search_client():
+    """Firecrawl /v2/search provider.
+
+    Works keyless on the free tier (rate-limited); set FIRECRAWL_API_KEY to
+    use an authenticated account. Disable with AGENT_WEB_FIRECRAWL_ENABLED=0.
+    """
+    if not _env_flag("AGENT_WEB_FIRECRAWL_ENABLED", default=True):
+        return None
+    api_key = _load_secret("FIRECRAWL_API_KEY")
+    search_url = _env_value(
+        "AGENT_FIRECRAWL_SEARCH_URL", default="https://api.firecrawl.dev/v2/search"
+    )
+
+    class _FirecrawlWebSearch:
+        def __init__(self, key: str, url: str):
+            self.api_key = key
+            self.search_url = url
+
+        def run(self, query: str) -> str:
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "llm-app/1.0 (+search_web)",
+            }
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+            response = httpx.post(
+                self.search_url,
+                json={"query": query, "limit": DEFAULT_WEB_MAX_RESULTS},
+                headers=headers,
+                timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
+            )
+            if response.status_code >= 400:
+                raise RuntimeError(f"firecrawl status={response.status_code}")
+            payload = response.json()
+            data_block = payload.get("data") if isinstance(payload, dict) else None
+            results = data_block.get("web") if isinstance(data_block, dict) else None
+            return _format_web_results(
+                results,
+                title_key="title",
+                url_key="url",
+                snippet_key="description",
+            )
+
+    return _FirecrawlWebSearch(api_key, search_url)
+
+
 # Module-level cache for web search clients
 _web_search_clients: list[tuple[str, Any]] | None = None
 
@@ -222,6 +268,11 @@ def _ensure_web_search_clients() -> list[tuple[str, Any]]:
         clients.append(("searxng_public_pool", searxng_client))
         logger.info("tool.search_web provider initialized: searxng_public_pool")
 
+    firecrawl_client = _build_firecrawl_web_search_client()
+    if firecrawl_client is not None:
+        clients.append(("firecrawl_search", firecrawl_client))
+        logger.info("tool.search_web provider initialized: firecrawl_search")
+
     wikipedia_client = _build_wikipedia_web_search_client()
     if wikipedia_client is not None:
         clients.append(("wikipedia_api", wikipedia_client))
@@ -230,20 +281,19 @@ def _ensure_web_search_clients() -> list[tuple[str, Any]]:
     if not clients:
         logger.warning("tool.search_web no primary provider initialized")
 
-    if not clients:
-        allow_ddg_fallback = _env_flag("AGENT_WEB_ENABLE_DDG_FALLBACK", default=False)
-        if allow_ddg_fallback:
-            fallback_client = _build_native_web_search_client()
-            if fallback_client is not None:
-                clients.append(("native_duckduckgo_search", fallback_client))
-                logger.info("tool.search_web provider fallback initialized: native_duckduckgo_search")
-            else:
-                try:
-                    native_client = DuckDuckGoSearchRun()
-                    clients.append(("langchain_duckduckgo_search", native_client))
-                    logger.info("tool.search_web provider fallback initialized: langchain_duckduckgo_search")
-                except Exception:
-                    logger.warning("tool.search_web no fallback provider available")
+    allow_ddg_fallback = _env_flag("AGENT_WEB_ENABLE_DDG_FALLBACK", default=False)
+    if allow_ddg_fallback:
+        fallback_client = _build_native_web_search_client()
+        if fallback_client is not None:
+            clients.append(("native_duckduckgo_search", fallback_client))
+            logger.info("tool.search_web provider fallback initialized: native_duckduckgo_search")
+        else:
+            try:
+                native_client = DuckDuckGoSearchRun()
+                clients.append(("langchain_duckduckgo_search", native_client))
+                logger.info("tool.search_web provider fallback initialized: langchain_duckduckgo_search")
+            except Exception:
+                logger.warning("tool.search_web no fallback provider available")
 
     _web_search_clients = clients
     return _web_search_clients
@@ -257,8 +307,8 @@ def _run_web_search_internal(query: str) -> tuple[str | None, str | None, str | 
             None,
             (
                 "Web search is unavailable in current environment. "
-                "Set BRAVE_SEARCH_API_KEY in .env, or configure AGENT_SEARXNG_BASE_URLS, "
-                "or enable AGENT_WEB_ENABLE_DDG_FALLBACK=1."
+                "Set FIRECRAWL_API_KEY or BRAVE_SEARCH_API_KEY in .env, or configure "
+                "AGENT_SEARXNG_BASE_URLS, or enable AGENT_WEB_ENABLE_DDG_FALLBACK=1."
             ),
         )
     errors: list[str] = []

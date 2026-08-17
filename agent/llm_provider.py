@@ -87,8 +87,28 @@ def _provider_supports_reasoning_effort(base_url: str) -> bool:
     return _provider_host(base_url) == "api.openai.com"
 
 
-def _provider_supports_enable_thinking_flag(base_url: str) -> bool:
-    return _provider_host(base_url) == "dashscope.aliyuncs.com"
+def _thinking_extra_body(
+    base_url: str,
+    model_name: str,
+    enable_thinking: bool,
+) -> dict[str, object] | None:
+    """Map the thinking switch to provider-level flags, sent explicitly for both
+    on and off. Providers without a known flag get ``None`` (no guessing).
+
+    - DashScope hybrid models read ``enable_thinking``; an explicit ``False`` is
+      required to keep Qwen-style models from thinking by default.
+    - MiniMax M3 reads ``thinking.type`` (``adaptive``/``disabled``; ``enabled``
+      is rejected with a 400). M2.x cannot disable thinking, so no flag is sent
+      for non-M3 MiniMax models.
+    """
+    host = _provider_host(base_url)
+    if host == "dashscope.aliyuncs.com":
+        return {"enable_thinking": enable_thinking}
+    if host in {"api.minimaxi.com", "api.minimax.io"}:
+        if model_name.strip().upper().startswith("MINIMAX-M3"):
+            return {"thinking": {"type": "adaptive" if enable_thinking else "disabled"}}
+        return None
+    return None
 
 
 def _provider_host(base_url: str) -> str:
@@ -126,15 +146,17 @@ def build_openai_compatible_chat_model(
     resolved_timeout = timeout if timeout is not None else settings.agent_llm_request_timeout
 
     resolved_reasoning: str | None = None
-    resolved_extra_body: dict[str, object] | None = None
+    resolved_extra_body: dict[str, object] | None = _thinking_extra_body(
+        resolved_base_url,
+        model_name,
+        resolved_enable_thinking,
+    )
     if resolved_enable_thinking:
         if (
             resolved_reasoning_effort
             and _provider_supports_reasoning_effort(resolved_base_url)
         ):
             resolved_reasoning = resolved_reasoning_effort
-        if _provider_supports_enable_thinking_flag(resolved_base_url):
-            resolved_extra_body = {"enable_thinking": True}
 
     max_input_tokens = _get_model_max_input_tokens(model_name)
     return ChatOpenAI(

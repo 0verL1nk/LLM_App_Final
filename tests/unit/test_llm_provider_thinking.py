@@ -111,6 +111,82 @@ def test_build_model_disables_thinking_when_overridden(monkeypatch):
     assert captured["extra_body"] is None
 
 
+def test_build_model_sends_explicit_thinking_off_for_dashscope(monkeypatch):
+    captured = {}
+
+    def fake_chat_openai(**kwargs):
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr(
+        provider,
+        "load_agent_settings",
+        lambda: _settings(enable_thinking=False, reasoning_effort=""),
+    )
+    monkeypatch.setattr(provider, "ChatOpenAI", fake_chat_openai)
+
+    provider.build_openai_compatible_chat_model(
+        api_key="k",
+        model_name="m",
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    )
+
+    assert captured["extra_body"] == {"enable_thinking": False}
+
+
+def test_build_model_controls_minimax_m3_thinking_type(monkeypatch):
+    captured = {}
+
+    def fake_chat_openai(**kwargs):
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr(
+        provider,
+        "load_agent_settings",
+        lambda: _settings(enable_thinking=False, reasoning_effort=""),
+    )
+    monkeypatch.setattr(provider, "ChatOpenAI", fake_chat_openai)
+
+    provider.build_openai_compatible_chat_model(
+        api_key="k",
+        model_name="MiniMax-M3",
+        base_url="https://api.minimaxi.com/v1",
+    )
+    assert captured["extra_body"] == {"thinking": {"type": "disabled"}}
+
+    provider.build_openai_compatible_chat_model(
+        api_key="k",
+        model_name="MiniMax-M3",
+        base_url="https://api.minimaxi.com/v1",
+        enable_thinking=True,
+    )
+    assert captured["extra_body"] == {"thinking": {"type": "adaptive"}}
+
+
+def test_build_model_sends_no_thinking_flag_for_minimax_m2(monkeypatch):
+    captured = {}
+
+    def fake_chat_openai(**kwargs):
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr(
+        provider,
+        "load_agent_settings",
+        lambda: _settings(enable_thinking=False, reasoning_effort=""),
+    )
+    monkeypatch.setattr(provider, "ChatOpenAI", fake_chat_openai)
+
+    provider.build_openai_compatible_chat_model(
+        api_key="k",
+        model_name="MiniMax-M2.1",
+        base_url="https://api.minimaxi.com/v1",
+    )
+
+    assert captured["extra_body"] is None
+
+
 class _ReplyModel(BaseModel):
     title: str
 
