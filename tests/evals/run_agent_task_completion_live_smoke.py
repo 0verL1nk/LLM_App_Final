@@ -250,7 +250,17 @@ def main() -> int:
         "--limit",
         type=int,
         default=1,
-        help="Optional max number of cases to run after filtering. Defaults to 1.",
+        help="Optional max number of cases to run after filtering. Defaults to 1; 0 runs all cases.",
+    )
+    parser.add_argument(
+        "--judge-model",
+        default="",
+        help="Optional judge model override; defaults to OPENAI_MODEL_NAME (same as agent).",
+    )
+    parser.add_argument(
+        "--judge-base-url",
+        default="",
+        help="Optional judge base URL override; defaults to OPENAI_BASE_URL.",
     )
     args = parser.parse_args()
 
@@ -271,7 +281,20 @@ def main() -> int:
 
     documents = _load_project_documents()
     llm = _build_live_llm()
-    judge = build_trajectory_llm_as_judge(model=llm)
+    judge_model_name = args.judge_model.strip() or str(os.getenv("OPENAI_MODEL_NAME") or "")
+    judge_base_url = args.judge_base_url.strip() or str(os.getenv("OPENAI_BASE_URL") or "")
+    judge_llm = (
+        llm
+        if judge_model_name == str(os.getenv("OPENAI_MODEL_NAME") or "")
+        and not args.judge_base_url.strip()
+        else create_chat_model(
+            api_key=str(os.getenv("OPENAI_API_KEY") or ""),
+            model_name=judge_model_name,
+            base_url=judge_base_url or None,
+            temperature=0.0,
+        )
+    )
+    judge = build_trajectory_llm_as_judge(model=judge_llm)
     runner = LivePaperSageEvalRunner(
         llm=llm,
         documents=documents,
@@ -283,6 +306,17 @@ def main() -> int:
         runner=runner,
         judge=judge,
         fixture_path=str(fixture_path),
+        run_config={
+            "runner_mode": "live_model",
+            "agent_model": str(os.getenv("OPENAI_MODEL_NAME") or ""),
+            "judge_model": judge_model_name,
+            "web_search_fallback": bool(os.getenv("AGENT_WEB_ENABLE_DDG_FALLBACK")),
+            "document_corpus": str(FIXTURE_DIR),
+            "delegation_note": (
+                "turn-level harness: delegate_task returns durable_run_required; "
+                "delegation contracts measure leader behavior only"
+            ),
+        },
     )
     output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 

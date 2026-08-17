@@ -62,6 +62,11 @@ models
 docs/*
 !docs/architecture/
 !docs/architecture/agent-runtime.md
+!docs/plans/
+docs/plans/*
+!docs/plans/baselines/
+!docs/plans/baselines/*.json
+!docs/plans/baselines/*.html
 
 .serena
 

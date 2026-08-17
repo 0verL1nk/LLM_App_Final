@@ -3,9 +3,46 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from langchain_core.exceptions import OutputParserException
+from pydantic import BaseModel, Field
+
+from ...llm_provider import invoke_structured_model
 from .contracts import AgentEvalCase, FinalAnswerJudge, FinalAnswerJudgeResult
 
-FINAL_ANSWER_JUDGE_PROMPT = """You are evaluating whether an AI research assistant successfully completed a user task.\n\nJudge only the user-visible final answer quality against the supplied task and success rubric.\nIgnore private middleware details, exact internal decomposition, and implementation-specific routing choices.\nDo not require exact keyword overlap unless the rubric explicitly requires it.\n\n<UserRequest>\n{inputs}\n</UserRequest>\n\n<SuccessRubric>\n{rubric}\n</SuccessRubric>\n\n<ReferenceOutputs>\n{reference_outputs}\n</ReferenceOutputs>\n\n<AgentOutputs>\n{outputs}\n</AgentOutputs>\n"""
+
+class JudgeVerdict(BaseModel):
+    """Structured verdict contract shared by the bound and fallback judge paths."""
+
+    reasoning: str = Field(default="", description="Item-by-item rubric analysis.")
+    score: bool = Field(default=False, description="True only if every rubric item is satisfied.")
+
+FINAL_ANSWER_JUDGE_PROMPT = """You are evaluating whether an AI research assistant successfully completed a user task.
+
+Evaluate ONLY the user-visible final answer against the supplied task and success rubric.
+Treat the rubric as an itemized checklist and judge each numbered item independently:
+
+- For every item you mark satisfied, quote the exact span of the answer that satisfies it; an item with no quotable span is not satisfied.
+- Do not infer content the answer does not state, and do not reward fluent paraphrase of an unsatisfied item.
+- Do not require exact keyword overlap unless the rubric explicitly requires it, and ignore private middleware details, internal decomposition, and implementation-specific routing choices.
+- If the transcript is genuinely insufficient to judge (for example an empty answer), say so explicitly instead of guessing.
+- The overall score is true only if every rubric item is satisfied; otherwise it is false. Put the item-by-item analysis in the reasoning field.
+
+<UserRequest>
+{inputs}
+</UserRequest>
+
+<SuccessRubric>
+{rubric}
+</SuccessRubric>
+
+<ReferenceOutputs>
+{reference_outputs}
+</ReferenceOutputs>
+
+<AgentOutputs>
+{outputs}
+</AgentOutputs>
+"""
 
 
 def _stable_dict(payload: Any) -> dict[str, Any] | None:
@@ -118,6 +155,37 @@ def build_trajectory_llm_as_judge(
 
     evaluator = create_trajectory_llm_as_judge(**evaluator_kwargs)
 
+    fallback_llm = None if isinstance(model, str) else model
+    # Structured-output binding is provider-dependent: reasoning-style models that
+    # emit <think> prefixes break it persistently, so one failure switches this
+    # judge instance to the project's tolerant structured path for good.
+    state = {"prefer_fallback": False}
+
+    def _fallback_verdict(
+        eval_case: AgentEvalCase,
+        normalized_outputs: list[dict[str, Any]],
+        normalized_reference_outputs: list[dict[str, Any]] | None,
+    ) -> FinalAnswerJudgeResult:
+        template = prompt or FINAL_ANSWER_JUDGE_PROMPT
+        prompt_text = template.format(
+            inputs=eval_case.prompt,
+            rubric=eval_case.final_answer_contract.success_rubric,
+            reference_outputs=json.dumps(
+                normalized_reference_outputs or [], ensure_ascii=False, default=str
+            ),
+            outputs=json.dumps(normalized_outputs, ensure_ascii=False, default=str),
+        )
+        verdict = invoke_structured_model(
+            fallback_llm,
+            JudgeVerdict,
+            [{"role": "user", "content": prompt_text}],
+        )
+        return FinalAnswerJudgeResult(
+            passed=bool(verdict.score),
+            score=1.0 if verdict.score else 0.0,
+            reasoning=str(verdict.reasoning or "").strip(),
+        )
+
     def _judge(case: AgentEvalCase, normalized_result: dict[str, Any]) -> FinalAnswerJudgeResult:
         outputs = _normalize_output_messages(normalized_result.get("output_messages"))
         if not outputs:
@@ -137,12 +205,25 @@ def build_trajectory_llm_as_judge(
             if isinstance(messages, list):
                 reference_outputs = messages
 
-        result = evaluator(
+        evaluator_kwargs = dict(
             outputs=outputs,
             reference_outputs=reference_outputs,
             inputs=case.prompt,
             rubric=case.final_answer_contract.success_rubric,
         )
+        if state["prefer_fallback"]:
+            return _fallback_verdict(case, outputs, reference_outputs)
+        try:
+            result = evaluator(**evaluator_kwargs)
+        except OutputParserException as exc:
+            if fallback_llm is None:
+                return FinalAnswerJudgeResult(
+                    passed=False,
+                    score=0.0,
+                    reasoning=f"judge_output_parse_failure: {exc}",
+                )
+            state["prefer_fallback"] = True
+            return _fallback_verdict(case, outputs, reference_outputs)
         if not isinstance(result, dict):
             raise TypeError("Trajectory judge returned a non-dict result.")
 

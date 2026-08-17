@@ -5,6 +5,8 @@ from typing import Any
 from .contracts import AgentEvalCase, FinalAnswerJudge, FinalAnswerJudgeResult, ProcessContract
 from .feedback import build_case_feedback
 
+MIN_PARALLEL_DELEGATION_CALLS = 2
+
 
 def _stable_dict(payload: Any) -> dict[str, Any] | None:
     if isinstance(payload, dict):
@@ -104,6 +106,8 @@ def normalize_turn_result(turn_result: dict[str, Any]) -> dict[str, Any]:
     output_messages: list[Any] = raw_output_messages if isinstance(raw_output_messages, list) else []
     used_tool_names: list[str] = []
     delegated_roles: list[str] = []
+    total_tool_calls = 0
+    max_delegations_per_message = 0
     for item in output_messages:
         tool_calls = (
             item.get("tool_calls")
@@ -112,9 +116,11 @@ def normalize_turn_result(turn_result: dict[str, Any]) -> dict[str, Any]:
         )
         if not isinstance(tool_calls, list):
             continue
+        message_delegation_count = 0
         for tool_call in tool_calls:
             if not isinstance(tool_call, dict):
                 continue
+            total_tool_calls += 1
             tool_name = str(tool_call.get("name") or "").strip()
             if tool_name and tool_name not in used_tool_names:
                 used_tool_names.append(tool_name)
@@ -122,6 +128,8 @@ def normalize_turn_result(turn_result: dict[str, Any]) -> dict[str, Any]:
                 role = str(tool_call["args"].get("role") or "").strip()
                 if role:
                     delegated_roles.append(role)
+                    message_delegation_count += 1
+        max_delegations_per_message = max(max_delegations_per_message, message_delegation_count)
     execution_completion_ratio = compute_execution_completion_ratio(
         plan=plan,
         runtime_state=runtime_state,
@@ -138,10 +146,12 @@ def normalize_turn_result(turn_result: dict[str, Any]) -> dict[str, Any]:
         "trace_diagnostic_count": len(normalized_trace),
         "output_messages": output_messages,
         "used_tool_names": used_tool_names,
+        "total_tool_calls": total_tool_calls,
         "execution_completion_ratio": execution_completion_ratio,
         "delegation_count": len(delegated_roles),
         "delegated_subagent_types": sorted(set(delegated_roles)),
-        "parallel_delegation": False,
+        "max_delegations_per_message": max_delegations_per_message,
+        "parallel_delegation": max_delegations_per_message >= MIN_PARALLEL_DELEGATION_CALLS,
         "run_latency_ms": float(turn_result.get("run_latency_ms") or 0.0),
         "used_document_rag": bool(turn_result.get("used_document_rag", False)),
         "leader_tool_names": (
@@ -215,6 +225,12 @@ def evaluate_case_result(
     tool_names_pass = all(
         tool_name in used_tool_names for tool_name in process_contract.required_tool_names
     )
+    forbidden_tools_used = [
+        tool_name
+        for tool_name in process_contract.forbidden_tool_names
+        if tool_name in used_tool_names
+    ]
+    forbidden_tools_pass = not forbidden_tools_used
     delegated_subagent_types = normalized_result["delegated_subagent_types"]
     subagent_types_pass = all(
         role in delegated_subagent_types
@@ -234,6 +250,7 @@ def evaluate_case_result(
             ratio_pass,
             phase_pass,
             tool_names_pass,
+            forbidden_tools_pass,
             subagent_types_pass,
             delegation_count_pass,
             parallel_delegation_pass,
@@ -244,11 +261,14 @@ def evaluate_case_result(
         "plan_passed": plan_pass,
         "tool_names_passed": tool_names_pass,
         "used_tool_names": used_tool_names,
+        "forbidden_tools_passed": forbidden_tools_pass,
+        "forbidden_tools_used": forbidden_tools_used,
         "subagent_types_passed": subagent_types_pass,
         "delegated_subagent_types": delegated_subagent_types,
         "delegation_count_passed": delegation_count_pass,
         "delegation_count": delegation_count,
         "parallel_delegation_passed": parallel_delegation_pass,
+        "max_delegations_per_message": int(normalized_result["max_delegations_per_message"]),
         "phase_labels_passed": phase_pass,
         "missing_phase_labels": missing_phase_labels,
         "ratio_passed": ratio_pass,
@@ -283,6 +303,7 @@ def evaluate_case_result(
             "phase_path": normalized_result["phase_path"],
             "trace_diagnostic_count": normalized_result["trace_diagnostic_count"],
             "run_latency_ms": normalized_result["run_latency_ms"],
+            "total_tool_calls": int(normalized_result["total_tool_calls"]),
             "used_document_rag": normalized_result["used_document_rag"],
             "leader_tool_names": normalized_result["leader_tool_names"],
         },

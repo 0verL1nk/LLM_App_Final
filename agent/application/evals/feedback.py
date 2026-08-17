@@ -43,6 +43,30 @@ def build_case_feedback(
             "Adjust prompt or routing rules so the turn uses the required stable tools for this task type."
         )
 
+    if not bool(process_checks.get("forbidden_tools_passed", True)):
+        if "prompt" not in remediation_area:
+            remediation_area.append("prompt")
+        failure_reason_parts.append(
+            "forbidden tools were used despite the case's access-mode contract"
+        )
+        recommended_actions.append(
+            "Tighten scope guidance so corpus-bound and web-bound tasks route to the "
+            "allowed tool set instead of reaching across access modes."
+        )
+
+    delegation_failed = any(
+        not bool(process_checks.get(key, True))
+        for key in ("subagent_types_passed", "delegation_count_passed", "parallel_delegation_passed")
+    )
+    if delegation_failed:
+        if "prompt" not in remediation_area:
+            remediation_area.append("prompt")
+        failure_reason_parts.append("delegation contract was not met (roles, count, or parallel fan-out)")
+        recommended_actions.append(
+            "Strengthen leader delegation guidance so multi-source tasks emit delegate_task calls "
+            "to the required roles within a single assistant message."
+        )
+
     if not bool(process_checks.get("plan_passed", True)) or not bool(process_checks.get("todo_passed", True)):
         if "prompt" not in remediation_area:
             remediation_area.append("prompt")
