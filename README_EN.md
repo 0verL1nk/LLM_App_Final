@@ -11,6 +11,11 @@ PaperSage is a project-oriented workspace for paper reading, evidence retrieval,
 - Completed turns enqueue model-driven long-term memory consolidation.
 - SQLite persists workspace state while LangGraph checkpoints persist Agent execution state.
 
+The repository-level [Agent Card](agent-card.json) records the current workflow,
+tool effects, readiness score, and unresolved launch blockers in a
+machine-readable form. It is a bounded repository claim, not a replacement for
+a security audit, and a high total never hides a blocker.
+
 ## Stack
 
 The `web/` client uses Vite, React, TypeScript, Tailwind CSS, shadcn/ui, Radix UI, TanStack Query, TanStack Router, Zustand, React Hook Form, Zod, and Lucide React.
