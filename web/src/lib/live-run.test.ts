@@ -53,7 +53,18 @@ function toolEvent(sequence: number, status: string): AgentEvent {
       id: "item-tool-1",
       type: "tool_call",
       status,
-      payload: { toolName: "search_document", summary: "检索项目资料" },
+      payload: status === "completed"
+        ? {
+            toolName: "search_document",
+            label: "search_document \"DDPM noise schedule\"",
+            arguments: { query: "DDPM noise schedule" },
+            result: "{\"evidences\": []}",
+          }
+        : {
+            toolName: "search_document",
+            label: "search_document \"DDPM noise schedule\"",
+            arguments: { query: "DDPM noise schedule" },
+          },
     },
   }
 }
@@ -143,7 +154,31 @@ describe("reduceLiveRun", () => {
 
     expect(steps.map((step) => step.kind)).toEqual(["reasoning", "tool", "reasoning"])
     expect(steps[0]).toMatchObject({ id: "reasoning:reasoning-0", text: "先定位" })
-    expect(steps[1]).toMatchObject({ kind: "tool", label: "检索项目资料", status: "completed" })
+    expect(steps[1]).toMatchObject({
+      kind: "tool",
+      toolName: "search_document",
+      label: "search_document \"DDPM noise schedule\"",
+      status: "completed",
+      args: { query: "DDPM noise schedule" },
+      result: "{\"evidences\": []}",
+    })
     expect(steps[2]).toMatchObject({ id: "reasoning:reasoning-1", text: "再综合" })
+  })
+
+  it("falls back to the tool name when no label payload exists", () => {
+    let run = createLiveRun()
+    run = reduceLiveRun(run, {
+      ...event(1, "item.created"),
+      version: 2,
+      item: {
+        id: "item-tool-legacy",
+        type: "tool_call",
+        status: "in_progress",
+        payload: { toolName: "list_document", summary: "{\"count\": 3}" },
+      },
+    })
+
+    const steps = buildLiveTimeline(run)
+    expect(steps[0]).toMatchObject({ kind: "tool", toolName: "list_document", label: "list_document" })
   })
 })

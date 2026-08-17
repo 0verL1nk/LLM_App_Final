@@ -3,13 +3,22 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
-import { Tool, ToolHeader } from "@/components/ai-elements/tool";
+import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import type { LiveRun, RenderedMessagePart } from "@/lib/live-run";
 import { cn } from "@/lib/utils";
 
 export type AssistantTimelineStep =
   | { kind: "reasoning"; id: string; text: string }
-  | { kind: "tool"; id: string; label: string; status: string; web: boolean }
+  | {
+      kind: "tool";
+      id: string;
+      toolName: string;
+      label: string;
+      status: string;
+      web: boolean;
+      args?: Record<string, unknown>;
+      result?: string;
+    }
   | { kind: "task"; id: string; label: string; status: string };
 
 function isWebTool(name: string): boolean {
@@ -20,6 +29,12 @@ function toolState(status: string): "input-available" | "output-available" | "ou
   if (status === "in_progress") return "input-available";
   if (status === "failed") return "output-error";
   return "output-available";
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
 }
 
 /**
@@ -56,9 +71,15 @@ export function buildLiveTimeline(run: LiveRun): AssistantTimelineStep[] {
         upsert({
           kind: "tool",
           id: item.id,
-          label: String(payload.summary ?? toolName),
+          toolName,
+          // The collapsed row must never show the raw tool result; the label
+          // from the backend is "tool + key argument" and the result text
+          // only appears inside the expanded body.
+          label: String(payload.label ?? toolName),
           status: item.status,
           web: isWebTool(toolName),
+          args: record(payload.arguments),
+          result: typeof payload.result === "string" ? payload.result : undefined,
         });
       }
       // agent_task stays out of the live timeline: the run-activity panel
@@ -91,17 +112,32 @@ export function buildTraceTimeline(
     .filter((part): part is Extract<RenderedMessagePart, { type: "reasoning" }> => part.type === "reasoning")
     .map((part) => ({ kind: "reasoning" as const, id: part.id, text: part.text }));
   const activity: AssistantTimelineStep[] = [];
+  const toolSteps = new Map<string, Extract<AssistantTimelineStep, { kind: "tool" }>>();
   trace.forEach((entry, index) => {
     const performative = String(entry.performative ?? entry.type ?? "");
+    const metadata = record(entry.metadata) ?? {};
+    const arguments_ = record(metadata.arguments) ?? {};
+    const toolName = String(
+      entry.tool_name ?? metadata.tool_name ?? entry.receiver ?? entry.name ?? "工具调用",
+    );
     if (performative === "tool_call" || performative === "skill_activate") {
-      const toolName = String(entry.tool_name ?? entry.toolName ?? entry.name ?? entry.summary ?? "工具调用");
-      activity.push({
+      const step: Extract<AssistantTimelineStep, { kind: "tool" }> = {
         kind: "tool",
         id: `trace-${index}`,
-        label: String(entry.summary ?? toolName),
+        toolName,
+        label: String(metadata.label ?? entry.summary ?? toolName),
         status: "completed",
         web: isWebTool(toolName),
-      });
+        args: Object.keys(arguments_).length ? arguments_ : undefined,
+      };
+      activity.push(step);
+      const callId = String(metadata.tool_call_id ?? "");
+      if (callId) toolSteps.set(callId, step);
+    } else if (performative === "tool_result") {
+      const callId = String(metadata.tool_call_id ?? "");
+      const step = callId ? toolSteps.get(callId) : undefined;
+      const result = String(entry.content ?? "");
+      if (step && result) step.result = result;
     } else if (performative === "delegate_task") {
       activity.push({
         kind: "task",
@@ -143,14 +179,36 @@ export function AssistantTimeline({
             </Reasoning>
           );
         }
+        if (step.kind === "task") {
+          return (
+            <Tool key={step.id}>
+              <ToolHeader
+                title={step.label}
+                type="dynamic-tool"
+                state={toolState(step.status)}
+                toolName="委派任务"
+              />
+            </Tool>
+          );
+        }
+        const failed = step.status === "failed";
         return (
           <Tool key={step.id}>
             <ToolHeader
               title={step.label}
               type="dynamic-tool"
               state={toolState(step.status)}
-              toolName={step.kind === "task" ? "委派任务" : "工具调用"}
+              toolName={step.toolName}
             />
+            <ToolContent>
+              {step.args && <ToolInput input={step.args} />}
+              {(step.result || failed) && (
+                <ToolOutput
+                  output={failed ? undefined : step.result}
+                  errorText={failed ? (step.result ?? "工具执行失败") : undefined}
+                />
+              )}
+            </ToolContent>
           </Tool>
         );
       })}
