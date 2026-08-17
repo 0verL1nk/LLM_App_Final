@@ -218,6 +218,7 @@ export function useTurn(projectId: string, sessionId: string) {
           plan: result.agent_plan ?? result.plan,
           todos: result.todos,
           a2ui: result.a2ui_surface,
+          parts: result.response_parts,
         },
       ])
       void client.invalidateQueries({ queryKey: keys.messages(projectId, sessionId) })

@@ -3,10 +3,10 @@ from agent.application.run_timeline import project_runtime_item_event
 
 def test_projects_tool_lifecycle_as_a_versioned_item() -> None:
     started = project_runtime_item_event(
-        {"performative": "tool_call", "metadata": {"tool_name": "search_document", "tool_call_id": "call-1"}}
+        {"performative": "tool_call", "metadata": {"tool_name": "search_document", "tool_call_id": "call-1", "arguments": {"query": "DDPM noise schedule"}}}
     )
     completed = project_runtime_item_event(
-        {"performative": "tool_result", "metadata": {"tool_name": "search_document", "tool_call_id": "call-1", "status": "success", "summary": "找到 3 条资料"}}
+        {"performative": "tool_result", "metadata": {"tool_name": "search_document", "tool_call_id": "call-1", "status": "success", "summary": "找到 3 条资料", "arguments": {"query": "DDPM noise schedule"}}}
     )
 
     assert started == {
@@ -15,12 +15,42 @@ def test_projects_tool_lifecycle_as_a_versioned_item() -> None:
         "task_uid": None,
         "status": "in_progress",
         "event_type": "item.created",
-        "payload": {"summary": "", "toolName": "search_document", "durationMs": None},
+        "payload": {
+            "summary": "",
+            "toolName": "search_document",
+            "durationMs": None,
+            "label": 'search_document "DDPM noise schedule"',
+            "arguments": {"query": "DDPM noise schedule"},
+        },
     }
     assert completed is not None
     assert completed["item_uid"] == started["item_uid"]
     assert completed["event_type"] == "item.completed"
     assert completed["payload"]["summary"] == "找到 3 条资料"
+    assert completed["payload"]["result"] == "找到 3 条资料"
+    # Row label stays the tool + argument line even after the result lands.
+    assert completed["payload"]["label"] == 'search_document "DDPM noise schedule"'
+
+
+def test_tool_label_prefers_descriptive_arguments_and_drops_secrets() -> None:
+    plain = project_runtime_item_event(
+        {"performative": "tool_call", "metadata": {"tool_name": "list_document", "tool_call_id": "call-2", "arguments": {}}}
+    )
+    secret = project_runtime_item_event(
+        {"performative": "tool_call", "metadata": {"tool_name": "web_search", "tool_call_id": "call-3", "arguments": {"query": "x", "api_key": "sk-123"}}}
+    )
+    long_query = "超长" * 100
+
+    assert plain["payload"]["label"] == "list_document"
+    assert "arguments" not in plain["payload"]
+    assert secret["payload"]["label"] == 'web_search "x"'
+    assert "api_key" not in secret["payload"]["arguments"]
+
+    truncated = project_runtime_item_event(
+        {"performative": "tool_call", "metadata": {"tool_name": "search_document", "tool_call_id": "call-4", "arguments": {"query": long_query}}}
+    )
+    assert truncated["payload"]["label"].startswith('search_document "超长')
+    assert len(truncated["payload"]["label"]) < len(f'search_document "{long_query}"')
 
 
 def test_projects_text_and_reasoning_parts_as_distinct_item_deltas() -> None:

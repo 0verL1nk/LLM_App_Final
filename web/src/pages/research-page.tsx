@@ -68,11 +68,11 @@ import { formatEvidenceCitations } from "@/lib/evidence";
 import { sessionContextUsage } from "@/lib/context-usage";
 import { consumeEventStream } from "@/lib/api";
 import {
+  assistantParts,
   createLiveRun,
   liveAnswer,
   reduceLiveRun,
   type LiveRun,
-  type RenderedMessagePart,
 } from "@/lib/live-run";
 import { agentEventSchema, turnResultSchema } from "@/lib/schemas";
 import type { AgentEvent, Message, TurnResult } from "@/lib/schemas";
@@ -88,32 +88,6 @@ const ResearchRunActivity = lazy(async () => {
   const module = await import("@/components/research-run-activity");
   return { default: module.ResearchRunActivity };
 });
-
-function assistantParts(message: Message): RenderedMessagePart[] {
-  const stored: RenderedMessagePart[] = [];
-  message.parts?.forEach((part, index) => {
-    const type = part.type;
-    if (type === "markdown" && typeof part.text === "string") {
-      stored.push({ id: typeof part.id === "string" ? part.id : `text-${index}`, type, text: part.text });
-      return;
-    }
-    if (type === "reasoning" && typeof part.text === "string") {
-      stored.push({ id: typeof part.id === "string" ? part.id : `reasoning-${index}`, type, text: part.text });
-      return;
-    }
-    if (type === "a2ui") {
-      stored.push({ id: typeof part.id === "string" ? part.id : `surface-${index}`, type, surfaceId: typeof part.surfaceId === "string" ? part.surfaceId : undefined });
-    }
-  });
-  if (stored.length) return stored;
-  const legacySurfaces = Array.isArray(message.a2ui) ? message.a2ui : [message.a2ui];
-  return [
-    ...(message.content ? [{ id: "text-0", type: "markdown" as const, text: message.content }] : []),
-    ...legacySurfaces.flatMap((surface, index) => typeof surface?.surfaceId === "string"
-      ? [{ id: `surface-${index}`, type: "a2ui" as const, surfaceId: surface.surfaceId }]
-      : []),
-  ];
-}
 
 function MessageBubble({
   message,

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, Notification, shell, Tray } = require("electron")
+const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net: electronNet, Notification, shell, Tray } = require("electron")
 const { autoUpdater } = require("electron-updater")
 const { spawn } = require("node:child_process")
 const net = require("node:net")
@@ -274,7 +274,9 @@ function downloadWithResume(url, destination, onProgress, remainingAttempts = 5)
   return new Promise((resolve, reject) => {
     const attempt = () => {
       const alreadyReceived = fs.existsSync(destination) ? fs.statSync(destination).size : 0
-      const request = net.request({
+      // electronNet, not node:net — this is the Chromium network stack with
+      // redirect following and the system proxy configuration.
+      const request = electronNet.request({
         url,
         headers: alreadyReceived ? { Range: `bytes=${alreadyReceived}-` } : {},
         redirect: "follow",

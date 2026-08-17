@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.10.1](https://github.com/0verL1nk/PaperSage/compare/v1.10.0...v1.10.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* **agent:** propagate mid-stream model failures instead of leaking them into answers ([#150](https://github.com/0verL1nk/PaperSage/issues/150)) ([0fbe799](https://github.com/0verL1nk/PaperSage/commit/0fbe799591fed8cb8d867e8a9508b5ca54b8142d))
+* **web:** readable tool rows in the assistant timeline with expandable detail ([#151](https://github.com/0verL1nk/PaperSage/issues/151)) ([aaf9730](https://github.com/0verL1nk/PaperSage/commit/aaf973042e43179dbcd9a022321083bd35ec5605))
+
+## [1.10.0](https://github.com/0verL1nk/PaperSage/compare/v1.9.0...v1.10.0) (2026-08-16)
+
+
+### Features
+
+* **agent:** Codex-parity subagent controls ([#147](https://github.com/0verL1nk/PaperSage/issues/147)) ([9dde03e](https://github.com/0verL1nk/PaperSage/commit/9dde03e93f113e8cee93e49195a5a2e0779572c1))
+
+## [1.9.0](https://github.com/0verL1nk/PaperSage/compare/v1.8.4...v1.9.0) (2026-08-16)
+
+
+### Features
+
+* **agent:** builtin research subagents with agentic search and paper ingestion ([#144](https://github.com/0verL1nk/PaperSage/issues/144)) ([2703028](https://github.com/0verL1nk/PaperSage/commit/2703028fdbb9769af47e049b83e92aca2d0e3772))
+
+## [1.8.4](https://github.com/0verL1nk/PaperSage/compare/v1.8.3...v1.8.4) (2026-08-16)
+
+
+### Bug Fixes
+
+* **agent:** salvage unterminated UI fragments and repair update_plan tool dispatch ([#142](https://github.com/0verL1nk/PaperSage/issues/142)) ([956ec13](https://github.com/0verL1nk/PaperSage/commit/956ec13ee92c17a7d5f5ffa01332787c99c32072))
+
+## [1.8.3](https://github.com/0verL1nk/PaperSage/compare/v1.8.2...v1.8.3) (2026-08-16)
+
+
+### Bug Fixes
+
+* **desktop:** use the Electron net module for the GPU pack download ([#140](https://github.com/0verL1nk/PaperSage/issues/140)) ([17219e2](https://github.com/0verL1nk/PaperSage/commit/17219e2e186650d8b838005a46b9e476c7d06d5d))
+* **web:** keep a2ui mindmaps inline after a turn completes ([#139](https://github.com/0verL1nk/PaperSage/issues/139)) ([abc0f10](https://github.com/0verL1nk/PaperSage/commit/abc0f103828dce74d47ec9528e2e3224c3a919f3))
+
+## [1.8.2](https://github.com/0verL1nk/PaperSage/compare/v1.8.1...v1.8.2) (2026-08-16)
+
+
+### Bug Fixes
+
+* **desktop:** use the Electron net module for the GPU pack download ([#138](https://github.com/0verL1nk/PaperSage/issues/138)) ([a51ddd6](https://github.com/0verL1nk/PaperSage/commit/a51ddd6c2657783a18d0c7c99a27b83ced8c1de7))
+
+## [1.8.1](https://github.com/0verL1nk/PaperSage/compare/v1.8.0...v1.8.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* dangling a2ui placeholders, dead renderer logging, context card design ([#136](https://github.com/0verL1nk/PaperSage/issues/136)) ([9f346e1](https://github.com/0verL1nk/PaperSage/commit/9f346e1b0e7324e1255bf4d023840fc2b684fd41))
+
 ## [1.8.0](https://github.com/0verL1nk/PaperSage/compare/v1.7.0...v1.8.0) (2026-08-16)
 
 

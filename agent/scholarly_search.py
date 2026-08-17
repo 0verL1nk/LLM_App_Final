@@ -1,13 +1,15 @@
 import logging
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
 SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1/paper/search"
+SEMANTIC_SCHOLAR_PAPER_API = "https://api.semanticscholar.org/graph/v1/paper"
 SEMANTIC_SCHOLAR_FIELDS = ",".join(
     [
+        "paperId",
         "title",
         "authors",
         "year",
@@ -18,6 +20,11 @@ SEMANTIC_SCHOLAR_FIELDS = ",".join(
         "openAccessPdf",
     ]
 )
+# Citation responses nest the target paper under "citingPaper"/"citedPaper".
+_CITATION_DIRECTION_FIELDS = {"citations": "citingPaper", "references": "citedPaper"}
+# Open-access PDF downloads are bounded so one tool call cannot exhaust memory
+# or the ingestion pipeline; arXiv papers are typically well under this cap.
+MAX_PAPER_PDF_BYTES = 50 * 1024 * 1024
 
 
 class ScholarlySearchError(RuntimeError):
@@ -48,6 +55,7 @@ def _paper_from_semantic_scholar(item: dict[str, Any]) -> dict[str, Any]:
         url = f"https://doi.org/{doi}"
 
     return {
+        "paper_id": item.get("paperId") if isinstance(item.get("paperId"), str) else "",
         "title": item.get("title") if isinstance(item.get("title"), str) else "",
         "authors": author_names,
         "year": item.get("year") if isinstance(item.get("year"), int) else None,
@@ -98,6 +106,87 @@ def search_semantic_scholar(
     return [paper for paper in parsed if paper.get("title")]
 
 
+def fetch_semantic_scholar_citations(
+    paper_id: str,
+    *,
+    direction: Literal["citations", "references"] = "citations",
+    limit: int = 10,
+    timeout_seconds: float = 8.0,
+) -> list[dict[str, Any]]:
+    """Fetch one hop of the Semantic Scholar citation graph for snowballing."""
+    normalized_id = paper_id.strip()
+    if not normalized_id:
+        return []
+    safe_limit = max(1, min(limit, 50))
+    endpoint = f"{SEMANTIC_SCHOLAR_PAPER_API}/{normalized_id}/{direction}"
+    paper_field = _CITATION_DIRECTION_FIELDS[direction]
+    params: dict[str, Any] = {
+        "limit": safe_limit,
+        "fields": f"{paper_field}.{SEMANTIC_SCHOLAR_FIELDS}",
+    }
+    try:
+        with httpx.Client(timeout=timeout_seconds) as client:
+            response = client.get(endpoint, params=params)
+            response.raise_for_status()
+            payload = response.json()
+    except httpx.TimeoutException as exc:
+        raise ScholarlySearchError("Semantic Scholar citation request timed out.") from exc
+    except httpx.HTTPStatusError as exc:
+        raise ScholarlySearchError(
+            f"Semantic Scholar citation request failed with status {exc.response.status_code}."
+        ) from exc
+    except Exception as exc:
+        raise ScholarlySearchError(f"Semantic Scholar citation request failed: {exc}") from exc
+
+    rows = payload.get("data")
+    if not isinstance(rows, list):
+        logger.warning("Unexpected Semantic Scholar citation payload: missing 'data' list.")
+        return []
+    parsed: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        paper = row.get(paper_field)
+        if isinstance(paper, dict):
+            parsed.append(_paper_from_semantic_scholar(paper))
+    return [paper for paper in parsed if paper.get("title")]
+
+
+def download_paper_pdf(url: str, *, timeout_seconds: float = 30.0) -> bytes:
+    """Download one open-access paper PDF with size and format guards."""
+    normalized_url = url.strip()
+    if not normalized_url.startswith(("https://", "http://")):
+        raise ScholarlySearchError("Paper download URL must be an http(s) link.")
+    try:
+        with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+            with client.stream("GET", normalized_url) as response:
+                response.raise_for_status()
+                chunks: list[bytes] = []
+                total = 0
+                for chunk in response.iter_bytes():
+                    total += len(chunk)
+                    if total > MAX_PAPER_PDF_BYTES:
+                        raise ScholarlySearchError(
+                            "Paper download exceeded the 50 MB limit."
+                        )
+                    chunks.append(chunk)
+    except httpx.TimeoutException as exc:
+        raise ScholarlySearchError("Paper download timed out.") from exc
+    except httpx.HTTPStatusError as exc:
+        raise ScholarlySearchError(
+            f"Paper download failed with status {exc.response.status_code}."
+        ) from exc
+    except ScholarlySearchError:
+        raise
+    except Exception as exc:
+        raise ScholarlySearchError(f"Paper download failed: {exc}") from exc
+
+    content = b"".join(chunks)
+    if not content.startswith(b"%PDF"):
+        raise ScholarlySearchError("Downloaded content is not a PDF (missing %PDF header).")
+    return content
+
+
 def format_search_papers_results(papers: list[dict[str, Any]]) -> str:
     if not papers:
         return "No academic papers found for this query."
@@ -125,5 +214,8 @@ def format_search_papers_results(papers: list[dict[str, Any]]) -> str:
         lines.append(f"   DOI: {doi}")
         lines.append(f"   URL: {url}")
         lines.append(f"   Open Access: {open_access}")
+        paper_id = paper.get("paper_id") or ""
+        if paper_id:
+            lines.append(f"   PaperId: {paper_id}")
 
     return "\n".join(lines)

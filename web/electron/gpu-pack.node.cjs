@@ -84,3 +84,75 @@ test("an incomplete pack fails without touching the CPU tree", async () => {
   assert.ok(!fs.existsSync(path.join(sandbox.internalDir, BACKUP_DIR)))
   fs.rmSync(sandbox.root, { recursive: true, force: true })
 })
+
+test("enable falls back to copy+delete when staging crosses drives (EXDEV)", async (t) => {
+  const { mock } = require("node:test")
+  const sandbox = makeSandbox()
+  t.after(() => {
+    mock.restoreAll()
+    fs.rmSync(sandbox.root, { recursive: true, force: true })
+  })
+  // Only moves out of the staging tree are cross-volume; renames inside the
+  // internal tree (the backup) keep working, as they do on a real machine.
+  const originalRename = fs.renameSync
+  mock.method(fs, "renameSync", (source, destination) => {
+    if (source.startsWith(sandbox.workDir)) {
+      throw Object.assign(new Error("cross-device link not permitted"), { code: "EXDEV" })
+    }
+    originalRename(source, destination)
+  })
+  const service = createGpuPackService({
+    internalDir: sandbox.internalDir,
+    workDir: sandbox.workDir,
+    download: async (_url, destination) => fs.writeFileSync(destination, "zip", "utf8"),
+    extract: async (_zipPath, stagingDir) => fakeExtract(stagingDir),
+    report: () => undefined,
+    logger: { error: () => undefined },
+  })
+
+  await service.enable("https://example.invalid/pack.zip")
+
+  assert.equal(service.status().phase, "gpu-active")
+  assert.ok(fs.existsSync(path.join(sandbox.internalDir, "onnxruntime", "gpu.txt")))
+  assert.ok(fs.existsSync(path.join(sandbox.internalDir, "nvidia", "cudnn", "bin", "cudnn64_9.dll")))
+  assert.ok(fs.existsSync(path.join(sandbox.internalDir, BACKUP_DIR, "cpu.txt")))
+  assert.ok(!fs.existsSync(path.join(sandbox.workDir, "staging", "onnxruntime")))
+})
+
+test("enable rolls the CPU tree back when the swap dies mid-flight", async (t) => {
+  const { mock } = require("node:test")
+  const sandbox = makeSandbox()
+  const errors = []
+  t.after(() => {
+    mock.restoreAll()
+    fs.rmSync(sandbox.root, { recursive: true, force: true })
+  })
+  // Cross-volume staging forces the copy path, and the onnxruntime copy (the
+  // first cpSync of the swap) fails; the internal tree must roll back to CPU.
+  const originalRename = fs.renameSync
+  mock.method(fs, "renameSync", (source, destination) => {
+    if (source.startsWith(sandbox.workDir)) {
+      throw Object.assign(new Error("cross-device link not permitted"), { code: "EXDEV" })
+    }
+    originalRename(source, destination)
+  })
+  mock.method(fs, "cpSync", () => {
+    throw new Error("disk full")
+  })
+  const service = createGpuPackService({
+    internalDir: sandbox.internalDir,
+    workDir: sandbox.workDir,
+    download: async (_url, destination) => fs.writeFileSync(destination, "zip", "utf8"),
+    extract: async (_zipPath, stagingDir) => fakeExtract(stagingDir),
+    report: () => undefined,
+    logger: { error: (_message, error) => errors.push(error) },
+  })
+
+  await service.enable("https://example.invalid/pack.zip")
+
+  assert.equal(service.status().phase, "error")
+  assert.ok(fs.existsSync(sandbox.cpuMarker))
+  assert.ok(!fs.existsSync(path.join(sandbox.internalDir, BACKUP_DIR)))
+  assert.ok(!fs.existsSync(path.join(sandbox.internalDir, "nvidia")))
+  assert.ok(errors.length >= 1)
+})
