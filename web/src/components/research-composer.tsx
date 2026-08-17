@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 
 import {
   PromptInput,
@@ -64,6 +64,24 @@ function ComposerInner({
 }: ResearchComposerProps) {
   const controller = usePromptInputController()
   const skills = useSkills()
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const [caret, setCaret] = useState(0)
+  const syncCaret = useCallback((element: HTMLTextAreaElement) => {
+    setCaret(element.selectionStart ?? element.value.length)
+  }, [])
+  const restoreCaret = useCallback((position: number) => {
+    // Update React state so detection immediately re-runs with the new caret
+    // (closes the menu past the completed token); the rAF placement applies
+    // after React commits the replaced value, so the browser's
+    // caret-to-end reset doesn't fight the placement.
+    setCaret(position)
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current
+      if (!textarea) return
+      textarea.focus()
+      textarea.setSelectionRange(position, position)
+    })
+  }, [])
   const skillCommands = useMemo<SlashCommandDef[]>(
     () =>
       (skills.data ?? []).map((skill) => ({
@@ -88,19 +106,12 @@ function ComposerInner({
   )
   const menu = useSlashCommandMenu({
     value: controller.textInput.value,
+    caret,
     setInput: controller.textInput.setInput,
+    restoreCaret,
     commands,
     onExecute: executeFromMenu,
   })
-  const selectFromMenu = useCallback(
-    (index: number) => {
-      const command = menu.filtered[index]
-      if (!command) return
-      controller.textInput.setInput("")
-      executeFromMenu(command)
-    },
-    [menu.filtered, controller.textInput, executeFromMenu],
-  )
   const handleSubmit = useCallback(
     ({ text }: PromptInputMessage) => {
       const resolved = resolveSlashSubmission(text, skillNames)
@@ -126,22 +137,26 @@ function ComposerInner({
           ))}
         </Suggestions>
       ) : null}
-      <div className="relative">
+      <div className="relative" data-slash-scope="true">
         {menu.open ? (
           <SlashCommandMenu
             filtered={menu.filtered}
             activeIndex={menu.activeIndex}
             onHover={menu.setActiveIndex}
-            onSelect={selectFromMenu}
+            onSelect={menu.select}
+            onDismiss={menu.dismiss}
           />
         ) : null}
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputBody>
             <PromptInputTextarea
+              ref={textareaRef}
               aria-label="消息输入框"
               disabled={inputDisabled}
               placeholder="询问论文、比较方法，或输入 / 使用命令…"
               onKeyDown={menu.handleKeyDown}
+              onSelect={(event) => syncCaret(event.currentTarget)}
+              onKeyUp={(event) => syncCaret(event.currentTarget)}
             />
           </PromptInputBody>
           <PromptInputFooter>

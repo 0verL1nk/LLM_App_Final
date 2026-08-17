@@ -1,19 +1,24 @@
 import { Sparkles, Terminal } from "lucide-react"
-import { useCallback, useMemo, useState, type KeyboardEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 
 import { cn } from "@/lib/utils"
 import {
+  detectSlashTrigger,
   filterSlashCommands,
-  parseSlashToken,
   type SlashCommandDef,
   type SlashCommandKind,
+  type SlashTriggerHit,
 } from "@/lib/slash-commands"
 
 export interface UseSlashCommandMenuOptions {
   /** Current textarea value (controlled). */
   value: string
-  /** Controlled setter used for Tab completion and Enter cleanup. */
+  /** Current textarea caret (selectionStart), refreshed by the composer. */
+  caret: number
+  /** Controlled setter used for completions and Enter cleanup. */
   setInput: (value: string) => void
+  /** Restores the textarea caret after an in-place completion. */
+  restoreCaret: (position: number) => void
   /** Full command registry; builtins are expected before skills. */
   commands: readonly SlashCommandDef[]
   /** Invoked when the user executes the highlighted command. */
@@ -25,39 +30,59 @@ export interface SlashCommandMenuState {
   filtered: SlashCommandDef[]
   activeIndex: number
   setActiveIndex: (index: number) => void
+  dismiss: () => void
+  /** Pointer pick: executes a leading trigger, completes an inline one. */
+  select: (index: number) => void
   handleKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void
 }
 
+function hitKey(hit: SlashTriggerHit | null): string | null {
+  return hit === null ? null : `${hit.span.start}:${hit.token}`
+}
+
 /**
- * Keyboard-driven slash command completion attached to the chat textarea:
- * ↑/↓ move, Tab completes, Enter executes, Esc dismisses until the token
- * changes. IME composition is never intercepted.
+ * Keyboard-driven slash command completion attached to the chat textarea,
+ * following DeepSeek Harness's input-trigger model: the trigger is detected
+ * at the caret anywhere in the draft ("帮我 /sum" opens the menu), Tab and
+ * Space complete the token in place by replacing only its span, Enter
+ * executes a leading command (or completes an inline one), and Esc dismisses
+ * until the token changes. IME composition is never intercepted.
  */
 export function useSlashCommandMenu(options: UseSlashCommandMenuOptions): SlashCommandMenuState {
-  const { value, setInput, commands, onExecute } = options
+  const { value, caret, setInput, restoreCaret, commands, onExecute } = options
   const [activeIndex, setActiveIndex] = useState(0)
-  const [dismissedToken, setDismissedToken] = useState<string | null>(null)
-  const [lastToken, setLastToken] = useState<string | null>(() => null)
+  const [dismissedKey, setDismissedKey] = useState<string | null>(null)
+  const [lastKey, setLastKey] = useState<string | null>(() => null)
 
-  const token = parseSlashToken(value)
-  // Reset transient state during render whenever the slash token changes,
-  // so selection and dismissal never leak across edits.
-  if (lastToken !== token) {
-    setLastToken(token)
+  const hit = detectSlashTrigger(value, caret)
+  const currentKey = hitKey(hit)
+  // Reset transient state during render whenever the trigger token moves or
+  // changes, so selection and dismissal never leak across edits.
+  if (lastKey !== currentKey) {
+    setLastKey(currentKey)
     setActiveIndex(0)
-    setDismissedToken(null)
+    setDismissedKey(null)
   }
 
   const filtered = useMemo(
-    () => (token === null ? [] : filterSlashCommands(commands, token)),
-    [commands, token],
+    () => (hit === null ? [] : filterSlashCommands(commands, hit.token)),
+    [commands, hit],
   )
   const safeIndex = filtered.length === 0 ? 0 : Math.min(activeIndex, filtered.length - 1)
-  const open = token !== null && token !== dismissedToken
+  const open = hit !== null && currentKey !== dismissedKey
+
+  const completeInPlace = useCallback(
+    (target: SlashTriggerHit, command: SlashCommandDef) => {
+      const replacement = `/${command.name} `
+      setInput(value.slice(0, target.span.start) + replacement + value.slice(target.span.end))
+      restoreCaret(target.span.start + replacement.length)
+    },
+    [setInput, restoreCaret, value],
+  )
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (!open || event.nativeEvent.isComposing) return
+      if (!open || hit === null || event.nativeEvent.isComposing) return
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         if (!filtered.length) return
         event.preventDefault()
@@ -67,30 +92,61 @@ export function useSlashCommandMenu(options: UseSlashCommandMenuOptions): SlashC
       }
       if (event.key === "Escape") {
         event.preventDefault()
-        setDismissedToken(token)
+        setDismissedKey(currentKey)
         return
       }
       if (event.key === "Tab") {
         const active = filtered[safeIndex]
         if (!active) return
         event.preventDefault()
-        setInput(`/${active.name} `)
+        completeInPlace(hit, active)
+        return
+      }
+      if (event.key === " " && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        // Space after an exact command name completes the token, dsh-style:
+        // "/skills " leaves argument entry ready without dismissing the mode.
+        const exact = commands.find(
+          (command) => command.name.toLowerCase() === hit.token.toLowerCase(),
+        )
+        if (exact) {
+          event.preventDefault()
+          completeInPlace(hit, exact)
+        }
         return
       }
       if (event.key === "Enter") {
         if (!filtered.length) return
         event.preventDefault()
         const active = filtered[safeIndex]
-        if (active) {
+        if (!active) return
+        if (hit.leading) {
           setInput("")
           onExecute(active)
+          return
         }
+        completeInPlace(hit, active)
       }
     },
-    [open, filtered, safeIndex, token, setInput, onExecute],
+    [open, hit, currentKey, filtered, safeIndex, commands, completeInPlace, setInput, onExecute],
   )
 
-  return { open, filtered, activeIndex: safeIndex, setActiveIndex, handleKeyDown }
+  const dismiss = useCallback(() => setDismissedKey(currentKey), [currentKey])
+
+  const select = useCallback(
+    (index: number) => {
+      const command = filtered[index]
+      if (!command || hit === null) return
+      if (hit.leading) {
+        setInput("")
+        onExecute(command)
+        return
+      }
+      completeInPlace(hit, command)
+    },
+    [filtered, hit, setInput, onExecute, completeInPlace],
+  )
+
+  return { open, filtered, activeIndex: safeIndex, setActiveIndex, dismiss, select, handleKeyDown }
 }
 
 const GROUP_LABELS: Record<SlashCommandKind, string> = {
@@ -103,6 +159,8 @@ export interface SlashCommandMenuProps {
   activeIndex: number
   onHover: (index: number) => void
   onSelect: (index: number) => void
+  /** Closes the menu when the pointer lands outside the composer card. */
+  onDismiss: () => void
 }
 
 interface MenuGroup {
@@ -125,12 +183,25 @@ function groupByKind(filtered: SlashCommandDef[]): MenuGroup[] {
 
 /**
  * Popup listing slash commands above the input; purely presentational,
- * all navigation state lives in useSlashCommandMenu.
+ * all navigation state lives in useSlashCommandMenu. Clicks on the textarea
+ * or composer chrome keep the menu open; clicks elsewhere dismiss it.
  */
-export function SlashCommandMenu({ filtered, activeIndex, onHover, onSelect }: SlashCommandMenuProps) {
+export function SlashCommandMenu({ filtered, activeIndex, onHover, onSelect, onDismiss }: SlashCommandMenuProps) {
   const groups = groupByKind(filtered)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (!(event.target instanceof Node)) return
+      if (rootRef.current?.contains(event.target)) return
+      if (event.target instanceof Element && event.target.closest("[data-slash-scope]")) return
+      onDismiss()
+    }
+    document.addEventListener("pointerdown", onPointerDown, true)
+    return () => document.removeEventListener("pointerdown", onPointerDown, true)
+  }, [onDismiss])
   return (
     <div
+      ref={rootRef}
       role="listbox"
       aria-label="斜杠命令"
       className="absolute bottom-full left-0 right-0 z-20 mb-2 overflow-hidden rounded-xl border bg-popover/95 shadow-lg backdrop-blur"
@@ -173,7 +244,7 @@ export function SlashCommandMenu({ filtered, activeIndex, onHover, onSelect }: S
         )}
       </div>
       <p className="border-t px-2.5 py-1.5 text-[11px] text-muted-foreground">
-        ↑↓ 选择 · Tab 补全 · Enter 执行 · Esc 关闭
+        ↑↓ 选择 · Tab/空格 补全 · Enter 执行 · Esc 关闭
       </p>
     </div>
   )

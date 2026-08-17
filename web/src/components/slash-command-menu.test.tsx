@@ -15,36 +15,43 @@ const commands: readonly SlashCommandDef[] = [
   { name: "summary", description: "总结论文要点", kind: "skill" },
 ]
 
+interface DraftState {
+  value: string
+  caret: number
+}
+
 function Harness({ onExecute }: { onExecute: (command: SlashCommandDef) => void }) {
-  const [value, setValue] = useState("")
-  const menu = useSlashCommandMenu({ value, setInput: setValue, commands, onExecute })
-  const execute = (index: number) => {
-    const command = menu.filtered[index]
-    if (command) {
-      setValue("")
-      onExecute(command)
-    }
-  }
+  const [draft, setDraft] = useState<DraftState>({ value: "", caret: 0 })
+  const menu = useSlashCommandMenu({
+    value: draft.value,
+    caret: draft.caret,
+    setInput: (value) => setDraft({ value, caret: value.length }),
+    restoreCaret: (position) => setDraft((current) => ({ ...current, caret: position })),
+    commands,
+    onExecute,
+  })
   return (
-    <div className="relative">
+    <div className="relative" data-slash-scope="true">
       {menu.open ? (
         <SlashCommandMenu
           filtered={menu.filtered}
           activeIndex={menu.activeIndex}
           onHover={menu.setActiveIndex}
-          onSelect={execute}
+          onSelect={menu.select}
+          onDismiss={menu.dismiss}
         />
       ) : null}
       <textarea
         aria-label="消息输入框"
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
+        value={draft.value}
+        onChange={(event) => setDraft({ value: event.target.value, caret: event.target.value.length })}
         onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => menu.handleKeyDown(event)}
       />
     </div>
   )
 }
 
+/** Types a value with the caret at its end, like typing at the input's end. */
 function typeValue(value: string) {
   fireEvent.change(screen.getByLabelText("消息输入框"), { target: { value } })
 }
@@ -62,6 +69,26 @@ describe("SlashCommandMenu", () => {
     expect(screen.getByText("/summary")).toBeTruthy()
     expect(screen.getByText("命令")).toBeTruthy()
     expect(screen.getByText("技能")).toBeTruthy()
+  })
+
+  it("opens for an inline slash after whitespace", () => {
+    render(<Harness onExecute={vi.fn()} />)
+    typeValue("帮我 /sum")
+
+    expect(screen.getByRole("listbox")).toBeTruthy()
+    expect(screen.getByText("/summary")).toBeTruthy()
+  })
+
+  it("stays closed for plain prompts, mid-word slashes, and URLs", () => {
+    render(<Harness onExecute={vi.fn()} />)
+    typeValue("帮我总结这篇论文")
+    expect(screen.queryByRole("listbox")).toBeNull()
+
+    typeValue("a/b")
+    expect(screen.queryByRole("listbox")).toBeNull()
+
+    typeValue("看 https://example.com/paper")
+    expect(screen.queryByRole("listbox")).toBeNull()
   })
 
   it("filters while typing and resets to the first entry", () => {
@@ -98,7 +125,29 @@ describe("SlashCommandMenu", () => {
     expect(screen.queryByRole("listbox")).toBeNull()
   })
 
-  it("executes the highlighted command with Enter", () => {
+  it("completes an inline trigger in place without touching surrounding text", () => {
+    render(<Harness onExecute={vi.fn()} />)
+    typeValue("帮我 /sum")
+    const textarea = screen.getByLabelText("消息输入框") as HTMLTextAreaElement
+
+    fireEvent.keyDown(textarea, { key: "Tab" })
+
+    expect(textarea.value).toBe("帮我 /summary ")
+    expect(screen.queryByRole("listbox")).toBeNull()
+  })
+
+  it("completes an exact name with Space", () => {
+    render(<Harness onExecute={vi.fn()} />)
+    typeValue("/skills")
+    const textarea = screen.getByLabelText("消息输入框") as HTMLTextAreaElement
+
+    fireEvent.keyDown(textarea, { key: " " })
+
+    expect(textarea.value).toBe("/skills ")
+    expect(screen.queryByRole("listbox")).toBeNull()
+  })
+
+  it("executes the highlighted command with Enter when leading", () => {
     const onExecute = vi.fn()
     render(<Harness onExecute={onExecute} />)
     typeValue("/sum")
@@ -110,6 +159,18 @@ describe("SlashCommandMenu", () => {
       expect.objectContaining({ name: "summary", kind: "skill" }),
     )
     expect(textarea.value).toBe("")
+  })
+
+  it("completes instead of executing when the trigger is inline", () => {
+    const onExecute = vi.fn()
+    render(<Harness onExecute={onExecute} />)
+    typeValue("帮我 /sum")
+    const textarea = screen.getByLabelText("消息输入框") as HTMLTextAreaElement
+
+    fireEvent.keyDown(textarea, { key: "Enter" })
+
+    expect(onExecute).not.toHaveBeenCalled()
+    expect(textarea.value).toBe("帮我 /summary ")
   })
 
   it("closes on Escape and reopens when the token changes", () => {
@@ -133,12 +194,5 @@ describe("SlashCommandMenu", () => {
     expect(screen.getByText("没有匹配的命令")).toBeTruthy()
     fireEvent.keyDown(textarea, { key: "Enter" })
     expect(onExecute).not.toHaveBeenCalled()
-  })
-
-  it("stays closed for plain prompts", () => {
-    render(<Harness onExecute={vi.fn()} />)
-    typeValue("帮我总结这篇论文")
-
-    expect(screen.queryByRole("listbox")).toBeNull()
   })
 })

@@ -21,15 +21,46 @@ export const BUILTIN_COMMAND_NAMES: ReadonlySet<string> = new Set(
   BUILTIN_COMMANDS.map((command) => command.name),
 )
 
+export interface SlashTriggerHit {
+  /** Token typed between the slash and the caret ("" for a lone slash). */
+  token: string
+  /** Draft range occupied by the trigger token: [start, caret). */
+  span: { start: number; end: number }
+  /** True when the slash sits at the draft's first non-space character. */
+  leading: boolean
+}
+
+const WORD_CHAR = /[\p{L}\p{N}_]/u
+const WHITESPACE = /\s/u
+
 /**
- * Returns the token typed after a leading "/" while the user is still typing
- * the command name ("" for a lone slash), or null when the input is not in
- * slash-command completion mode (no leading slash or arguments already began).
+ * Detects the slash-command token under the caret, anywhere in the draft —
+ * not only at the start. Detection model ported from DeepSeek Harness's
+ * ui-input-trigger core: scan backward from the caret, stop at whitespace,
+ * and require a word boundary before the slash so "a/b", URL paths, and "//"
+ * stay plain text. Only `leading` hits execute as commands on Enter; inline
+ * hits complete in place, mirroring dsh's command-vs-reference split.
  */
-export function parseSlashToken(value: string): string | null {
-  if (!value.startsWith("/")) return null
-  const token = value.slice(1)
-  return /\s/.test(token) ? null : token
+export function detectSlashTrigger(draft: string, caret: number): SlashTriggerHit | null {
+  for (let i = Math.min(caret, draft.length) - 1; i >= 0; i--) {
+    const ch = draft.charAt(i)
+    if (WHITESPACE.test(ch)) return null
+    if (ch !== "/") continue
+    if (i > 0) {
+      const prev = draft.charAt(i - 1)
+      // "word/" or "user@host/x" style: the slash is ordinary text.
+      if (WORD_CHAR.test(prev)) continue
+      // URL carve-outs: second slash of "//" and the path slash in "scheme://".
+      if (prev === "/") continue
+      if (prev === ":" && i >= 2 && !WHITESPACE.test(draft.charAt(i - 2))) continue
+    }
+    return {
+      token: draft.slice(i + 1, caret),
+      span: { start: i, end: caret },
+      leading: draft.search(/\S/) === i,
+    }
+  }
+  return null
 }
 
 /**

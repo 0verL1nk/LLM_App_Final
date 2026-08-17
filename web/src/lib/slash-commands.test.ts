@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest"
 import {
   BUILTIN_COMMANDS,
   BUILTIN_COMMAND_NAMES,
+  detectSlashTrigger,
   expandSkillDirective,
   filterSlashCommands,
-  parseSlashToken,
   resolveSlashSubmission,
   type SlashCommandDef,
 } from "@/lib/slash-commands"
@@ -18,21 +18,57 @@ const commands: readonly SlashCommandDef[] = [
 
 const skillNames = new Set(["summary", "translation"])
 
-describe("parseSlashToken", () => {
-  it("returns empty token for a lone slash", () => {
-    expect(parseSlashToken("/")).toBe("")
+describe("detectSlashTrigger", () => {
+  it("detects a leading slash at the caret with its span", () => {
+    expect(detectSlashTrigger("/", 1)).toEqual({
+      token: "",
+      span: { start: 0, end: 1 },
+      leading: true,
+    })
+    expect(detectSlashTrigger("/su", 3)).toEqual({
+      token: "su",
+      span: { start: 0, end: 3 },
+      leading: true,
+    })
   })
 
-  it("returns the token between slash and whitespace", () => {
-    expect(parseSlashToken("/su")).toBe("su")
-    expect(parseSlashToken("/summary")).toBe("summary")
+  it("detects inline triggers after whitespace but not mid-word", () => {
+    expect(detectSlashTrigger("帮我 /sum", 7)).toEqual({
+      token: "sum",
+      span: { start: 3, end: 7 },
+      leading: false,
+    })
+    expect(detectSlashTrigger("a/b", 3)).toBeNull()
+    expect(detectSlashTrigger("word/su", 7)).toBeNull()
   })
 
-  it("returns null once arguments begin or slash is absent", () => {
-    expect(parseSlashToken("/summary 总结一下")).toBeNull()
-    expect(parseSlashToken("/compact\n")).toBeNull()
-    expect(parseSlashToken("帮我 /summary")).toBeNull()
-    expect(parseSlashToken("")).toBeNull()
+  it("keeps slashes inside URLs and double slashes dead", () => {
+    expect(detectSlashTrigger("看 https://example.com/paper", 27)).toBeNull()
+    expect(detectSlashTrigger("path//tmp", 9)).toBeNull()
+  })
+
+  it("stops the token at whitespace and before the caret", () => {
+    expect(detectSlashTrigger("/summary 参数", 5)).toEqual({
+      token: "summ",
+      span: { start: 0, end: 5 },
+      leading: true,
+    })
+    expect(detectSlashTrigger("/summary ", 10)).toBeNull()
+    expect(detectSlashTrigger("/su", 0)).toBeNull()
+  })
+
+  it("allows triggers after punctuation but not after a scheme colon", () => {
+    expect(detectSlashTrigger("结论、/sum", 7)).toEqual({
+      token: "sum",
+      span: { start: 3, end: 7 },
+      leading: false,
+    })
+    // "x:/y" reads as a URL scheme separator and stays plain text (dsh rule).
+    expect(detectSlashTrigger("结论:/sum", 7)).toBeNull()
+  })
+
+  it("treats a trigger after leading spaces as leading", () => {
+    expect(detectSlashTrigger("  /sum", 6)?.leading).toBe(true)
   })
 })
 

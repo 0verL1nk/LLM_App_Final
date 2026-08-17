@@ -31,6 +31,14 @@ function renderComposer(props: Partial<Parameters<typeof ResearchComposer>[0]> =
   return { onPromptSubmit, onCommand }
 }
 
+/** Types a value into the composer with the caret at its end. */
+function typeValue(value: string) {
+  const textarea = screen.getByLabelText("消息输入框") as HTMLTextAreaElement
+  fireEvent.change(textarea, { target: { value } })
+  Object.assign(textarea, { selectionStart: value.length, selectionEnd: value.length })
+  fireEvent.keyUp(textarea, { key: "a" })
+}
+
 describe("ResearchComposer", () => {
   beforeEach(() => {
     fetchMock.mockReset()
@@ -48,31 +56,40 @@ describe("ResearchComposer", () => {
 
   it("lists builtin commands and fetched skills in the popup", async () => {
     renderComposer()
-    const textarea = screen.getByLabelText("消息输入框")
-    fireEvent.change(textarea, { target: { value: "/" } })
+    typeValue("/")
 
     expect(screen.getByText("/skills")).toBeTruthy()
     await waitFor(() => expect(screen.getByText("/summary")).toBeTruthy())
   })
 
+  it("opens the popup for an inline slash and completes in place", async () => {
+    renderComposer()
+    typeValue("帮我 /sum")
+    await waitFor(() => expect(screen.getByText("/summary")).toBeTruthy())
+    const textarea = screen.getByLabelText("消息输入框") as HTMLTextAreaElement
+
+    fireEvent.keyDown(textarea, { key: "Tab" })
+
+    expect(textarea.value).toBe("帮我 /summary ")
+    expect(screen.queryByRole("listbox")).toBeNull()
+  })
+
   it("executes a highlighted builtin command with Enter", async () => {
     const { onCommand } = renderComposer()
-    const textarea = screen.getByLabelText("消息输入框")
-    fireEvent.change(textarea, { target: { value: "/com" } })
+    typeValue("/com")
     await waitFor(() => expect(screen.getByText("/compact")).toBeTruthy())
 
-    fireEvent.keyDown(textarea, { key: "Enter" })
+    fireEvent.keyDown(screen.getByLabelText("消息输入框"), { key: "Enter" })
 
     expect(onCommand).toHaveBeenCalledExactlyOnceWith("compact", "")
-    expect((textarea as HTMLTextAreaElement).value).toBe("")
+    expect((screen.getByLabelText("消息输入框") as HTMLTextAreaElement).value).toBe("")
   })
 
   it("routes submissions with arguments through onCommand", async () => {
     const { onCommand } = renderComposer()
-    const textarea = screen.getByLabelText("消息输入框")
-    fireEvent.change(textarea, { target: { value: "/skills 全部" } })
+    typeValue("/skills 全部")
 
-    fireEvent.keyDown(textarea, { key: "Enter" })
+    fireEvent.keyDown(screen.getByLabelText("消息输入框"), { key: "Enter" })
 
     await waitFor(() =>
       expect(onCommand).toHaveBeenCalledExactlyOnceWith("skills", "全部"),
@@ -81,12 +98,11 @@ describe("ResearchComposer", () => {
 
   it("expands skill invocations into an explicit directive prompt", async () => {
     const { onPromptSubmit } = renderComposer()
-    const textarea = screen.getByLabelText("消息输入框")
-    fireEvent.change(textarea, { target: { value: "/" } })
+    typeValue("/")
     await waitFor(() => expect(screen.getByText("/summary")).toBeTruthy())
 
-    fireEvent.change(textarea, { target: { value: "/summary 总结这篇论文" } })
-    fireEvent.keyDown(textarea, { key: "Enter" })
+    typeValue("/summary 总结这篇论文")
+    fireEvent.keyDown(screen.getByLabelText("消息输入框"), { key: "Enter" })
 
     await waitFor(() => expect(onPromptSubmit).toHaveBeenCalledOnce())
     const prompt = onPromptSubmit.mock.calls[0]?.[0] as string
@@ -97,10 +113,9 @@ describe("ResearchComposer", () => {
 
   it("passes plain prompts through untouched", async () => {
     const { onPromptSubmit } = renderComposer()
-    const textarea = screen.getByLabelText("消息输入框")
-    fireEvent.change(textarea, { target: { value: "对比两篇论文的方法" } })
+    typeValue("对比两篇论文的方法")
 
-    fireEvent.keyDown(textarea, { key: "Enter" })
+    fireEvent.keyDown(screen.getByLabelText("消息输入框"), { key: "Enter" })
 
     await waitFor(() =>
       expect(onPromptSubmit).toHaveBeenCalledExactlyOnceWith("对比两篇论文的方法"),
