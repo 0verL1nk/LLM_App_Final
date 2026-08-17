@@ -37,7 +37,7 @@ def test_agent_card_is_fail_visible_and_score_complete() -> None:
     card = _card()
 
     assert card["$schema"].endswith(
-        "/awesome-agentic-engineering/v0.14.0/schema/agent-card.schema.json"
+        "/awesome-agentic-engineering/v0.15.0/schema/agent-card.schema.json"
     )
     assert card["risk_profile"] == "draft-only"
     assert set(card["scorecard"]) == SCORE_AREAS
