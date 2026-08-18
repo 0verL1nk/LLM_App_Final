@@ -54,7 +54,11 @@ def invoke_structured_model(
     schema: type[BaseModel],
     messages: list[dict[str, str]],
 ) -> BaseModel:
-    """Invoke a chat model and validate its sanitized JSON against ``schema``."""
+    """Invoke a chat model and validate its sanitized JSON against ``schema``.
+
+    Long judge reasonings occasionally produce malformed JSON, so one fresh
+    retry is taken before surfacing the validation error.
+    """
     schema_instruction = {
         "role": "system",
         "content": (
@@ -63,18 +67,21 @@ def invoke_structured_model(
             f"{json.dumps(schema.model_json_schema(), ensure_ascii=False)}"
         ),
     }
-    response = llm.invoke([*messages, schema_instruction])
-    content = getattr(response, "content", response)
-    if not isinstance(content, str):
-        content = json.dumps(content, ensure_ascii=False)
-    cleaned = strip_model_reasoning(content)
-    try:
-        return schema.model_validate_json(cleaned)
-    except ValidationError:
-        coerced = _coerce_bare_text(schema, cleaned)
-        if coerced is not None:
-            return coerced
-        raise
+    last_error: Exception | None = None
+    for _attempt in range(2):
+        response = llm.invoke([*messages, schema_instruction])
+        content = getattr(response, "content", response)
+        if not isinstance(content, str):
+            content = json.dumps(content, ensure_ascii=False)
+        cleaned = strip_model_reasoning(content)
+        try:
+            return schema.model_validate_json(cleaned)
+        except ValidationError as exc:
+            last_error = exc
+            coerced = _coerce_bare_text(schema, cleaned)
+            if coerced is not None:
+                return coerced
+    raise last_error if last_error is not None else RuntimeError("structured model call failed")
 
 
 def _get_model_max_input_tokens(model_name: str) -> int:

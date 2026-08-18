@@ -1,6 +1,9 @@
-"""Leader delegation tool backed by generic durable AgentTask persistence."""
+"""Leader delegation tool backed by generic durable AgentTask persistence.
 
-from __future__ import annotations
+NOTE: Do NOT add ``from __future__ import annotations`` here. Stringified
+annotations break langchain_core's injected-arg detection for the ``runtime:
+ToolRuntime`` parameter, so the runtime value would never reach the function.
+"""
 
 import json
 
@@ -32,9 +35,12 @@ class DurableDelegationMiddleware(AgentMiddleware):
             f"- {definition.name}: {definition.description}" for definition in definitions
         )
         self.system_prompt = (
-            "Use `delegate_task` only when a distinct evidence task is useful. "
-            "It creates durable work and returns its stable task UID; it does not run "
-            "a child synchronously. Do not delegate recursively.\n\nAvailable roles:\n" + available
+            "Delegate research work to role subagents when a task needs independent "
+            "evidence gathering (per-document analysis, multi-source synthesis) or an "
+            "independent review pass. When subtasks are independent, emit multiple "
+            "delegate_task calls in the SAME turn so they run concurrently; the runtime "
+            "joins their results asynchronously. Do not delegate recursively and do not "
+            "delegate trivial single-lookup work.\n\nAvailable roles:\n" + available
         )
         self.tools = [self._build_tool()]
 

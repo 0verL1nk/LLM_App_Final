@@ -80,7 +80,15 @@ def run_agent_evals(
             except Exception as retry_exc:
                 case_results.append(_execution_error_case_result(case, retry_exc))
                 continue
-        case_results.append(evaluate_case_result(case, turn_result, judge=judge))
+        try:
+            case_results.append(evaluate_case_result(case, turn_result, judge=judge))
+        except Exception:
+            # The judge call is equally fallible (malformed verdicts, provider
+            # hiccups): retry once, then record instead of killing the run.
+            try:
+                case_results.append(evaluate_case_result(case, turn_result, judge=judge))
+            except Exception as judge_exc:
+                case_results.append(_execution_error_case_result(case, judge_exc))
     return build_eval_report(
         fixture_path=fixture_path,
         case_results=case_results,

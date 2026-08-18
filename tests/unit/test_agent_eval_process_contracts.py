@@ -245,3 +245,44 @@ def test_run_agent_evals_records_crashed_case_and_continues() -> None:
     assert boom["completed"] is False
     assert "case execution error" in boom["feedback"]["failure_reason"]
     assert boom["diagnostics"]["error_type"] == "RuntimeError"
+
+
+def test_run_agent_evals_tolerates_judge_failure_and_continues() -> None:
+    def _case(case_id: str) -> AgentEvalCase:
+        return AgentEvalCase.from_dict(
+            {
+                "id": case_id,
+                "category": "fact",
+                "prompt": "请总结",
+                "success_rubric": "Answer should summarize.",
+            }
+        )
+
+    class _StaticRunner:
+        def __call__(self, case: AgentEvalCase) -> dict[str, object]:
+            return {
+                "answer": "结论 <evidence>chunk-1|p1|o0-10</evidence>",
+                "evidence_items": [{"chunk_id": "chunk-1"}],
+                "phase_path": "处理中 -> 输出最终答案",
+                "trace_payload": [],
+                "run_latency_ms": 5.0,
+            }
+
+    judge_calls = {"judge_broken": 0}
+
+    def _flaky_judge(case: AgentEvalCase, _normalized: dict[str, object]) -> FinalAnswerJudgeResult:
+        if case.case_id == "judge_broken":
+            judge_calls["judge_broken"] += 1
+            raise ValueError("pydantic ValidationError from malformed judge JSON")
+        return FinalAnswerJudgeResult(passed=True, score=0.9, reasoning="pass")
+
+    report = run_agent_evals(
+        [_case("judge_broken"), _case("ok")],
+        runner=_StaticRunner(),
+        judge=_flaky_judge,
+    )
+
+    assert judge_calls["judge_broken"] == 2  # one retry before recording the error
+    assert report["completed_cases"] == 1
+    broken = next(item for item in report["cases"] if item["case_id"] == "judge_broken")
+    assert "case execution error" in broken["feedback"]["failure_reason"]

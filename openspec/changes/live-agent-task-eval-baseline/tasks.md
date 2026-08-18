@@ -36,6 +36,21 @@
 - [x] 5.2 openspec 变更校验通过
 - [x] 5.3 基线汇总数字记录于 tasks.md 4.1/4.2 与提交说明
 
+## 7. 迭代 1（2026-08-18：提示词触发 + 工具注入修复 + 双层容错）
+
+修复（首轮 live 发现驱动）：
+
+- [x] 7.1 域提示新增「计划与委派」触发规则（多步先建计划；对比≥2篇/并行证据/需独立审阅 → 同轮并行委派），委派中间件提示同步
+- [x] 7.2 修复 ToolRuntime 注入失效：`plan_tools.py` / `durable_delegation.py` 的 `from __future__ import annotations` 使注解字符串化、langchain_core 无法识别 `runtime` 注入参数——移除并加注释防回退；`update_plan` 重写为官方 `StructuredTool.from_function` 模式；计划工具改由 PlanMiddleware 提供；新增真实 agent 路径回归测试 `test_agent_tool_runtime_injection.py`。该 bug 同时影响生产 agent_teams 委派
+- [x] 7.3 评测 harness 双层容错（turn 执行 + 裁判调用，重试一次→记错误→继续）；`invoke_structured_model` 对损坏 JSON 重试一次
+- [x] 7.4 SearXNG 公共池支持显式关闭（`AGENT_SEARXNG_BASE_URLS=none/off/disabled`）
+- [x] 7.5 12 用例失败子集重跑（`task-completion-live-iteration1-20260817.json` + HTML）：结果层 52.6%→92%、证据覆盖→100%、`web_overturn_001` 崩溃消失并转通过、4/12 用例转完成
+
+发现（迭代 1 数据）：
+
+- [ ] 7.6 委派触发不稳定：同一用例单跑委派 4 次并行、批量跑委派 0 次——需 pass^k 重复试验量化方差（3.10 升级为必做），并排查域提示「优先 search_document」与「多文档应委派」的优先级冲突
+- [ ] 7.7 `plan_passed` 在 3 个 hybrid 用例仍失败（模型不建计划），与委派不稳定同源
+
 ## 6. 首轮 live 基线发现（2026-08-17，MiniMax-M3，19 用例）
 
 - 模型在 `project_delegation_scaling_001` 中自行发现语料标注错误：`2205.00445-Self-Consistency.txt` 实为 MRKL Systems 论文（真实 Self-Consistency 编号 2203.11171）。

@@ -8,6 +8,7 @@ from langchain_core.messages import ToolMessage
 from typing_extensions import NotRequired, TypedDict
 
 from ..adapters.orm.research_plan_repository import PlanRevisionConflictError, save_plan_snapshot
+from ..tools.plan_tools import PLAN_TOOLS
 from .types import AgentState
 
 
@@ -34,8 +35,14 @@ class PlanMiddleware(AgentMiddleware[ExtendedPlanningState, Any, Any]):
     state_schema = ExtendedPlanningState
 
     def __init__(self) -> None:
-        """Initialize the PlanMiddleware."""
+        """Initialize the PlanMiddleware.
+
+        Plan tools are provided by the middleware (not as top-level agent tools)
+        so the agent runtime injects ToolRuntime state and tool_call_id — the same
+        execution path as DurableDelegationMiddleware and the official TodoListMiddleware.
+        """
         super().__init__()
+        self.tools = list(PLAN_TOOLS)
 
     def wrap_tool_call(self, request: ToolCallRequest, handler: Any) -> Any:
         """Persist successful ``update_plan`` snapshots for durable worker runs."""

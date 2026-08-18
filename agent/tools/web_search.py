@@ -35,6 +35,10 @@ class SearchWebInput(BaseModel):
 
 def _parse_searxng_instances() -> list[str]:
     configured = str(os.getenv("AGENT_SEARXNG_BASE_URLS", "") or "").strip()
+    if configured.lower() in {"none", "off", "disabled", "false"}:
+        # Explicit opt-out: skip SearXNG entirely instead of falling back to
+        # the slow public instance pool.
+        return []
     if configured:
         items = [item.strip().rstrip("/") for item in configured.split(",")]
         return [item for item in items if item]

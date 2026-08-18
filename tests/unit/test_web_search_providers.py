@@ -126,3 +126,16 @@ def test_provider_chain_without_ddg_flag_has_no_fallback(monkeypatch):
     assert "firecrawl_search" in names
     assert "native_duckduckgo_search" not in names
     assert "langchain_duckduckgo_search" not in names
+
+
+def test_searxng_explicitly_disabled_skips_public_pool(monkeypatch):
+    monkeypatch.setenv("AGENT_SEARXNG_BASE_URLS", "none")
+
+    assert web_search._parse_searxng_instances() == []
+    assert web_search._build_searxng_web_search_client() is None
+
+
+def test_searxng_off_alias_also_disables(monkeypatch):
+    monkeypatch.setenv("AGENT_SEARXNG_BASE_URLS", "off")
+
+    assert web_search._parse_searxng_instances() == []
