@@ -48,8 +48,16 @@
 
 发现（迭代 1 数据）：
 
-- [ ] 7.6 委派触发不稳定：同一用例单跑委派 4 次并行、批量跑委派 0 次——需 pass^k 重复试验量化方差（3.10 升级为必做），并排查域提示「优先 search_document」与「多文档应委派」的优先级冲突
+- [ ] 7.6 委派触发不稳定：同一用例单跑委派 4 次并行、批量跑委派 0 次——pass^k 重复试验机制已实现（harness `trials` 参数 + 组合门控 + 前端选择器），3 次试验的实测基线待跑；并排查域提示「优先 search_document」与「多文档应委派」的优先级冲突（已在检索策略第 0 条显式让位，待基线验证）
 - [ ] 7.7 `plan_passed` 在 3 个 hybrid 用例仍失败（模型不建计划），与委派不稳定同源
+
+## 8. 基线 2 与内置评测前端（2026-08-23）
+
+- [x] 8.1 全量 19 用例基线 2（语料修正 + 提示词优先级规则 + list_document harness 对齐后）：完成率 6/19→**10/19（53%）**，结果层 89%，证据覆盖 100%；`project_false_premise`（语料修正直接受益）、`web_overturn`、`web_latest`、`routing_discrimination_web`、`project_gap` 转通过（`task-completion-live-baseline2-20260823.json` + HTML）
+- [x] 8.2 live harness 与生产对齐：提供 `list_documents_fn` 使 `list_document` 工具真实注册（此前域提示提及该工具但 harness 未注册，模型调用报 invalid tool）
+- [x] 8.3 `run_agent_evals` 支持 `trials`（pass^k 全过门控 + 逐试验明细 + 方差归因）与 `on_case_start` / `on_case_result` 进度回调
+- [x] 8.4 内置评测服务与进度前端：`agent/application/evals/run_service.py`（后台线程执行 + 进度注册表 + 报告落盘 data/evals/，单实例并发拒绝）；`api/eval_routes.py`（start/runs/runs/{uid}，信封契约）；web 新增「评测」页面（试验次数选择、逐用例进度表、聚合指标、运行历史切换，轮询快照）
+- [ ] 8.5 （后续）pass^k=3 的全量基线与裁判独立模型对照跑
 
 ## 6. 首轮 live 基线发现（2026-08-17，MiniMax-M3，19 用例）
 
@@ -60,6 +68,6 @@
 
 ### 后续项
 
-- [ ] 6.1 修正语料：下载真实 Self-Consistency（arXiv 2203.11171）替换误标文件，或改标为 MRKL 并重写引用该编号的用例前提
+- [x] 6.1 修正语料：已下载真实 Self-Consistency（arXiv 2203.11171，PyMuPDF 抽取）替换误标文件，全部引用从 `arxiv:2205.00445` 切换到 `arxiv:2203.11171`
 - [ ] 6.2 Leader 计划/委派触发的提示词迭代后重跑 live 基线对比
-- [ ] 6.3 排查 `web_overturn_001` 的流式无最终状态崩溃（turn_runtime 与 MiniMax 流式兼容性）
+- [x] 6.3 排查 `web_overturn_001` 的流式无最终状态崩溃——已定位为 ToolRuntime 注入 bug 的下游（见 §7.2），修复后该用例连续两轮稳定通过

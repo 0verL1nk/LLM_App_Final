@@ -150,6 +150,32 @@ export const researchArtifactSchema = z.object({
   created_at: z.string().nullish(),
 })
 
+export const evalCaseProgressSchema = z.object({
+  case_id: z.string(),
+  category: z.string().default(""),
+  status: z.enum(["pending", "running", "passed", "failed", "errored"]),
+  started_at: z.string().nullish(),
+  finished_at: z.string().nullish(),
+  summary: z.record(z.string(), z.unknown()).default({}),
+})
+
+export const evalRunSnapshotSchema = z.object({
+  uid: z.string(),
+  status: z.enum(["running", "completed", "failed"]),
+  fixture_path: z.string(),
+  trials: z.number(),
+  started_at: z.string(),
+  finished_at: z.string().nullish(),
+  total_cases: z.number(),
+  finished_cases: z.number(),
+  completed_cases: z.number(),
+  case_ids: z.array(z.string()),
+  cases: z.array(evalCaseProgressSchema),
+  report: z.record(z.string(), z.unknown()).nullish(),
+  artifact_path: z.string().nullish(),
+  error: z.string().nullish(),
+})
+
 export type Project = z.infer<typeof projectSchema>
 export type Document = z.infer<typeof documentSchema>
 export type Session = z.infer<typeof sessionSchema>
@@ -160,3 +186,5 @@ export type AgentEvent = z.infer<typeof agentEventSchema>
 export type Run = z.infer<typeof runSchema>
 export type SteeringInput = z.infer<typeof steeringInputSchema>
 export type ResearchArtifact = z.infer<typeof researchArtifactSchema>
+export type EvalCaseProgress = z.infer<typeof evalCaseProgressSchema>
+export type EvalRunSnapshot = z.infer<typeof evalRunSnapshotSchema>

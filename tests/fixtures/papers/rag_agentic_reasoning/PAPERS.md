@@ -25,9 +25,9 @@
    - pdf: `2201.11903-Chain-of-Thought.pdf`  
    - source: https://arxiv.org/pdf/2201.11903.pdf
 5. Self-Consistency (2022)  
-   - id: `2205.00445`  
-   - pdf: `2205.00445-Self-Consistency.pdf`  
-   - source: https://arxiv.org/pdf/2205.00445.pdf
+   - id: `2203.11171`  
+   - pdf: `2203.11171-Self-Consistency.pdf`  
+   - source: https://arxiv.org/pdf/2203.11171
 6. Toolformer (2023)  
    - id: `2302.04761`  
    - pdf: `2302.04761-Toolformer.pdf`  

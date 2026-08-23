@@ -4,7 +4,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { BookOpen, ChevronDown, Menu, MessageSquarePlus } from "lucide-react";
+import { BookOpen, ChevronDown, FlaskConical, Menu, MessageSquarePlus } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -100,6 +100,12 @@ function WorkspaceSidebar({
           </Button>
         )}
         <CreateProjectDialog />
+        <Button variant="ghost" className="w-full justify-start" asChild>
+          <Link to="/evals">
+            <FlaskConical />
+            评测
+          </Link>
+        </Button>
       </nav>
       {currentProject && (
         <>

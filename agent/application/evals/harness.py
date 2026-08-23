@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -57,19 +58,8 @@ def _execution_error_case_result(case: AgentEvalCase, exc: Exception) -> dict[st
     }
 
 
-def run_agent_evals(
-    cases: list[AgentEvalCase],
-    *,
-    runner,
-    judge: FinalAnswerJudge | None,
-    fixture_path: str = "",
-    run_config: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    if judge is None:
-        raise ValueError("A final-answer LLM judge is required for task-completion eval runs.")
-
-    case_results: list[dict[str, Any]] = []
-    for case in cases:
+def _run_single_trial(case: AgentEvalCase, *, runner, judge: FinalAnswerJudge) -> dict[str, Any]:
+    try:
         try:
             turn_result = runner(case)
         except Exception:
@@ -78,17 +68,96 @@ def run_agent_evals(
             try:
                 turn_result = runner(case)
             except Exception as retry_exc:
-                case_results.append(_execution_error_case_result(case, retry_exc))
-                continue
+                return _execution_error_case_result(case, retry_exc)
         try:
-            case_results.append(evaluate_case_result(case, turn_result, judge=judge))
+            return evaluate_case_result(case, turn_result, judge=judge)
         except Exception:
             # The judge call is equally fallible (malformed verdicts, provider
             # hiccups): retry once, then record instead of killing the run.
             try:
-                case_results.append(evaluate_case_result(case, turn_result, judge=judge))
+                return evaluate_case_result(case, turn_result, judge=judge)
             except Exception as judge_exc:
-                case_results.append(_execution_error_case_result(case, judge_exc))
+                return _execution_error_case_result(case, judge_exc)
+    except Exception as exc:  # defensive: a case must never kill the whole run
+        return _execution_error_case_result(case, exc)
+
+
+TRIAL_DELEGATION_KEYS = (
+    "delegation_count",
+    "max_delegations_per_message",
+)
+
+
+def _combine_trial_results(trial_results: list[dict[str, Any]]) -> dict[str, Any]:
+    """Gate a case on pass^k (all trials must pass) and record per-trial detail."""
+    combined = dict(trial_results[-1])  # latest trial carries the full detail
+    trial_count = len(trial_results)
+    passed_trials = sum(1 for item in trial_results if bool(item.get("completed")))
+    trial_summary: list[dict[str, Any]] = []
+    for index, item in enumerate(trial_results):
+        checks = item.get("process_checks") or {}
+        diagnostics = item.get("diagnostics") or {}
+        summary: dict[str, Any] = {
+            "trial": index + 1,
+            "completed": bool(item.get("completed")),
+            "final_success": bool(item.get("final_success")),
+            "process_success": bool(item.get("process_success")),
+            "error_type": diagnostics.get("error_type"),
+        }
+        for key in TRIAL_DELEGATION_KEYS:
+            if key in checks:
+                summary[key] = checks[key]
+        trial_summary.append(summary)
+    combined["trials"] = {
+        "count": trial_count,
+        "passed_trials": passed_trials,
+        "success_rate": passed_trials / trial_count if trial_count else 0.0,
+        "pass_at_k": passed_trials == trial_count,
+        "summary": trial_summary,
+    }
+    combined["completed"] = passed_trials == trial_count
+    combined["final_success"] = all(bool(item.get("final_success")) for item in trial_results)
+    combined["process_success"] = all(bool(item.get("process_success")) for item in trial_results)
+    if not combined["completed"] and 0 < passed_trials < trial_count:
+        feedback = dict(combined.get("feedback") or {})
+        feedback["failure_reason"] = (
+            f"trial variance: {passed_trials}/{trial_count} trials passed; "
+            + str(feedback.get("failure_reason") or "")
+        ).strip()
+        combined["feedback"] = feedback
+    return combined
+
+
+def run_agent_evals(
+    cases: list[AgentEvalCase],
+    *,
+    runner,
+    judge: FinalAnswerJudge | None,
+    fixture_path: str = "",
+    run_config: dict[str, Any] | None = None,
+    trials: int = 1,
+    on_case_start: Callable[[str], None] | None = None,
+    on_case_result: Callable[[str, dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
+    if judge is None:
+        raise ValueError("A final-answer LLM judge is required for task-completion eval runs.")
+
+    normalized_trials = max(1, int(trials))
+    case_results: list[dict[str, Any]] = []
+    for case in cases:
+        if on_case_start is not None:
+            on_case_start(case.case_id)
+        trial_results = [
+            _run_single_trial(case, runner=runner, judge=judge)
+            for _ in range(normalized_trials)
+        ]
+        if normalized_trials == 1:
+            combined = trial_results[0]
+        else:
+            combined = _combine_trial_results(trial_results)
+        case_results.append(combined)
+        if on_case_result is not None:
+            on_case_result(case.case_id, combined)
     return build_eval_report(
         fixture_path=fixture_path,
         case_results=case_results,
