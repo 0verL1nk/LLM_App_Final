@@ -61,12 +61,25 @@ models
 
 docs/*
 !docs/architecture/
-!docs/architecture/agent-runtime.md
+!docs/design-docs/
+!docs/exec-plans/
+!docs/generated/
+!docs/product-specs/
+!docs/references/
 !docs/plans/
 docs/plans/*
 !docs/plans/baselines/
 !docs/plans/baselines/*.json
 !docs/plans/baselines/*.html
+!docs/DESIGN.md
+!docs/FRONTEND.md
+!docs/PLANS.md
+!docs/PRODUCT_SENSE.md
+!docs/QUALITY_SCORE.md
+!docs/RELIABILITY.md
+!docs/SECURITY.md
+!docs/agent-evals.md
+!docs/github-actions.md
 
 .serena
 
