@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.12.1](https://github.com/0verL1nk/PaperSage/compare/v1.12.0...v1.12.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **agent:** drop orphaned tool turns and keep the context card after compact ([#165](https://github.com/0verL1nk/PaperSage/issues/165)) ([0c0ce3d](https://github.com/0verL1nk/PaperSage/commit/0c0ce3d4d71c09f5f52e8169d1d5d19ab3b1e17a))
+
 ## [1.12.0](https://github.com/0verL1nk/PaperSage/compare/v1.11.1...v1.12.0) (2026-08-23)
 
 
