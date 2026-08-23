@@ -1,0 +1,598 @@
+{
+  "fixture": "v1",
+  "captured_at": "2026-08-23T07:24:34.419919+00:00",
+  "entry_count": 118,
+  "checksum": "9c5ed702be8de666",
+  "entries": {
+    "self-rag 2025 latest advances retrieval augmented generation": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: assigning roles to the model. Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider\n\n2. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: large language models with external knowledge sources using retrieval-augmented generation (RAG), a technique in which relevant documents are retrieved at\n\n3. Qualcomm\nURL: https://en.wikipedia.org/?curid=256913\nSnippet: Contextual AI, a company building retrieval-augmented generation (RAG) agents for enterprise use. In September 2025, Qualcomm and BMW jointly developed",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:33.728960+00:00"
+    },
+    "self-rag self-reflective retrieval 2025 improvements": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: the model. Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider scope of functions",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:33.778487+00:00"
+    },
+    "self-rag recent advances 2024 2025 deployment production": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: called RAG keep AI models from making stuff up?&quot;. Ars Technica. June 6, 2024. Archived from the original on June 6, 2024. Retrieved March 7, 2025. Larson\n\n2. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: Karan; Sutherland, Andrew V. (March 17, 2025). &quot;Generative Modeling for Mathematical Discovery&quot;. Advances in Theoretical and Mathematical Physics. 29\n\n3. Vietnam War\nURL: https://en.wikipedia.org/?curid=32611\nSnippet: overwhelmingly supported the deployment. The Marines&#039; initial assignment was defense of Da Nang Air Base. The first deployment was increased to nearly 200\n\n4. Circassian genocide\nURL: https://en.wikipedia.org/?curid=6710001\nSnippet: Ukraine recognized the Circassian genocide on 9 January 2025, following Circassian appeals in June 2024. The city of Wayne, New Jersey in the United States\n\n5. Globalization\nURL: https://en.wikipedia.org/?curid=46313\nSnippet: Strategy, Weaponry&quot;. p. II-III. Kabeer, Nalia; Simeen; Mahmud (2004). &quot;Rags, Riches and Women Workers: Export-Oriented Garment Manufacturing in Bangladesh",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:33.965362+00:00"
+    },
+    "self-rag system implementation production system beyond paper benchmark": {
+      "text": "1. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: human benchmarks and have been integrated into the LLVM standard C++ sorting library. In 2025, Google DeepMind introduced AlphaEvolve, an AI system for\n\n2. Economy of India\nURL: https://en.wikipedia.org/?curid=1472206\nSnippet: pulp and paper industry in India is the 5th largest industrial sector in India. India accounts for approximately 5% of global paper production and ranks\n\n3. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: ponens. Forward chaining is a popular implementation strategy for expert systems, businesses and production rule systems. The opposite of forward chaining\n\n4. List of Indian inventions and discoveries\nURL: https://en.wikipedia.org/?curid=11572324\nSnippet: game, made of painted rags, invented in Ancient India. The term kridapatram literally means &quot;painted rags for playing.&quot; Paper playing cards first appeared\n\n5. History of the United States (1815–1849)\nURL: https://en.wikipedia.org/?curid=76251824\nSnippet: voters or winning major elections. The election of 1828 was a significant benchmark, marking the climax of the trend toward broader voter eligibility and",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:34.198089+00:00"
+    },
+    "self-rag iclr 2024 paper self-reflective retrieval": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: techniques include chain-of-thought, tree-of-thought, and retrieval-augmented generation (RAG). A 2024 survey of the field identified over 50 distinct text-based",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:34.577051+00:00"
+    },
+    "self-rag benefits costs tradeoffs retrieval augmented generation": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system with a generative",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:34.783103+00:00"
+    },
+    "self-rag adaptive retrieval llm 2025 benchmark": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: Biased or inaccurate training data can make an LLM&#039;s output less reliable. Benchmark evaluations for LLMs attempt to measure model reasoning, factual accuracy\n\n2. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: adaptive algorithm An algorithm that changes its behavior at the time it is run, based on a priori defined reward mechanism or criterion. adaptive neuro",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:38.695635+00:00"
+    },
+    "self-rag hallucination accuracy improvement benchmark results": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider scope of functions for prompt engineers. Prompt\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: make an LLM&#039;s output less reliable. Benchmark evaluations for LLMs attempt to measure model reasoning, factual accuracy, alignment, and safety. Before the\n\n3. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: citations or summaries that sound confidently correct, a phenomenon called hallucination. A paper published by researchers at Amazon Web Services AI Labs found\n\n4. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: to produce a more accurate and up-to-date response. RAG is commonly used to reduce hallucination in large language models and to enable models to answer",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:39.116067+00:00"
+    },
+    "self-rag variant 2025 arxiv paper": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: Inc.: 9459–9474. arXiv:2005.11401. Archived from the original on 12 June 2023. Retrieved 12 June 2023. Dickson, Ben (2 April 2025). &quot;The tool integration\n\n2. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: December 2017). &quot;Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm&quot;. arXiv:1712.01815 [cs.AI]. Ester, Martin; Kriegel",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:44.806562+00:00"
+    },
+    "self-rag retrieval reflection tokens efficiency evaluation": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system with a generative",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:46.199931+00:00"
+    },
+    "self reflective retrieval augmented generation paper 2025": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: assigning roles to the model. Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider\n\n2. 2024 in science\nURL: https://en.wikipedia.org/?curid=74041015\nSnippet: inaccurate information and hallucinations include the use of retrieval-augmented generation and &quot;grounding&quot; by configuring the corpus to be used by the\n\n3. Embodied cognition\nURL: https://en.wikipedia.org/?curid=33034640\nSnippet: S2CID 54494552. Dijkstra K, Kaschak MP, Zwaan RA (2007). &quot;Body posture facilitates retrieval of autobiographical memories&quot;. Cognition. 102 (1): 139–149. doi:10.1016/j\n\n4. M-learning\nURL: https://en.wikipedia.org/?curid=1420232\nSnippet: students, and among peers, enabling real-time collaboration, self-assessment, and reflective learning. Recent research highlights that mobile learning enhances",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:48.195098+00:00"
+    },
+    "self-rag paper": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external data sources. With RAG, LLMs\n\n2. The Rag\nURL: https://en.wikipedia.org/?curid=15905270\nSnippet: The Rag was an underground newspaper published in Austin, Texas from 1966–1977. The weekly paper covered political and cultural topics that the conventional\n\n3. Pulp (paper)\nURL: https://en.wikipedia.org/?curid=215844\nSnippet: mechanically isolating the cellulosic fibers of wood, fiber crops, waste paper, or rags. Mixed with water and other chemicals or plant-based additives, pulp\n\n4. Paper\nURL: https://en.wikipedia.org/?curid=16861908\nSnippet: 2nd century BCE paper-like material in China. Before the industrialization of paper production, the most common paper was rag paper, made from discarded\n\n5. Foxing\nURL: https://en.wikipedia.org/?curid=609062\nSnippet: demand for paper rose in later centuries, papermakers did not use as much water and spent less time cleansing the rag fibres used to make paper. An early",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:22:02.364583+00:00"
+    },
+    "self-rag 2024 reduce hallucination factuality benchmarks": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: inadequate&quot;. Efforts to reduce or compensate for hallucinations have employed automated reasoning, retrieval-augmented generation (RAG), fine-tuning, and other\n\n2. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: responses and fewer AI hallucinations without frequent retraining. GraphRAG (coined by Microsoft Research) is a technique that extends RAG with the use of a\n\n3. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: citations or summaries that sound confidently correct, a phenomenon called hallucination. A paper published by researchers at Amazon Web Services AI Labs found\n\n4. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: to produce a more accurate and up-to-date response. RAG is commonly used to reduce hallucination in large language models and to enable models to answer",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:10:58.529067+00:00"
+    },
+    "rag production system deployment challenges 2024 2025": {
+      "text": "1. AI agent\nURL: https://en.wikipedia.org/?curid=78823217\nSnippet: databases, data loaders, and RAG. Layer 3: Agent frameworks – software that manages the AI agents. Layer 4: Deployment and infrastructure – the technical\n\n2. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: August 26, 2024. Retrieved August 27, 2024. Wang, Peng; Zhang, Ling-Yu; Tzachor, Asaf; Chen, Wei-Qiang (October 28, 2024). &quot;E-waste challenges of generative\n\n3. MariaDB\nURL: https://en.wikipedia.org/?curid=24960699\nSnippet: enabling vector database workloads including retrieval-augmented generation (RAG) without requiring a separate extension or plugin. The implementation uses\n\n4. Economy of India\nURL: https://en.wikipedia.org/?curid=1472206\nSnippet: exports! Telecom equipment production crosses Rs 45,000 crore milestone&quot;. The Times of India. 2 May 2024. Retrieved 16 February 2025. &quot;Ministry wise Summary\n\n5. Caste system in India\nURL: https://en.wikipedia.org/?curid=7347540\nSnippet: challenged by many reformist Hindu movements, Buddhism, Sikhism, Christianity, and present-day Neo Buddhism. With Indian influences, the caste system",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:01.343369+00:00"
+    },
+    "self-rag inference slower retrieval decision tokens latency": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system with a generative\n\n2. Cloudflare\nURL: https://en.wikipedia.org/?curid=32760230\nSnippet: from scraping data and content. Cloudflare released AutoRAG into beta in 2025. AutoRAG (retrieval augmented generation) creates a vector database of a website&#039;s",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:04.830064+00:00"
+    },
+    "self-rag vs crag adaptive-rag comparison results": {
+      "text": "1. Vietnam War\nURL: https://en.wikipedia.org/?curid=32611\nSnippet: conflict. Country Joe and the Fish recorded &quot;I-Feel-Like-I&#039;m-Fixin&#039;-to-Die Rag&quot; in 1965, and it became one of the most influential protest anthems. Myths\n\n2. Ural owl\nURL: https://en.wikipedia.org/?curid=815909\nSnippet: northernmost part of its range, it is adaptive to Subarctic areas possibly up to the tree line but does not adapt as well as the great grey owl to areas",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:08.318453+00:00"
+    },
+    "self-rag github implementation": {
+      "text": "1. Vector database\nURL: https://en.wikipedia.org/?curid=74020014\nSnippet: recommendations engines, object detection, and retrieval-augmented generation (RAG). Vector embeddings are mathematical representations of data in a high-dimensional\n\n2. Deepset\nURL: https://en.wikipedia.org/?curid=72165130\nSnippet: systems, using architectures such as agents, retrieval augmented generation (RAG) and multimodal AI. It was founded in 2018 in Berlin by Milos Rusic, Malte\n\n3. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: models with external knowledge sources using retrieval-augmented generation (RAG), a technique in which relevant documents are retrieved at inference time\n\n4. Neo4j\nURL: https://en.wikipedia.org/?curid=25505874\nSnippet: lets users build knowledge graphs, supporting AI use cases such as GraphRAG. In June 2024, Neo4j integrated with Snowflake to enable graph analytics\n\n5. WhatsApp\nURL: https://en.wikipedia.org/?curid=32058867\nSnippet: packs&quot;. GitHub. March 1, 2021. Archived from the original on April 8, 2023. Retrieved March 26, 2020. &quot;Animated stickers enabled worldwide&quot;. GitHub. March",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:12.383512+00:00"
+    },
+    "self-rag overview how it works reflection token": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: transformer architecture that generates text. It is first pretrained to predict the next token in texts (a token is typically a word, subword, or punctuation)\n\n2. Stanford University\nURL: https://en.wikipedia.org/?curid=26977\nSnippet: Hopper (FoHo) is a financially independent, anonymous student-run campus rag publication, notable for having broken the Brock Turner story. Stanford hosts\n\n3. List of The Muppet Show episodes\nURL: https://en.wikipedia.org/?curid=1524031\nSnippet: created by Jim Henson and produced by ITC Entertainment and Henson Associates. It premiered on 5 September 1976 and ended on 15 March 1981, with a total of\n\n4. List of Friday the 13th characters\nURL: https://en.wikipedia.org/?curid=12380956\nSnippet: learn how to swim. Disgusted, Rennie and Sean leave him behind before Jason appears. McCulloch tries to run but he is thrown from a window like a rag doll",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:14.333893+00:00"
+    },
+    "self-rag followup paper": {
+      "text": "1. List of Christmas films\nURL: https://en.wikipedia.org/?curid=4311667\nSnippet: friends show him the true meaning of the holiday in this holiday-themed followup to the animated Disney theatrical film. Blinky Bill&#039;s White Christmas 2005\n\n2. Twelve-inch single\nURL: https://en.wikipedia.org/?curid=295828\nSnippet: jazz-pop guitarist Buddy Fite, featuring &quot;Glad Rag Doll&quot; backed with &quot;For Once in My Life&quot;, both from his self-titled debut album issued in 1969. Subtitled\n\n3. List of longest gaps between studio albums\nURL: https://en.wikipedia.org/?curid=54539646\nSnippet: September 2024). &quot;18 Years After Her Debut Album, Paris Hilton Releases Its Followup: &#039;I&#039;m the Original Brat&#039;&quot;. Billboard. Retrieved 23 August 2025. Kim, J...",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:18.586968+00:00"
+    },
+    "self-rag": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external data sources. With RAG, LLMs\n\n2. Rag Doll (Peter Merkel Jr.)\nURL: https://en.wikipedia.org/?curid=26024081\nSnippet: character went on to appear in several volumes of the Secret Six&#039;s self-titled series. Rag Doll is implied to be non-binary; he once took on a role and costume\n\n3. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider scope of functions for prompt\n\n4. Light of My Life (film)\nURL: https://en.wikipedia.org/?curid=53100465\nSnippet: teaches Rag how to use a shotgun for self-defense. Tom eventually suspects that the &quot;son&quot; is a daughter and he questions Dad with concern, not wanting Rag to\n\n5. Recursive self-improvement\nURL: https://en.wikipedia.org/?curid=1167455\nSnippet: long-term memories using techniques such as retrieval-augmented generation (RAG), develop specialized subsystems, or agents, each optimized for specific",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:09.717118+00:00"
+    },
+    "self-rag advantage factuality long-form qa citations": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: it.[citation needed] Watson A question-answering computer system capable of answering questions posed in natural language, developed in IBM&#039;s DeepQA project",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:22.957699+00:00"
+    },
+    "self-rag disadvantage limitation criticism": {
+      "text": "1. Hip-hop culture\nURL: https://en.wikipedia.org/?curid=2632114\nSnippet: earlier African-American-rooted and Latino musical genres such as blues, jazz, rag-time, funk, salsa, and disco to become one of the most practiced genres worldwide\n\n2. Equal opportunity\nURL: https://en.wikipedia.org/?curid=355849\nSnippet: intertwined with social mobility, most often with upward mobility and with rags to riches stories: The coming President of France is the grandson of a shoemaker\n\n3. Traffic collision\nURL: https://en.wikipedia.org/?curid=19740545\nSnippet: But that progress obscures a surprising type of inequality: The most disadvantaged are more likely — and have grown even more likely over time — to die\n\n4. Poverty\nURL: https://en.wikipedia.org/?curid=64959\nSnippet: to the disadvantage of girls in poorer countries with low completion rates and social expectations that they marry early, and to the disadvantage of boys\n\n5. Economic inequality\nURL: https://en.wikipedia.org/?curid=370432\nSnippet: ISSN 1556-5068. S2CID 55109224. Hertz, Tom (December 31, 2009), &quot;Chapter Five. Rags, Riches, and Race The Intergenerational Economic Mobility of Black and White",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:26.063907+00:00"
+    },
+    "self reflective retrieval augmented language model iclr 2024": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: prompting, as well as assigning roles to the model. Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:27.820881+00:00"
+    },
+    "self-rag tutorial blog post 2024 benefits": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: centred on the benefits of converged infrastructure and shared services for robotics. When connected to the cloud, robots can benefit from the powerful",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:32.481431+00:00"
+    },
+    "rag agents deployment 2025": {
+      "text": "1. AI agent\nURL: https://en.wikipedia.org/?curid=78823217\nSnippet: announced the deployment of agents at the local and national level. The city of Kyle, Texas deployed an AI agent from Salesforce in March 2025 for 311 customer\n\n2. Contextual AI\nURL: https://en.wikipedia.org/?curid=80182758\nSnippet: January 2025, Contextual AI announced the general availability of its enterprise platform for building specialized RAG agents. In March 2025, the company\n\n3. LangChain\nURL: https://en.wikipedia.org/?curid=73577626\nSnippet: Retrieved 2025-08-03. &quot;LangGraph Platform is now Generally Available: Deploy &amp; manage long-running, stateful Agents&quot;. LangChain Blog. 2025-05-14. Retrieved\n\n4. Flowable\nURL: https://en.wikipedia.org/?curid=52724355\nSnippet: Knowledge agents for RAG-based querying. Orchestration agents for coordinating other agents and guiding process flow. Governance and auditability of agent actions\n\n5. Deepset\nURL: https://en.wikipedia.org/?curid=72165130\nSnippet: processing (NLP) systems, using architectures such as agents, retrieval augmented generation (RAG) and multimodal AI. It was founded in 2018 in Berlin",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:41.887493+00:00"
+    },
+    "langchain langgraph self-rag integration": {
+      "text": "1. Milvus (vector database)\nURL: https://en.wikipedia.org/?curid=77949393\nSnippet: database can integrate with DataDog, Prometheus and Grafana for monitoring and alerts, as well as generative AI frameworks Haystack, LangChain, IBM Watsonx\n\n2. City\nURL: https://en.wikipedia.org/?curid=5391\nSnippet: peripheral economic niches of personal service, casual labor, street vending, rag picking, begging, and crime. This outcast proletariat—perhaps 1.5 billion",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:45.079454+00:00"
+    },
+    "contextual ai enterprise rag platform 2024 2025": {
+      "text": "1. Contextual AI\nURL: https://en.wikipedia.org/?curid=80182758\nSnippet: January 2025, Contextual AI announced the general availability of its enterprise platform for building specialized RAG agents. In March 2025, the company\n\n2. AI agent\nURL: https://en.wikipedia.org/?curid=78823217\nSnippet: required for AI agent operations, including vector databases, data loaders, and RAG. Layer 3: Agent frameworks – software that manages the AI agents. Layer\n\n3. Deepset\nURL: https://en.wikipedia.org/?curid=72165130\nSnippet: on-prem, air gapped) offering, Haystack Enterprise Platform. (formerly known as deepset Cloud and deepset AI Platform) In June 2018, Milos Rusic, Malte Pietsch\n\n4. LlamaIndex\nURL: https://en.wikipedia.org/?curid=81834114\nSnippet: Plumb, Taryn (2024-07-10). &quot;How LlamaIndex is ushering in the future of RAG for enterprises&quot;. VentureBeat. Archived from the original on 2025-07-24. Retrieved\n\n5. Douwe Kiela\nURL: https://en.wikipedia.org/?curid=81451909\nSnippet: served as CEO of Contextual AI, an enterprise software company that provides a platform for building grounded AI agents for enterprise knowledge bases",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:45.154773+00:00"
+    },
+    "llamaindex self-rag agent modules": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: called a &quot;system prompt&quot;.[citation needed] Retrieval-augmented generation (RAG) is an approach that integrates LLMs with document retrieval systems. Given",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:48.738441+00:00"
+    },
+    "haystack self-rag deepset pipeline": {
+      "text": "1. Deepset\nURL: https://en.wikipedia.org/?curid=72165130\nSnippet: software Haystack and its commercial SaaS and self-hosted (VPC, on-prem, air gapped) offering, Haystack Enterprise Platform. (formerly known as deepset Cloud",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:48.742576+00:00"
+    },
+    "self-rag agents benchmark reliability": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider scope of functions for prompt\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: Biased or inaccurate training data can make an LLM&#039;s output less reliable. Benchmark evaluations for LLMs attempt to measure model reasoning, factual accuracy",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:55.077562+00:00"
+    },
+    "adaptive retrieval llm 2024 paper": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: A large language model (LLM) is an AI model (typically a neural network) trained on a vast amount of text for natural language processing tasks, especially\n\n2. Machine learning\nURL: https://en.wikipedia.org/?curid=233488\nSnippet: outside the field of AI proper, in pattern recognition and information retrieval. Neural network research was abandoned by AI and computer science around\n\n3. Knowledge graph\nURL: https://en.wikipedia.org/?curid=64418530\nSnippet: and adaptive graph structures, which support retrieval, reasoning, and summarization in generative systems. Microsoft Research&#039;s GraphRAG (2024) exemplified\n\n4. Transformer (deep learning)\nURL: https://en.wikipedia.org/?curid=61603971\nSnippet: (2023-06-20). &quot;vLLM: Easy, Fast, and Cheap LLM Serving with PagedAttention&quot;. vLLM Blog. Archived from the original on 2024-06-20. Retrieved 2024-06-20. Hu,\n\n5. Language model benchmark\nURL: https://en.wikipedia.org/?curid=79100184\nSnippet: document. Answers are scored by frontier LLMs. InfiniteBench: 3946 items in 12 tasks from 5 domains (retrieval, code, math, novels, and dialogue) with",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:58.052635+00:00"
+    },
+    "self-reflective rag adaptive retrieval paper results": {
+      "text": "1. List of Fables characters\nURL: https://en.wikipedia.org/?curid=5577654\nSnippet: of security, training the tigers and so forth, Priscilla Page handles retrievals, the capture of Fables and bringing them back to the facility, while Hillary",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:11:59.433366+00:00"
+    },
+    "graphrag microsoft 2024 retrieval system": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: Retrieval-augmented generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external\n\n2. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: frequent retraining. GraphRAG (coined by Microsoft Research) is a technique that extends RAG with the use of a knowledge graph to allow the model to\n\n3. Vector database\nURL: https://en.wikipedia.org/?curid=74020014\nSnippet: domain-specific responses of large language models. The retrieval component of a RAG can be any search system, but is most often implemented as a vector database\n\n4. Knowledge graph\nURL: https://en.wikipedia.org/?curid=64418530\nSnippet: generative systems. Microsoft Research&#039;s GraphRAG (2024) exemplified this development by integrating LLM-generated graphs into retrieval-augmented generation\n\n5. LangChain\nURL: https://en.wikipedia.org/?curid=73577626\nSnippet: 2024-03-14. Retrieved 2023-11-26. &quot;Retrieval-augmented generation (RAG) | 🦜️🔗 Langchain&quot;. python.langchain.com. Archived from the original on 2024-03-28",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:01.485560+00:00"
+    },
+    "self-rag limitations criticism follow-up": {
+      "text": "1. The Waste Land\nURL: https://en.wikipedia.org/?curid=15108083\nSnippet: Canterbury Tales, and even a contemporary popular song, &quot;That Shakespearian Rag&quot;. The poem is divided into five sections. The first, &quot;The Burial of the Dead&quot;\n\n2. George R. R. Martin\nURL: https://en.wikipedia.org/?curid=12300\nSnippet: Martin followed up Fevre Dream with another horror novel, The Armageddon Rag (1983). The unexpected commercial failure of The Armageddon Rag &quot;essentially\n\n3. K-pop\nURL: https://en.wikipedia.org/?curid=629945\nSnippet: leg rolled up, and American sports team jerseys.[citation needed] Accessories included baseball caps worn backwards, bucket hats, and do-rags.[citation\n\n4. Lumpenproletariat\nURL: https://en.wikipedia.org/?curid=38802947\nSnippet: Bussard noted that the meaning of lump shifted from being a person dressed in rags in the 17th century to knavery in the 19th century. The American Heritage\n\n5. Hip-hop culture\nURL: https://en.wikipedia.org/?curid=2632114\nSnippet: culture. Hip-hop music follows in the footsteps of earlier African-American-rooted and Latino musical genres such as blues, jazz, rag-time, funk, salsa, and",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:04.558048+00:00"
+    },
+    "self-rag nature machine intelligence conference iclr": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: modelling with motif-aware pretraining and type-guided fine-tuning&quot;. Nature Machine Intelligence. 6 (5): 548–557. doi:10.1038/s42256-024-00836-4. Hoffmann, Jordan;",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:06.148216+00:00"
+    },
+    "adaptive retrieval augmentation reflection llm survey": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: adaptive algorithm An algorithm that changes its behavior at the time it is run, based on a priori defined reward mechanism or criterion. adaptive neuro",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:09.689296+00:00"
+    },
+    "instructrag 2024 paper": {
+      "text": "1. The Light (newspaper)\nURL: https://en.wikipedia.org/?curid=70525583\nSnippet: Viktor Orbán. The paper is purchased via private Facebook groups and Twitter contacts and then distributed by volunteers who are instructed to airdrop copies\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: introduced the transformer architecture in their landmark paper &quot;Attention Is All You Need&quot;. This paper&#039;s goal was to improve upon 2014 seq2seq technology, and\n\n3. Prompt injection\nURL: https://en.wikipedia.org/?curid=71850350\nSnippet: in 2025 found that holding up a sheet of paper instructing the viewer to act as if the person (and the paper itself) were not present in the image resulted\n\n4. List of Bluey episodes\nURL: https://en.wikipedia.org/?curid=62382677\nSnippet: Steve (11 April 2020). &quot;Bluey creator Joe Brumm&#039;s dog days&quot;. The Saturday Paper. Schwartz Publishing. Archived from the original on 10 April 2020. Retrieved\n\n5. Circassian genocide\nURL: https://en.wikipedia.org/?curid=6710001\nSnippet: for example, the already stiff corpse of a young Circassian woman lying in rags on the damp ground under the open sky with two infants, one struggling in",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:12.088292+00:00"
+    },
+    "self-rag github project repo results": {
+      "text": "1. WhatsApp\nURL: https://en.wikipedia.org/?curid=32058867\nSnippet: Messenger&quot;. March 14, 2026. Retrieved March 14, 2026. &quot;WhatsApp Win Uptodown Repo&quot;. March 16, 2026. Retrieved March 16, 2026. &quot;WhatsApp apk&quot;. March 21, 202...",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:15.416382+00:00"
+    },
+    "self-rag benchmark follow-up arxiv 2024": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: fine-tuned to follow instructions and to behave as assistants. Biased or inaccurate training data can make an LLM&#039;s output less reliable. Benchmark evaluations\n\n2. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: Perspective&quot;. arXiv:2502.11560 [cs.AI]. &quot;Can a technology called RAG keep AI models from making stuff up?&quot;. Ars Technica. June 6, 2024. Archived from",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:18.840476+00:00"
+    },
+    "self-rag method llm retrieval": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: Retrieval-augmented generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: employed automated reasoning, retrieval-augmented generation (RAG), fine-tuning, and other methods. The matter of LLM&#039;s exhibiting intelligence or understanding\n\n3. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: roles to the model. Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider scope\n\n4. Vector database\nURL: https://en.wikipedia.org/?curid=74020014\nSnippet: detection, and retrieval-augmented generation. An especially common use-case for vector databases is in retrieval-augmented generation (RAG), a method to improve\n\n5. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: was in an attempt to take advantage of the retrieval-augmented generation (RAG) technique which is used by LLMs to provide more up-to-date information. The",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:21.611341+00:00"
+    },
+    "self-rag wikipedia retrieval augmented generation variants": {
+      "text": "1. Qualcomm\nURL: https://en.wikipedia.org/?curid=256913\nSnippet: was among the clients of Contextual AI, a company building retrieval-augmented generation (RAG) agents for enterprise use. In September 2025, Qualcomm and\n\n2. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system with a generative",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:25.305012+00:00"
+    },
+    "self-rag evaluation reduce hallucination gain long answer": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: arguments. RAG also reduces the need to retrain LLMs with new data, saving on computational and financial costs. Beyond efficiency gains, RAG also allows\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: inadequate&quot;. Efforts to reduce or compensate for hallucinations have employed automated reasoning, retrieval-augmented generation (RAG), fine-tuning, and other\n\n3. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: responses and fewer AI hallucinations without frequent retraining. GraphRAG (coined by Microsoft Research) is a technique that extends RAG with the use of a\n\n4. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: citations or summaries that sound confidently correct, a phenomenon called hallucination. A paper published by researchers at Amazon Web Services AI Labs found\n\n5. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: and up-to-date response. RAG is commonly used to reduce hallucination in large language models and to enable models to answer questions about information",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:32.500926+00:00"
+    },
+    "self-rag gains factuality metrics results experiments": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: fire based on its data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system\n\n2. Globalization\nURL: https://en.wikipedia.org/?curid=46313\nSnippet: planet as well as the human costs. They challenge directly traditional metrics, such as GDP, and look to other measures, such as the Gini coefficient",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:38.372999+00:00"
+    },
+    "self-rag production deployment guardrails hallucination evaluation": {
+      "text": "1. AI agent\nURL: https://en.wikipedia.org/?curid=78823217\nSnippet: foster hallucinations, hinder countermeasures against rogue agents, and suffer from the lack of standardized evaluation methods. Enterprise deployment of",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:12:58.026588+00:00"
+    },
+    "self-rag wikipedia": {
+      "text": "1. Reg Varney\nURL: https://en.wikipedia.org/?curid=2153055\nSnippet: national recognition as factory foreman Reg Turner in the BBC sitcom The Rag Trade (1961–1963). He appeared in further sitcoms including Beggar My Neighbour\n\n2. Michael Pitt\nURL: https://en.wikipedia.org/?curid=977409\nSnippet: menswear line. He was also featured in two separate Rag &amp; Bone campaigns prior to the release of his self-directed campaign—once for Fall/Winter 2013, with\n\n3. Rag-stone\nURL: https://en.wikipedia.org/?curid=3085031\nSnippet: Rag-stone is a name given by some architectural writers to work done with stones that are quarried in thin pieces, such as Horsham Stone, sandstone, Yorkshire\n\n4. Doo Rag\nURL: https://en.wikipedia.org/?curid=9244155\nSnippet: [1] The band recorded a cassette together, which they self-released, and then began touring. Doo Rag first gained recognition outside of Tucson playing in\n\n5. The Rag Trade\nURL: https://en.wikipedia.org/?curid=2582403\nSnippet: The Rag Trade is a British television sitcom broadcast by the BBC between 1961 and 1963 and by ITV between 1977 and 1978. Although a comedy, it shed light",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:13:09.416931+00:00"
+    },
+    "self-rag llm adaptive retrieval when": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: prompt&quot;.[citation needed] Retrieval-augmented generation (RAG) is an approach that integrates LLMs with document retrieval systems. Given a query, a document\n\n2. Recursive self-improvement\nURL: https://en.wikipedia.org/?curid=1167455\nSnippet: features for long-term memories using techniques such as retrieval-augmented generation (RAG), develop specialized subsystems, or agents, each optimized\n\n3. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: adaptive algorithm An algorithm that changes its behavior at the time it is run, based on a priori defined reward mechanism or criterion. adaptive neuro",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:13:28.322276+00:00"
+    },
+    "self-rag factuality improved by retrieval on demand accuracy gains": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: prompt&quot;.[citation needed] Retrieval-augmented generation (RAG) is an approach that integrates LLMs with document retrieval systems. Given a query, a document\n\n2. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: content authentication, information retrieval, and machine learning classifier models. Despite claims of accuracy, both free and paid AI text detectors\n\n3. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: based on its data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:13:38.342674+00:00"
+    },
+    "self-rag retrieval generated inference token additional": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: Retrieval-augmented generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: (2023). &quot;Self-Instruct: Aligning Language Models with Self-Generated Instructions&quot;. Self-Instruct: Aligning Language Model with Self Generated Instructions\n\n3. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: websites. This was in an attempt to take advantage of the retrieval-augmented generation (RAG) technique which is used by LLMs to provide more up-to-date\n\n4. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: the model. Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider scope of functions\n\n5. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system with a generative",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:13:47.964564+00:00"
+    },
+    "self-rag reduce hallucination benchmark increase": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: inadequate&quot;. Efforts to reduce or compensate for hallucinations have employed automated reasoning, retrieval-augmented generation (RAG), fine-tuning, and other\n\n2. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: responses and fewer AI hallucinations without frequent retraining. GraphRAG (coined by Microsoft Research) is a technique that extends RAG with the use of a\n\n3. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: costs prior to model development or data collection, increasing efficiency of data centers to reduce electricity/energy usage, building more efficient machine\n\n4. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: to produce a more accurate and up-to-date response. RAG is commonly used to reduce hallucination in large language models and to enable models to answer\n\n5. Life imprisonment in Singapore\nURL: https://en.wikipedia.org/?curid=71952157\nSnippet: Malaysian rag-and-bone man who robbed and fatally injured 40-year-old Chinese national Cao Ruyin in 2008. His death sentence was initially reduced to life",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:13:54.006281+00:00"
+    },
+    "self-rag reflection tokens llm increase inference time": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: changes its behavior at the time it is run, based on a priori defined reward mechanism or criterion. adaptive neuro fuzzy inference system (ANFIS) A kind of\n\n2. Cloudflare\nURL: https://en.wikipedia.org/?curid=32760230\nSnippet: unauthorized &quot;AI&quot; data scraping by serving fake &quot;AI&quot;-generated content to LLM bots. In July, the company rolled out a permission-based setting to allow",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:01.325217+00:00"
+    },
+    "self-rag critic model training data cost annotations": {
+      "text": "1. Vietnam War\nURL: https://en.wikipedia.org/?curid=32611\nSnippet: conflict. Country Joe and the Fish recorded &quot;I-Feel-Like-I&#039;m-Fixin&#039;-to-Die Rag&quot; in 1965, and it became one of the most influential protest anthems. Myths",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:16.939929+00:00"
+    },
+    "self rag language model critique tokens": {
+      "text": "1. Social credit\nURL: https://en.wikipedia.org/?curid=208697\nSnippet: intent or of desirable consequence and in themselves alone are as &quot;filthy rags&quot;. For instance, the present system makes destructive, obscenely wasteful\n\n2. Book\nURL: https://en.wikipedia.org/?curid=3778\nSnippet: called bullae, which contained physical tokens, and logographic proto-cuneiform written to represent the physical tokens. Created circa 3200 BC during the Uruk\n\n3. Heinrich Heine\nURL: https://en.wikipedia.org/?curid=104641\nSnippet: Presses. pp. 125–126. ISBN 9780845347621. Reid Busk, Michael (Summer 2014). &quot;Rag-and-Bone Angel: The Angelus Novus in Charles Bernstein&#039;s Shadowtime&quot;. Journal\n\n4. Head covering for Christian women\nURL: https://en.wikipedia.org/?curid=5989851\nSnippet: criticized coiffures and gauzy hats that left hair visible, extending its critique from church to public life. Many Protestant exegesis held Paul&#039;s injunctions\n\n5. Bastille\nURL: https://en.wikipedia.org/?curid=66186\nSnippet: Latude&#039;s inaccuracies include his referring to a new fur coat as &quot;half-rotted rags&quot;, for example. Jacques Berchtold observes that Latude&#039;s writing also introduc...",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:28.203005+00:00"
+    },
+    "self-rag trade-off quality latency tokens generation": {
+      "text": "1. Steam (service)\nURL: https://en.wikipedia.org/?curid=898503\nSnippet: third-party developers were contracted to release games on Steam, such as Rag Doll Kung Fu and Darwinia. In May 2007, ATI included Steam in the ATI Catalyst\n\n2. List of ethnic slurs\nURL: https://en.wikipedia.org/?curid=11014515\nSnippet: Khambhaita, Priya; Willis, Rosalind (2018). &quot;British-born Indian second-generation &#039;return&#039; to India&quot;. In Leonard, Pauline; Walsh, Katie (eds.). British\n\n3. Richard Burton\nURL: https://en.wikipedia.org/?curid=45967\nSnippet: from the original on 18 April 2016. Retrieved 18 April 2016. &quot;&#039;The Desert Rags,&#039; With Richard Burton and Robert Newton, Presented at the Mayfair&quot;. The New",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:32.881496+00:00"
+    },
+    "self-rag paper 2023 results popqa accuracy": {
+      "text": "1. Glossary of video game terms\nURL: https://en.wikipedia.org/?curid=41568624\nSnippet: the impression that a character is flailing or being flung around, like a rag doll. Rage game A genre designed to cause anger and frustration in the player",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:44.460654+00:00"
+    },
+    "self-rag model architecture figure": {
+      "text": "1. Mammy stereotype\nURL: https://en.wikipedia.org/?curid=1224643\nSnippet: dark-skinned woman with a motherly personality. The origin of the mammy figure stereotype is rooted in the history of slavery in the United States, as\n\n2. 2026 deaths in the United States\nURL: https://en.wikipedia.org/?curid=82049138\nSnippet: (Country Joe and the Fish) and songwriter (&quot;I-Feel-Like-I&#039;m-Fixin&#039;-to-Die Rag&quot;) Augie Meyers, 85, musician (Sir Douglas Quintet, Texas Tornados) Cameron\n\n3. Michele Martin Taylor\nURL: https://en.wikipedia.org/?curid=53114363\nSnippet: Her subjects are often gardens, water and verdure, but also portraits, figural studies and interiors. Taylor studied drawing and painting at the Chouinard\n\n4. The Waste Land\nURL: https://en.wikipedia.org/?curid=15108083\nSnippet: Canterbury Tales, and even a contemporary popular song, &quot;That Shakespearian Rag&quot;. The poem is divided into five sections. The first, &quot;The Burial of the Dead&quot;\n\n5. Jasenovac concentration camp\nURL: https://en.wikipedia.org/?curid=106190\nSnippet: from which inmate drinking water was taken.[citation needed] The inmate&#039;s rags and blankets were too thin to prevent exposure to frost, as was the shelter",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:46.461019+00:00"
+    },
+    "self-rag learn to retrieve generate critique through self-reflection": {
+      "text": "1. Punk subculture\nURL: https://en.wikipedia.org/?curid=24589\nSnippet: A.&#039;s &quot;White Minority&quot;: Punk and the Contradictions of Self-Marginalization&quot;. Cultural Critique. 48 (Spring): 30–64. doi:10.1353/cul.2001.0040. JSTOR 1354396\n\n2. Friedrich Nietzsche\nURL: https://en.wikipedia.org/?curid=10671\nSnippet: self-reflection of humanity. Whether man recovers from it, whether he becomes a master of this crisis, is a question of his strength!&quot; According to Nietzsche\n\n3. Avicenna\nURL: https://en.wikipedia.org/?curid=1130\nSnippet: Morewedge in 1977. The book is also important in respect to Persian scientific works. Andar Dānish-i Rag (اندر دانش رگ, &quot;On the Science of the Pulse&quot;) contains\n\n4. Culture and menstruation\nURL: https://en.wikipedia.org/?curid=5778583\nSnippet: was not a priority and they had to resort to sharing and using rags. In 2017, the U.S. Department of Justice promised to grant every woman incarcerated\n\n5. Folklore, legends and myths in Dombey and Son\nURL: https://en.wikipedia.org/?curid=76406955\nSnippet: the virtuous, and redeeming the protagonist, Mr Dombey. Through a journey of self-reflection and the challenges imposed by fate, Mr Dombey ultimately",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:49.764896+00:00"
+    },
+    "function calling native tool use openai gpt-4 gpt-3.5 2023": {
+      "text": "1. Grok (chatbot)\nURL: https://en.wikipedia.org/?curid=75223933\nSnippet: agree with some of what OpenAI team wanted to do&quot;. OpenAI went on to launch ChatGPT in the end of 2022, and GPT-4 in March 2023. The same month, Musk was\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: multimodal capabilities. OpenAI did not reveal the high-level architecture and the number of parameters of GPT-4. The release of ChatGPT led to an uptick in\n\n3. Google Gemini\nURL: https://en.wikipedia.org/?curid=73363598\nSnippet: development. In November 2022, OpenAI launched ChatGPT, a chatbot based on the GPT-3 family of large language models (LLMs). ChatGPT gained worldwide attention\n\n4. AI agent\nURL: https://en.wikipedia.org/?curid=78823217\nSnippet: autonomy. Agentic AI contrasts with tool AI, which performs a narrow, specified task such as answering questions (as with chatbots like ChatGPT) or traditional\n\n5. List of free and open-source software packages\nURL: https://en.wikipedia.org/?curid=43314\nSnippet: – Google LLM GLM-4.5 and later versions – Z.ai LLMs GPT-1, GPT-2, and GPT-OSS – OpenAI LLMs GPT-J, GPT-Neo, and GPT-NeoX – EleutherAI LLMs Granite – IBM",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:55.522909+00:00"
+    },
+    "self-rag paper site:arxiv.org": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: called a &quot;system prompt&quot;.[citation needed] Retrieval-augmented generation (RAG) is an approach that integrates LLMs with document retrieval systems. Given\n\n2. Controversial Reddit communities\nURL: https://en.wikipedia.org/?curid=39293123\nSnippet: encouraging self-harm. Reddit prohibited such discussion, as did Facebook, Twitter and other platforms. Serge wrote days after the new site opened that\n\n3. Hydrogen storage\nURL: https://en.wikipedia.org/?curid=5382986\nSnippet: noting that the UK has sufficient salt bed resources to provide tens of GWe. RAG Austria AG finished a hydrogen storage project in a depleted oil and gas",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:55.533171+00:00"
+    },
+    "self-rag critique tokens results gains trade-offs": {
+      "text": "1. Social credit\nURL: https://en.wikipedia.org/?curid=208697\nSnippet: analysis. As the Phillips Curve demonstrates, inflation and unemployment are trade-offs, unless prices are reduced from monies derived from outside the productive\n\n2. Bengal famine of 1943\nURL: https://en.wikipedia.org/?curid=1420353\nSnippet: were disrupted by British &quot;denial policies&quot; for rice and boats (by some critiques considered a &quot;scorched earth&quot; response to the occupation). The British\n\n3. Bastille\nURL: https://en.wikipedia.org/?curid=66186\nSnippet: Latude&#039;s inaccuracies include his referring to a new fur coat as &quot;half-rotted rags&quot;, for example. Jacques Berchtold observes that Latude&#039;s writing also introduc...\n\n4. She: A History of Adventure\nURL: https://en.wikipedia.org/?curid=354398\nSnippet: originated from his childhood and &quot;the particularly hideous aspect&quot; of one rag-doll: &quot;This doll was something of a fetish, and Rider, as a small child,",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:56.726839+00:00"
+    },
+    "llm tool calling benchmark gorilla toolbench 2023": {
+      "text": "1. Language model benchmark\nURL: https://en.wikipedia.org/?curid=79100184\nSnippet: agents ready for the workplace? A new benchmark raises doubts&quot;. &quot;Berkeley Function Calling Leaderboard&quot;. gorilla.cs.berkeley.edu. Retrieved 2025-03-11",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:14:59.458549+00:00"
+    },
+    "\"toolformer\" \"toolformer: language models can teach themselves to use tools\"": {
+      "text": "1. Agent harness\nURL: https://en.wikipedia.org/?curid=83636670\nSnippet: Luke; Cancedda, Nicola; Scialom, Thomas (2023). Toolformer: Language Models Can Teach Themselves to Use Tools. Advances in Neural Information Processing Systems\n\n2. Curry–Howard correspondence\nURL: https://en.wikipedia.org/?curid=254299\nSnippet: Luke; Cancedda, Nicola; Scialom, Thomas (2023). Toolformer: Language Models Can Teach Themselves to Use Tools. Advances in Neural Information Processing Systems",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:03.480378+00:00"
+    },
+    "react yao 2022 reasoning acting language models": {
+      "text": "1. OpenAI\nURL: https://en.wikipedia.org/?curid=48795986\nSnippet: AI models, particularly the generative pre-trained transformer (GPT) series of large language models (LLMs). Its release of ChatGPT in November 2022 has\n\n2. White Terror (Taiwan)\nURL: https://en.wikipedia.org/?curid=30319983\nSnippet: similar reasons. However, other prosecutions did not have such clear reasoning, such as in 1968, when Bo Yang was imprisoned for his choice of words\n\n3. Executive dysfunction\nURL: https://en.wikipedia.org/?curid=21312269\nSnippet: Practice. 38 (4): 338–346. doi:10.1037/0735-7028.38.4.338. Yao A, Shimada K, Kasaba R, Tomoda A (2022). &quot;Beneficial Effects of Behavioral Parent Training on\n\n4. Timeline of computing 2020–present\nURL: https://en.wikipedia.org/?curid=61847470\nSnippet: Google DeepMind announced its Gemini multimodal language model, which it claims has advanced &quot;reasoning capabilities&quot; and can outperform GPT-4 on a variety\n\n5. Esketamine\nURL: https://en.wikipedia.org/?curid=12790813\nSnippet: M, Yao W, Yang C, Ren Q, et al. (October 2016). &quot;Comparison of R-ketamine and rapastinel antidepressant effects in the social defeat stress model of depression&quot;",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:03.628989+00:00"
+    },
+    "function calling json schema openai june 2023 gpt": {
+      "text": "1. PostgreSQL\nURL: https://en.wikipedia.org/?curid=23824\nSnippet: query layer as its default SQL mode OpenAI uses PostgreSQL as part of its primary API service - including for ChatGPT. Some notable vendors offer PostgreSQL",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:08.115757+00:00"
+    },
+    "code interpreter chatgpt plugin tool use 2023": {
+      "text": "1. GPT-4\nURL: https://en.wikipedia.org/?curid=72861474\nSnippet: of GPT-4 was integrated by Microsoft into Bing Chat, launched in February 2023. GPT-4 was released in ChatGPT in March 2023, and removed in 2025. GPT-4\n\n2. LangChain\nURL: https://en.wikipedia.org/?curid=73577626\nSnippet: actions. In October 2023 LangChain introduced LangServe, a deployment tool to host LCEL code as a production-ready API. In February 2024 LangChain released LangSmith\n\n3. Applications of artificial intelligence\nURL: https://en.wikipedia.org/?curid=15893057\nSnippet: be used for real-time code completion, chat, and automated test generation. These tools are typically integrated with editors and IDEs as plugins. AI-assisted",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:08.119842+00:00"
+    },
+    "gemini tool use google native function calling 2023 2024": {
+      "text": "1. Google Gemini\nURL: https://en.wikipedia.org/?curid=73363598\nSnippet: single prompt. Gemini was first announced on December 6, 2023, and replaced existing Google branding for AI services. In February 2024, the Bard chatbot\n\n2. Google DeepMind\nURL: https://en.wikipedia.org/?curid=41755648\nSnippet: December 2023. Retrieved 16 April 2024. &quot;Google is rebranding its Bard AI service as Gemini. Here&#039;s what it means&quot;. CBS News. 8 February 2024. Archived\n\n3. Google Assistant\nURL: https://en.wikipedia.org/?curid=50575063\nSnippet: Abner (February 8, 2024). &quot;Gemini app brings Google AI to Android and iPhone, rolling out now&quot;. 9to5Google. Retrieved February 8, 2024. Peters, Jay (March\n\n4. Gemma (language model)\nURL: https://en.wikipedia.org/?curid=76155063\nSnippet: by Google DeepMind. It is based on similar technologies as Gemini. The first version was released in February 2024, followed by Gemma 2 in June 2024, Gemma 3\n\n5. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: They are the basis for many modern chatbots, such as ChatGPT, Claude, Gemini, Grok, and DeepSeek. LLMs are typically based on transformer architecture",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:08.143998+00:00"
+    },
+    "self-rag outperforms chatqa rag benchmark 2024": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: PMID 41249236. Gilardi, Fabrizio; Alizadeh, Meysam; Kubli, Maël (2023). &quot;ChatGPT outperforms crowd workers for text-annotation tasks&quot;. Proceedings of the National",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:08.806346+00:00"
+    },
+    "self-rag llm critique 2024": {
+      "text": "1. Hard Times (novel)\nURL: https://en.wikipedia.org/?curid=843511\nSnippet: Bounderby estate. She is later revealed to be Bounderby&#039;s mother, proving his &quot;rags-to-riches&quot; story to be fraudulent. Jane Gradgrind – a younger sister of Tom",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:11.617541+00:00"
+    },
+    "anthropic claude tool use 2024 native api": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: According to industry estimates reported by the Financial Times, Anthropic&#039;s Claude Mythos, its most powerful model, restricted from public access, has\n\n2. GLM (AI)\nURL: https://en.wikipedia.org/?curid=83531761\nSnippet: approximately one tenth of a subscription to Claude Code. Z.ai also collaborated with Alibaba Cloud to release AutoGLM, a tool to run GLM from a mobile phone app\n\n3. Kimi (AI)\nURL: https://en.wikipedia.org/?curid=81026045\nSnippet: Policy, that Kimi K3 was made by distilling Anthropic&#039;s Claude Fable model. The Kimi apps are free to use with general rate limits. However, there are\n\n4. Gemini (language model)\nURL: https://en.wikipedia.org/?curid=74637995\nSnippet: Project Gemini. Gemini Ultra was said to have outperformed GPT-4, Anthropic&#039;s Claude 2, Inflection AI&#039;s Inflection-2, Meta&#039;s LLaMA 2, and xAI&#039;s Grok 1\n\n5. List of large language models\nURL: https://en.wikipedia.org/?curid=73249226\nSnippet: Claude 3.5 Sonnet&quot;. Anthropic. Retrieved 8 August 2025. &quot;Introducing computer use, a new Claude 3.5 Sonnet, and Claude 3.5 Haiku&quot;. Anthropic. Retrieved 8 August",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:12.405718+00:00"
+    },
+    "chatgpt plugins launch march 2023 openai tool browsing retrieval": {
+      "text": "1. Google Gemini\nURL: https://en.wikipedia.org/?curid=73363598\nSnippet: development. In November 2022, OpenAI launched ChatGPT, a chatbot based on the GPT-3 family of large language models (LLMs). ChatGPT gained worldwide attention\n\n2. List of free and open-source software packages\nURL: https://en.wikipedia.org/?curid=43314\nSnippet: versions – Z.ai LLMs GPT-1, GPT-2, and GPT-OSS – OpenAI LLMs GPT-J, GPT-Neo, and GPT-NeoX – EleutherAI LLMs Granite – IBM LLMs Grok-1 – xAI LLM Inkling\n\n3. LaMDA\nURL: https://en.wikipedia.org/?curid=70993391\nSnippet: 2023, Google announced Gemini (then Bard), a conversational artificial intelligence chatbot powered by LaMDA, to counter the rise of OpenAI&#039;s ChatGPT\n\n4. Google Search\nURL: https://en.wikipedia.org/?curid=12431\nSnippet: the unprecedented rise of generative AI technology, ushered by OpenAI&#039;s launch of ChatGPT, which sent Google executives to a panic due to its potential",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:12.548229+00:00"
+    },
+    "gorilla llm patil berkeley api calls paper 2023": {
+      "text": "1. Machine learning\nURL: https://en.wikipedia.org/?curid=233488\nSnippet: people as gorillas, which caused controversy. The gorilla label was subsequently removed, and in 2023, it still cannot recognise gorillas. Similar issues",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:17.309344+00:00"
+    },
+    "claude computer use anthropic october 2024 beta": {
+      "text": "1. Claude (AI)\nURL: https://en.wikipedia.org/?curid=75879512\nSnippet: 2023. It is also used in AI-assisted software development. Claude is trained using a constitution, a technique developed by Anthropic to improve ethical\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: According to industry estimates reported by the Financial Times, Anthropic&#039;s Claude Mythos, its most powerful model, restricted from public access, has\n\n3. Kimi (AI)\nURL: https://en.wikipedia.org/?curid=81026045\nSnippet: Policy, that Kimi K3 was made by distilling Anthropic&#039;s Claude Fable model. The Kimi apps are free to use with general rate limits. However, there are\n\n4. List of large language models\nURL: https://en.wikipedia.org/?curid=73249226\nSnippet: Claude 3.5 Sonnet&quot;. Anthropic. Retrieved 8 August 2025. &quot;Introducing computer use, a new Claude 3.5 Sonnet, and Claude 3.5 Haiku&quot;. Anthropic. Retrieved 8 August\n\n5. Reinforcement learning from human feedback\nURL: https://en.wikipedia.org/?curid=73200355\nSnippet: Gemini, and Anthropic&#039;s Claude. In computer vision, RLHF has also been used to align text-to-image models. Studies that successfully used RLHF for this",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:17.364015+00:00"
+    },
+    "\"gorilla\" large language model connected apis patil 2023": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: Tianjun; Wang, Xin; Gonzalez, Joseph E. (1 May 2023). &quot;Gorilla: Large Language Model Connected with Massive APIs&quot;. NeurIPS. 37: 126544–126565. Wang, Lei; Ma\n\n2. Machine learning\nURL: https://en.wikipedia.org/?curid=233488\nSnippet: November 2023. de Wynter, Adrian; Wang, Xun; Sokolov, Alex; Gu, Qilong; Chen, Si-Qing (September 2023). &quot;An evaluation on large language model outputs:",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:21.381273+00:00"
+    },
+    "self-rag comparison crag self-crag adaptive-rag 2024": {
+      "text": "1. Vietnam War\nURL: https://en.wikipedia.org/?curid=32611\nSnippet: &quot;Iraq Versus Vietnam: A Comparison of Public Opinion&quot;. Gallup, Inc. Archived from the original on 9 May 2024. Retrieved 8 May 2024. &quot;Victory in Europe 56",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:22.595075+00:00"
+    },
+    "llama 3 tool calling instruction tuning meta 2024": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: April 2023). &quot;Visual Instruction Tuning&quot;. NeurIPS. Zhang, Hang; Li, Xin; Bing, Lidong (1 June 2023). &quot;Video-LLaMA: An Instruction-tuned Audio-Visual Language\n\n2. Artificial intelligence\nURL: https://en.wikipedia.org/?curid=1164\nSnippet: community include Hugging Face, Google, EleutherAI and Meta. Various AI models, such as Llama 2, Mistral or Stable Diffusion, have been made open-weight\n\n3. AI safety\nURL: https://en.wikipedia.org/?curid=72360809\nSnippet: Guardrails. Retrieved 2024-12-08. &quot;Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations&quot;. Meta AI. Retrieved 2024-12-08. Šekrst, Kristina;",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:25.920090+00:00"
+    },
+    "openai function calling announcement june 13 2023": {
+      "text": "1. AI alignment\nURL: https://en.wikipedia.org/?curid=50785023\nSnippet: 2016). &quot;Faulty reward functions in the wild&quot;. openai.com. Retrieved December 30, 2023. Booth, Harry (February 19, 2025). &quot;When AI Thinks It Will Lose,\n\n2. AI slop\nURL: https://en.wikipedia.org/?curid=77986589\nSnippet: check: AI fakes in Israel&#039;s war against Hamas – DW – 11/10/2023&quot;. dw.com. Retrieved 16 November 2025. Gault, Matthew; Maiberg, Emanuel (18 June 2025).\n\n3. Grok (chatbot)\nURL: https://en.wikipedia.org/?curid=75223933\nSnippet: agree with some of what OpenAI team wanted to do&quot;. OpenAI went on to launch ChatGPT in the end of 2022, and GPT-4 in March 2023. The same month, Musk was\n\n4. Google Gemini\nURL: https://en.wikipedia.org/?curid=73363598\nSnippet: Google as &quot;rushing&quot; Bard&#039;s announcement to preempt rival Microsoft&#039;s planned February 7 event unveiling its partnership with OpenAI to integrate ChatGPT into\n\n5. History of artificial intelligence\nURL: https://en.wikipedia.org/?curid=2894560\nSnippet: or Azure Government cloud, &quot;on top of Microsoft&#039;s Azure OpenAI Service.&quot; OpenAI&#039;s announcement stated that &quot;Self-hosting ChatGPT Gov enables agencies to",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:25.936914+00:00"
+    },
+    "self-rag limitations critique 2024 follow-up work": {
+      "text": "1. George R. R. Martin\nURL: https://en.wikipedia.org/?curid=12300\nSnippet: Martin followed up Fevre Dream with another horror novel, The Armageddon Rag (1983). The unexpected commercial failure of The Armageddon Rag &quot;essentially\n\n2. The Waste Land\nURL: https://en.wikipedia.org/?curid=15108083\nSnippet: Canterbury Tales, and even a contemporary popular song, &quot;That Shakespearian Rag&quot;. The poem is divided into five sections. The first, &quot;The Burial of the Dead&quot;\n\n3. Vietnam War\nURL: https://en.wikipedia.org/?curid=32611\nSnippet: suggest it is an artifact of the self-selected nature of the participants in the Desbarats-Jackson study, as the authors followed subjects&#039; recommendations on\n\n4. Economy of India\nURL: https://en.wikipedia.org/?curid=1472206\nSnippet: November 2025. &quot;Economic survey 2024: Economic survey 2024: India has 18.3% unpaid workers, 57.3% of total workforce self-employed - The Economic Times&quot;\n\n5. Warren G. Harding\nURL: https://en.wikipedia.org/?curid=33060\nSnippet: payments, borrowing back wages, boasting, and manipulating, he turned a dying rag into a powerful small-town newspaper. Much of his success had to do with",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:28.878677+00:00"
+    },
+    "deepseek qwen tool calling 2024 instruction tuning": {
+      "text": "1. Artificial intelligence\nURL: https://en.wikipedia.org/?curid=1164\nSnippet: chatbots such as ChatGPT, Claude, Microsoft Copilot, DeepSeek, Doubao, Google Gemini, Grok, Kimi and Qwen; text-to-image models such as DALL-E, Firefly, Stable",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:32.133175+00:00"
+    },
+    "tool use mcp model context protocol anthropic november 2024": {
+      "text": "1. Model Context Protocol\nURL: https://en.wikipedia.org/?curid=79706999\nSnippet: The Model Context Protocol (MCP) is an open standard and open-source framework introduced by Anthropic in November 2024 to standardize the way artificial\n\n2. Anthropic\nURL: https://en.wikipedia.org/?curid=6206236\nSnippet: including the Model Context Protocol (MCP) connector. The company hosted its inaugural developer conference that month. Also in May, Anthropic launched a\n\n3. AI agent\nURL: https://en.wikipedia.org/?curid=78823217\nSnippet: was made available, and especially after Anthropic&#039;s late 2024 introduction of Model Context Protocol (MCP), a standardised way for LLM agents to gain\n\n4. ChatGPT\nURL: https://en.wikipedia.org/?curid=72417803\nSnippet: support for Model Context Protocol (MCP) to ChatGPT apps. When enabled in developer mode, this allows for improved third-party access to ChatGPT tools and servers\n\n5. Easyship\nURL: https://en.wikipedia.org/?curid=54851743\nSnippet: April 2026, Easyship released a Model Context Protocol (MCP) server, an open standard introduced by Anthropic in late 2024 that allows AI assistants and",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:32.222935+00:00"
+    },
+    "openai o1 o3 reasoning tool use planning 2024": {
+      "text": "1. Reasoning model\nURL: https://en.wikipedia.org/?curid=79013463\nSnippet: In September 2024, OpenAI released o1-preview, an LLM with enhanced reasoning. The full version, o1, followed in December 2024. OpenAI also began sharing\n\n2. OpenAI\nURL: https://en.wikipedia.org/?curid=48795986\nSnippet: later on December 13. In December 2024, the company launched the Sora model. It also launched OpenAI o1, an early reasoning model that was internally codenamed\n\n3. Products and applications of OpenAI\nURL: https://en.wikipedia.org/?curid=80209622\nSnippet: December 20, 2024, OpenAI unveiled o3, the successor of the o1 reasoning model. OpenAI also unveiled o3-mini, a lighter and faster version of OpenAI o3. As of\n\n4. ChatGPT\nURL: https://en.wikipedia.org/?curid=72417803\nSnippet: ChatGPT is a generative AI chatbot developed by OpenAI. Originally released on November 30, 2022, the product uses large language models—specifically generative\n\n5. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: software engineering, and societal impact work. In 2024, OpenAI released the reasoning model OpenAI o1, which generates long chains of thought before returning",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:37.035202+00:00"
+    },
+    "chatgpt plugins march 23 2023 openai release": {
+      "text": "1. ChatGPT\nURL: https://en.wikipedia.org/?curid=72417803\nSnippet: ChatGPT is a generative AI chatbot developed by OpenAI. Originally released on November 30, 2022, the product uses large language models—specifically\n\n2. Claude (AI)\nURL: https://en.wikipedia.org/?curid=75879512\nSnippet: American software company Anthropic. Claude was released as an AI-based chatbot in March 2023. It is also used in AI-assisted software development. Claude is\n\n3. GPT-4\nURL: https://en.wikipedia.org/?curid=72861474\nSnippet: of GPT-4 was integrated by Microsoft into Bing Chat, launched in February 2023. GPT-4 was released in ChatGPT in March 2023, and removed in 2025. GPT-4\n\n4. Google Gemini\nURL: https://en.wikipedia.org/?curid=73363598\nSnippet: development. In November 2022, OpenAI launched ChatGPT, a chatbot based on the GPT-3 family of large language models (LLMs). ChatGPT gained worldwide attention\n\n5. DeepSeek\nURL: https://en.wikipedia.org/?curid=78452842\nSnippet: trained V3 for US$6 million, which was less than OpenAI&#039;s reported US$100 million cost for GPT-4 in 2023. DeepSeek also claimed that they were using approximately",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:37.128745+00:00"
+    },
+    "\"langchain\" tool calling agents 2022 2023 framework": {
+      "text": "1. List of free and open-source software packages\nURL: https://en.wikipedia.org/?curid=43314\nSnippet: AI agents Hermes Agent — self-improving AI agent developed by Nous Research LangChain — software framework for developing applications and agents powered",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:41.791870+00:00"
+    },
+    "2310.11511": {
+      "text": "1. Nanobacterium\nURL: https://en.wikipedia.org/?curid=380890\nSnippet: biomineralization&quot;. Proc Natl Acad Sci USA. 97 (21): 11511–5. Bibcode:2000PNAS...9711511C. doi:10.1073/pnas.97.21.11511. PMC 17231. PMID 11027350. Martel J, Young\n\n2. Sulfur cycle\nURL: https://en.wikipedia.org/?curid=2465352\nSnippet: 364–375. Bibcode:2010ChGeo.269..364Y. doi:10.1016/j.chemgeo.2009.10.010. hdl:11511/32667. Pellerin, André; Bui, Thi Hao; Rough, Mikaella; Mucci, Alfonso; Canfield\n\n3. Iron fertilization\nURL: https://en.wikipedia.org/?curid=4145551\nSnippet: 2004GB002402: GB4025. Bibcode:2005GBioC..19.4025M. doi:10.1029/2004GB002402. hdl:11511/68526. Archived (PDF) from the original on 2020-02-06. Retrieved 2020-02-06",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:45.661593+00:00"
+    },
+    "llm agent tool calling survey 2024 unified paradigm": {
+      "text": "1. Language model benchmark\nURL: https://en.wikipedia.org/?curid=79100184\nSnippet: applications. Tasks are synthesized by LLM-generated product requirements document, agent database schema, agent tools, and user environments (&quot;mocked phone&quot;)\n\n2. Artificial intelligence\nURL: https://en.wikipedia.org/?curid=1164\nSnippet: models, a type of large language model (LLM) trained to generate intermediate chains-of-thought, emerged in 2024 and allowed improved performance on complex\n\n3. History of artificial intelligence\nURL: https://en.wikipedia.org/?curid=2894560\nSnippet: This provided useful tools in the present, rather than speculation about the future. A new paradigm called &quot;intelligent agents&quot; became widely accepted\n\n4. Consciousness\nURL: https://en.wikipedia.org/?curid=5664\nSnippet: consciousness. Chalmers notes that while LLMs exhibit impressive linguistic competence, their lack of unified agency, persistent goals, and integrated\n\n5. Timeline of computing 2020–present\nURL: https://en.wikipedia.org/?curid=61847470\nSnippet: source tool for understanding and generating speech, a data scientist argued that &quot;researchers need to collaborate to develop open-source LLMs that are",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:46.849643+00:00"
+    },
+    "selfrag benchmark 2024 surpassing": {
+      "text": "1. Rihanna\nURL: https://en.wikipedia.org/?curid=2110323\nSnippet: ranges to better serve diverse skin tones, with forty shades becoming the benchmark. In 2018, Rihanna launched the lingerie brand Savage X Fenty, designed\n\n2. Economy of India\nURL: https://en.wikipedia.org/?curid=1472206\nSnippet: Archived from the original on 15 August 2019. Retrieved 15 August 2019. &quot;BENCHMARK REPORT 2017 – INDI&quot; (PDF). World Travel and Tourism Council. Archived\n\n3. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: ImechE, Part C, 223(12), 2919–2938. Pham, D. T.; Castellani, M. (2014). &quot;Benchmarking and comparison of nature-inspired population-based continuous optimisation",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:51.844065+00:00"
+    },
+    "rag reflection tokens reduces hallucination paper": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: to produce a more accurate and up-to-date response. RAG is commonly used to reduce hallucination in large language models and to enable models to answer",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:15:55.085046+00:00"
+    },
+    "self-rag github implementation llama results paper": {
+      "text": "1. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: Computer to Run LLaMA AI Model at Home (GPU, CPU, RAM, SSD)&quot;. Archived from the original on August 15, 2023. Retrieved August 15, 2023. To run LLaMA model at",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:06.146752+00:00"
+    },
+    "self rag critique increase token output cost": {
+      "text": "1. Social credit\nURL: https://en.wikipedia.org/?curid=208697\nSnippet: overhead charges and very low direct labour cost, or high rates of production. Since increased industrial output per individual depends mainly on tools and\n\n2. Bengal famine of 1943\nURL: https://en.wikipedia.org/?curid=1420353\nSnippet: were disrupted by British &quot;denial policies&quot; for rice and boats (by some critiques considered a &quot;scorched earth&quot; response to the occupation). The British",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:14.258377+00:00"
+    },
+    "self-rag hallucination reduction 14 30 percent accuracy": {
+      "text": "1. Counterculture of the 1960s\nURL: https://en.wikipedia.org/?curid=8544676\nSnippet: rate rose from about 1.5 percent per year from 1950 to 1951, to a peak of over 2 percent in the early 1960s due to reductions in mortality. Growth rates",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:17.537839+00:00"
+    },
+    "retrieval augmented language model self-reflective training": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: prompting, as well as assigning roles to the model. Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy\n\n2. Dual process theory\nURL: https://en.wikipedia.org/?curid=6240358\nSnippet: retrieval-augmented generation, and intermediate verification. This framework has been extended to include &quot;tool-augmented thinking,&quot; where models autonomously\n\n3. Outline of thought\nURL: https://en.wikipedia.org/?curid=7260569\nSnippet: Reasoning Mind Reasoning system Recognition-primed decision Reflective disclosure Scientific method Self-deception Semantic network Semantics Semiotics Sensemaking\n\n4. Embodied cognition\nURL: https://en.wikipedia.org/?curid=33034640\nSnippet: ISSN 0093-5301. Baumeister RF, Vohs KD, Tice DM (2007). &quot;The Strength Model of Self-Control&quot;. Current Directions in Psychological Science. 16 (6): 351–355\n\n5. M-learning\nURL: https://en.wikipedia.org/?curid=1420232\nSnippet: students, and among peers, enabling real-time collaboration, self-assessment, and reflective learning. Recent research highlights that mobile learning enhances",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:32.115377+00:00"
+    },
+    "self-rag critique tokens sample efficiency": {
+      "text": "1. Bengal famine of 1943\nURL: https://en.wikipedia.org/?curid=1420353\nSnippet: were disrupted by British &quot;denial policies&quot; for rice and boats (by some critiques considered a &quot;scorched earth&quot; response to the occupation). The British",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:38.200827+00:00"
+    },
+    "self-rag benchmark surpassed new state-of-the-art 2025": {
+      "text": "1. Rihanna\nURL: https://en.wikipedia.org/?curid=2110323\nSnippet: A$AP Rocky&#039;s Rags-to-Riches Family Life&quot;. South China Morning Post. Archived from the original on July 22, 2025. Retrieved June 22, 2025. Cochrane, Kira\n\n2. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: used to determine which of the system&#039;s rules should fire based on its data store, its facts. Retrieval augmented generation (RAG) A technique in natural",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:40.246972+00:00"
+    },
+    "self-rag arxiv 2023 critique train data": {
+      "text": "1. List of agnostics\nURL: https://en.wikipedia.org/?curid=18166\nSnippet: another; and, however kind and friendly they might be, I, the man without a rag of a label to cover himself with, could not fail to have some of the uneasy",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:44.939574+00:00"
+    },
+    "retrieval augmented language models adapting open domain qa survey 2024": {
+      "text": "1. Language model benchmark\nURL: https://en.wikipedia.org/?curid=79100184\nSnippet: QA includes no relevant passages. Closed-book QA is also called open-domain question-answering. Before the era of large language models, open-book QA\n\n2. List of datasets for machine-learning research\nURL: https://en.wikipedia.org/?curid=49082762\nSnippet: tasks from classification to QA, and various languages from English, Portuguese to Arabic. Appen: Off The Shelf and Open Source Datasets hosted and maintained\n\n3. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system with a generative language model. Rather\n\n4. Hard negative mining\nURL: https://en.wikipedia.org/?curid=83587640\nSnippet: Hua; Wang, Haifeng (2021). &quot;RocketQA: An Optimized Training Approach to Dense Passage Retrieval for Open-Domain Question Answering&quot;. Proceedings of",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:16:50.862016+00:00"
+    },
+    "paper summary self-rag reflection critique": {
+      "text": "1. Holodomor\nURL: https://en.wikipedia.org/?curid=1007688\nSnippet: excess deaths. At every [train] station there was a crowd of peasants in rags, offering icons and linen in exchange for a loaf of bread. The women were\n\n2. Head covering for Christian women\nURL: https://en.wikipedia.org/?curid=5989851\nSnippet: Paul&#039;s teaching that women being unveiled is dishonourable, and as a reflection of the created order. The consensus of Biblical scholars conclude that\n\n3. Theravada\nURL: https://en.wikipedia.org/?curid=30994\nSnippet: the other. The ascetic focused monks were known by the names Pamsukulikas (rag robe wearers) and Araññikas (forest dwellers). The Mahavamsa mentions forest\n\n4. Reformation\nURL: https://en.wikipedia.org/?curid=37857\nSnippet: Donation of Constantine, was a medieval forgery. As the manufacturing of paper from rags and the printing machine with movable type were spreading in Europe\n\n5. Soviet famine of 1930–1933\nURL: https://en.wikipedia.org/?curid=8389940\nSnippet: campaign: In every wagon carrying merchandise there were Kazakh families wearing rags. They killed time picking lice from each other.... The train stops in the",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:01.204824+00:00"
+    },
+    "self rag paper benefits": {
+      "text": "1. The Rag\nURL: https://en.wikipedia.org/?curid=15905270\nSnippet: The Rag was an underground newspaper published in Austin, Texas from 1966–1977. The weekly paper covered political and cultural topics that the conventional\n\n2. Pulp (paper)\nURL: https://en.wikipedia.org/?curid=215844\nSnippet: mechanically isolating the cellulosic fibers of wood, fiber crops, waste paper, or rags. Mixed with water and other chemicals or plant-based additives, pulp\n\n3. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: Automated prompt generation methods, such as retrieval-augmented generation (RAG), provide for greater accuracy and a wider scope of functions for prompt\n\n4. Paper recycling\nURL: https://en.wikipedia.org/?curid=1524589\nSnippet: books and writing material. Up to that time, paper manufacturers had used discarded linen rags for paper, but supply could not keep up with the increased\n\n5. Underground press\nURL: https://en.wikipedia.org/?curid=886313\nSnippet: a model for many papers that followed. The Rag was the sixth member of UPS and the first underground paper in the South and, according to historian Abe",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:04.778182+00:00"
+    },
+    "self-rag arxiv paper": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external data sources. With RAG, LLMs\n\n2. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: Prompt Engineering: An Optimization Perspective&quot;. arXiv:2502.11560 [cs.AI]. &quot;Can a technology called RAG keep AI models from making stuff up?&quot;. Ars Technica\n\n3. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: called a &quot;system prompt&quot;.[citation needed] Retrieval-augmented generation (RAG) is an approach that integrates LLMs with document retrieval systems. Given\n\n4. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: models with external knowledge sources using retrieval-augmented generation (RAG), a technique in which relevant documents are retrieved at inference time\n\n5. Compliant mechanism\nURL: https://en.wikipedia.org/?curid=14821088\nSnippet: compensates for any slight misalignment between the motor and the pump. See rag joint and giubo.[citation needed] A laser welding robot positions the workpieces",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:07.888013+00:00"
+    },
+    "self-rag iclr 2024 2024 paper citation": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: user&#039;s input. This is called a &quot;system prompt&quot;.[citation needed] Retrieval-augmented generation (RAG) is an approach that integrates LLMs with document",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:21.647423+00:00"
+    },
+    "self-rag model architecture details explained": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: model to produce a more accurate and up-to-date response. RAG is commonly used to reduce hallucination in large language models and to enable models to\n\n2. Cloudflare\nURL: https://en.wikipedia.org/?curid=32760230\nSnippet: bots from scraping data and content. Cloudflare released AutoRAG into beta in 2025. AutoRAG (retrieval augmented generation) creates a vector database of\n\n3. List of Avatar: The Last Airbender characters\nURL: https://en.wikipedia.org/?curid=8531112\nSnippet: the third eye of the Hindu god, Shiva. First encountered in &quot;Jet&quot;, this rag-tag group led by the episode&#039;s namesake operates in the forests of the Earth\n\n4. Jasenovac concentration camp\nURL: https://en.wikipedia.org/?curid=106190\nSnippet: from which inmate drinking water was taken.[citation needed] The inmate&#039;s rags and blankets were too thin to prevent exposure to frost, as was the shelter\n\n5. Suspiria (2018 film)\nURL: https://en.wikipedia.org/?curid=52715813\nSnippet: 2018). &quot;First clip from Suspiria invokes a dancer being thrown around like a rag doll telekinetically in a mirrored rehearsal space, bones breaking, becoming",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:26.463407+00:00"
+    },
+    "self-rag paper critique factuality increase": {
+      "text": "1. Book\nURL: https://en.wikipedia.org/?curid=3778\nSnippet: mulberry bark to linen rags, often recycled in water-powered paper mills. The development of cheap, light, and easy-to-carry Arab paper resulted in the standardization\n\n2. Consumerism\nURL: https://en.wikipedia.org/?curid=170522\nSnippet: individual is defined by things and not their self. Austrian economists claim Keynesian notions of incentivizing increased consumption, which claims to mitigate\n\n3. Globalization\nURL: https://en.wikipedia.org/?curid=46313\nSnippet: liability/self-employed, leaving them vulnerable to financial difficulties, increasing the market share for oligopolistic markets as well as increasing the\n\n4. Glossary of journalism\nURL: https://en.wikipedia.org/?curid=66726924\nSnippet: journalism has changed over time, but implicit in the genre is a rejection and critique of the practices of mainstream journalism, such that alternative journalists\n\n5. Antisemitic trope\nURL: https://en.wikipedia.org/?curid=9214439\nSnippet: Griffith alleged that Dublin newspapers were almost all Jew rags [...] Fifty other rags like those which have nothing behind them but the forty or fifty",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:29.831164+00:00"
+    },
+    "self-rag 2024 evaluation overview": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: challenges around evaluation, ethics, and clinical reliability. Improvements to the basic process above can be applied at different stages in the RAG flow. These\n\n2. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: chain-of-thought, tree-of-thought, and retrieval-augmented generation (RAG). A 2024 survey of the field identified over 50 distinct text-based prompting\n\n3. Milvus (vector database)\nURL: https://en.wikipedia.org/?curid=77949393\nSnippet: &quot;Revolutionizing Biomedical GenAI with Hyperscale RAG: DDN Infinia, Milvus, and the Full PubMed Dataset&quot;. DDN. 2024-06-03. &quot;Hitachi Vantara unveils AI agent-building\n\n4. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: models with external knowledge sources using retrieval-augmented generation (RAG), a technique in which relevant documents are retrieved at inference time\n\n5. List of common misconceptions about science, technology, and mathematics\nURL: https://en.wikipedia.org/?curid=78730954\nSnippet: Hartelt, Tim; Martens, Helge (2024). &quot;Influence of self-assessment and conditional metaconceptual knowledge on students&#039; self-regulation of intuitive and",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:35.240190+00:00"
+    },
+    "selfrag": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external data sources. With RAG, LLMs\n\n2. The Rag\nURL: https://en.wikipedia.org/?curid=15905270\nSnippet: The Rag was an underground newspaper published in Austin, Texas from 1966–1977. The weekly paper covered political and cultural topics that the conventional\n\n3. Recursive self-improvement\nURL: https://en.wikipedia.org/?curid=1167455\nSnippet: long-term memories using techniques such as retrieval-augmented generation (RAG), develop specialized subsystems, or agents, each optimized for specific\n\n4. Tiger Rag\nURL: https://en.wikipedia.org/?curid=3225847\nSnippet: &quot;Tiger Rag&quot; is a jazz standard that was recorded and copyrighted by the Original Dixieland Jass Band in 1917. It is one of the most recorded jazz compositions\n\n5. Jumper (short story)\nURL: https://en.wikipedia.org/?curid=72108006\nSnippet: short story by Stephen King. Originally serialized in the self-published newspaper Dave&#039;s Rag in 1959–1960, it was later collected in the 2000 work Secret",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:40.831389+00:00"
+    },
+    "self-rag benchmark follow up crag": {
+      "text": "1. List of mountains of the United States\nURL: https://en.wikipedia.org/?curid=443695\nSnippet: Deertrap Mountain Delano Peak Deseret Peak Dromedary Peak Dunn Benchmark Eagle Crags Eagle Mesa The East Temple Explorer Peak Ferns Nipple Flat Top Mountain",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:45.487328+00:00"
+    },
+    "self rag adaptive reflection reduced hallucinations percentages": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: adaptive algorithm An algorithm that changes its behavior at the time it is run, based on a priori defined reward mechanism or criterion. adaptive neuro",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:17:46.605393+00:00"
+    },
+    "self rag paper icml": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: et al. (1 March 2023). &quot;PaLM-E: An Embodied Multimodal Language Model&quot;. ICML. 202: 8469–8488. Liu, Haotian; Li, Chunyuan; Wu, Qingyang; Lee, Yong Jae",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:18:15.666608+00:00"
+    },
+    "self-rag 2024 outperformed": {
+      "text": "1. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: introduced AlphaDev, which was used to discover small sorting algorithms that outperformed previously known human benchmarks and have been integrated into the LLVM\n\n2. Economy of India\nURL: https://en.wikipedia.org/?curid=1472206\nSnippet: COVID-19 pandemic in 2019, India&#039;s economic growth has consistently outperformed China every year by a large margin and stays among fastest growing major\n\n3. Storage Wars\nURL: https://en.wikipedia.org/?curid=29898672\nSnippet: Hester owned Newport Consignment Gallery in Costa Mesa, California and the Rags to Riches thrift store, but closed them in June 2011. He now operates his\n\n4. Educational inequality\nURL: https://en.wikipedia.org/?curid=20381835\nSnippet: study based in New York suggested that children of immigrant descent outperformed their native student counterparts. The paradox explains that the gratefulness",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:18:18.753085+00:00"
+    },
+    "self-rag paper abstract": {
+      "text": "1. Painting\nURL: https://en.wikipedia.org/?curid=18622193\nSnippet: references in the world. Abstract expressionism was an American post-World War II art movement that combined the emotional intensity and self-denial of the German\n\n2. Roy Turner Durrant\nURL: https://en.wikipedia.org/?curid=32980210\nSnippet: A Rag Book of Love in 1960 A self-portrait of the artist is included in the Tate Gallery Archive Collection TGA 8214.26 (1953 poster paint on paper, exhibited\n\n3. Abstract art by African-American artists\nURL: https://en.wikipedia.org/?curid=77697779\nSnippet: African-American artists have created various forms of abstract art in a wide range of mediums, including painting, sculpture, collage, drawing, graphics\n\n4. Dominic Di Mare\nURL: https://en.wikipedia.org/?curid=66658346\nSnippet: artist and craftsperson, known for his weaving, abstract mixed-media sculpture, watercolor paintings, cast paper art, and fiber art. His work touches on themes\n\n5. Asphalt shingle\nURL: https://en.wikipedia.org/?curid=5241974\nSnippet: with the base material, called felt, being primarily cotton rag until the 1920s when cotton rag became more expensive and alternative materials were used",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:18:22.253101+00:00"
+    },
+    "self-rag llm trained critique": {
+      "text": "1. Hard Times (novel)\nURL: https://en.wikipedia.org/?curid=843511\nSnippet: Bounderby estate. She is later revealed to be Bounderby&#039;s mother, proving his &quot;rags-to-riches&quot; story to be fraudulent. Jane Gradgrind – a younger sister of Tom",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:18:25.369301+00:00"
+    },
+    "arxiv self rag paper": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external data sources. With RAG, LLMs\n\n2. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: Prompt Engineering: An Optimization Perspective&quot;. arXiv:2502.11560 [cs.AI]. &quot;Can a technology called RAG keep AI models from making stuff up?&quot;. Ars Technica\n\n3. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: called a &quot;system prompt&quot;.[citation needed] Retrieval-augmented generation (RAG) is an approach that integrates LLMs with document retrieval systems. Given\n\n4. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: models with external knowledge sources using retrieval-augmented generation (RAG), a technique in which relevant documents are retrieved at inference time\n\n5. Compliant mechanism\nURL: https://en.wikipedia.org/?curid=14821088\nSnippet: compensates for any slight misalignment between the motor and the pump. See rag joint and giubo.[citation needed] A laser welding robot positions the workpieces",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:18:31.539191+00:00"
+    },
+    "retrieval augmented self reflection benchmark improvement 2024": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system with a generative",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:21:13.794647+00:00"
+    },
+    "self-rag paper comparison chatqa 2024": {
+      "text": "1. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: fire based on its data store, its facts. Retrieval augmented generation (RAG) A technique in natural language processing that combines a retrieval system\n\n2. Glossary of video game terms\nURL: https://en.wikipedia.org/?curid=41568624\nSnippet: the impression that a character is flailing or being flung around, like a rag doll. Rage game A genre designed to cause anger and frustration in the player",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:21:46.658416+00:00"
+    },
+    "adaptive-rag jeong 2024 self-rag comparison": {
+      "text": "1. Irving Berlin\nURL: https://en.wikipedia.org/?curid=48351\nSnippet: profile of Berlin, described &quot;Alexander&#039;s Ragtime Band&quot; as a march, not a rag, &quot;its savviest musicality comprised quotes from a bugle call and &quot;Swanee\n\n2. Vegetarianism\nURL: https://en.wikipedia.org/?curid=32591\nSnippet: rules involved ascetic and austere practices (forest-dwelling, wearing only rags, etc). The Buddha rejected all the proposed revisions of Devadatta, and it\n\n3. Cinderella (Disney character)\nURL: https://en.wikipedia.org/?curid=19225980\nSnippet: Cinderella&#039;s Fairy Godmother magically transforms the character&#039;s tattered rags into a beautiful ball gown has garnered widespread critical acclaim, receiving",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:22:30.858543+00:00"
+    },
+    "self-rag arxiv iclr 2024": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: 3390/bdcc10070224. Self-Consistency Improves Chain of Thought Reasoning in Language Models. ICLR. 2023. arXiv:2203.11171. Mittal, Aayush (May 27, 2024). &quot;Latest\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: October 2021). &quot;Mapping Language Models to Grounded Conceptual Spaces&quot;. ICLR. Archived from the original on 24 June 2023. Retrieved 27 June 2023. A Closer\n\n3. Vector database\nURL: https://en.wikipedia.org/?curid=74020014\nSnippet: recommendations engines, object detection, and retrieval-augmented generation (RAG). Vector embeddings are mathematical representations of data in a high-dimensional",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:22:37.485488+00:00"
+    },
+    "self-rag survey 2024 outperformed stronger baselines": {
+      "text": "1. Educational inequality\nURL: https://en.wikipedia.org/?curid=20381835\nSnippet: study based in New York suggested that children of immigrant descent outperformed their native student counterparts. The paradox explains that the gratefulness",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:23:56.754133+00:00"
+    },
+    "self-rag benchmark state of the art 2025": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: 20, 2025. Retrieved May 9, 2025. Sequeda, Juan; Allemang, Dean; Jacob, Bryon (2023). &quot;A Benchmark to Understand the Role of Knowledge Graphs on Large Language\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: trained on 300 million words, achieved state-of-the-art perplexity on benchmark tests. During the 2000s, with the rise of widespread internet access, researchers\n\n3. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: outperformed previously known human benchmarks and have been integrated into the LLVM standard C++ sorting library. In 2025, Google DeepMind introduced AlphaEvolve\n\n4. Rihanna\nURL: https://en.wikipedia.org/?curid=2110323\nSnippet: A$AP Rocky&#039;s Rags-to-Riches Family Life&quot;. South China Morning Post. Archived from the original on July 22, 2025. Retrieved June 22, 2025. Cochrane, Kira\n\n5. Stephen King\nURL: https://en.wikipedia.org/?curid=26954\nSnippet: High School in Lisbon Falls, Maine, in 1962. He contributed to Dave&#039;s Rag, the newspaper his brother printed with a mimeograph machine, and later sold",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:24:08.406075+00:00"
+    },
+    "self-rag results 2024": {
+      "text": "1. Retrieval-augmented generation\nURL: https://en.wikipedia.org/?curid=75229858\nSnippet: generation (RAG) is a technique that enables large language models (LLMs) to retrieve and incorporate new information from external data sources. With RAG, LLMs\n\n2. Recursive self-improvement\nURL: https://en.wikipedia.org/?curid=1167455\nSnippet: long-term memories using techniques such as retrieval-augmented generation (RAG), develop specialized subsystems, or agents, each optimized for specific\n\n3. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: chain-of-thought, tree-of-thought, and retrieval-augmented generation (RAG). A 2024 survey of the field identified over 50 distinct text-based prompting\n\n4. Country Joe McDonald\nURL: https://en.wikipedia.org/?curid=366848\nSnippet: Rag&quot;, &quot;Superbird&quot;, &quot;Bass Strings&quot;, &quot;Thing Called Love&quot; and &quot;Section 43&quot; were self-released through these &quot;talking issues&quot; of ...\n\n5. Self-made man\nURL: https://en.wikipedia.org/?curid=36045906\nSnippet: as his first example of its use in his 1954 book, The Self-Made Man in America: The Myth of Rags to Riches, stating that it &quot;was first applied&quot; on that",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:24:19.101260+00:00"
+    },
+    "self-rag arxiv 2310 2023 paper": {
+      "text": "1. Prompt engineering\nURL: https://en.wikipedia.org/?curid=69071767\nSnippet: Learning&quot;. arXiv:2507.19457 [cs.CL]. Khattab, Omar (2023). &quot;DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines&quot;. arXiv:2310.03714\n\n2. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: Bowman, Samuel R.; et al. (2023). &quot;Towards Understanding Sycophancy in Language Models&quot;. arXiv:2310.13548 [cs.CL].{{cite arXiv}}: CS1 maint: overridden",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:24:22.712566+00:00"
+    },
+    "self-rag outperform chatqa paper 2024": {
+      "text": "1. Large language model\nURL: https://en.wikipedia.org/?curid=73248112\nSnippet: PMID 41249236. Gilardi, Fabrizio; Alizadeh, Meysam; Kubli, Maël (2023). &quot;ChatGPT outperforms crowd workers for text-annotation tasks&quot;. Proceedings of the National",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:24:29.981923+00:00"
+    },
+    "self-rag benchmark evaluation comparison": {
+      "text": "1. Generative AI\nURL: https://en.wikipedia.org/?curid=73291755\nSnippet: models with external knowledge sources using retrieval-augmented generation (RAG), a technique in which relevant documents are retrieved at inference time\n\n2. Glossary of artificial intelligence\nURL: https://en.wikipedia.org/?curid=50336055\nSnippet: C, 223(12), 2919–2938. Pham, D. T.; Castellani, M. (2014). &quot;Benchmarking and comparison of nature-inspired population-based continuous optimisation algorithms&quot;\n\n3. Menstrual cup\nURL: https://en.wikipedia.org/?curid=454390\nSnippet: bit more difficult. Some suggest scrubbing out grooves with a toothbrush, rag, or cloth, and airholes with an interdental brush. Stains on any color of\n\n4. Traffic collision\nURL: https://en.wikipedia.org/?curid=19740545\nSnippet: Ruoshu; Gode, Tilia; Victor, Trent (2024). &quot;Comparison of Waymo rider-only crash data to human benchmarks at 7.1 million miles&quot;. Traffic Injury Prevention\n\n5. Jazz\nURL: https://en.wikipedia.org/?curid=15613\nSnippet: published his &quot;Harlem Rag&quot;, the first rag published by an African-American. Classically trained pianist Scott Joplin produced his &quot;Original Rags&quot; in 1898 and,",
+      "provider": "wikipedia_api",
+      "captured_at": "2026-08-23T07:24:34.419573+00:00"
+    }
+  }
+}
