@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.1](https://github.com/0verL1nk/PaperSage/compare/v1.11.0...v1.11.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **agent:** sanitize replayed history at the provider boundary ([#160](https://github.com/0verL1nk/PaperSage/issues/160)) ([e2da9e6](https://github.com/0verL1nk/PaperSage/commit/e2da9e6108e1e2712d689e711dc32e095d792cf8))
+
+## [1.11.0](https://github.com/0verL1nk/PaperSage/compare/v1.10.2...v1.11.0) (2026-08-23)
+
+
+### Features
+
+* **desktop:** resilient update checks with mirror fallback and visible failures ([#157](https://github.com/0verL1nk/PaperSage/issues/157)) ([63876a9](https://github.com/0verL1nk/PaperSage/commit/63876a9285baa987a9b19bf55611b3d458026f03))
+
+
+### Performance Improvements
+
+* **desktop:** defer lancedb, fastembed and langchain_community out of startup ([#158](https://github.com/0verL1nk/PaperSage/issues/158)) ([c552421](https://github.com/0verL1nk/PaperSage/commit/c5524219f144480bee9393e86dce881db90419d3))
+
+## [1.10.2](https://github.com/0verL1nk/PaperSage/compare/v1.10.1...v1.10.2) (2026-08-23)
+
+
+### Bug Fixes
+
+* **web:** visible marker for unvalidated a2ui parts + turn-engine baseline reset ([#153](https://github.com/0verL1nk/PaperSage/issues/153)) ([0e38275](https://github.com/0verL1nk/PaperSage/commit/0e38275be3185a096710510317f00dc79fced8aa))
+
+## [1.10.1](https://github.com/0verL1nk/PaperSage/compare/v1.10.0...v1.10.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* **agent:** propagate mid-stream model failures instead of leaking them into answers ([#150](https://github.com/0verL1nk/PaperSage/issues/150)) ([0fbe799](https://github.com/0verL1nk/PaperSage/commit/0fbe799591fed8cb8d867e8a9508b5ca54b8142d))
+* **web:** readable tool rows in the assistant timeline with expandable detail ([#151](https://github.com/0verL1nk/PaperSage/issues/151)) ([aaf9730](https://github.com/0verL1nk/PaperSage/commit/aaf973042e43179dbcd9a022321083bd35ec5605))
+
+## [1.10.0](https://github.com/0verL1nk/PaperSage/compare/v1.9.0...v1.10.0) (2026-08-16)
+
+
+### Features
+
+* **agent:** Codex-parity subagent controls ([#147](https://github.com/0verL1nk/PaperSage/issues/147)) ([9dde03e](https://github.com/0verL1nk/PaperSage/commit/9dde03e93f113e8cee93e49195a5a2e0779572c1))
+
+## [1.9.0](https://github.com/0verL1nk/PaperSage/compare/v1.8.4...v1.9.0) (2026-08-16)
+
+
+### Features
+
+* **agent:** builtin research subagents with agentic search and paper ingestion ([#144](https://github.com/0verL1nk/PaperSage/issues/144)) ([2703028](https://github.com/0verL1nk/PaperSage/commit/2703028fdbb9769af47e049b83e92aca2d0e3772))
+
 ## [1.8.4](https://github.com/0verL1nk/PaperSage/compare/v1.8.3...v1.8.4) (2026-08-16)
 
 

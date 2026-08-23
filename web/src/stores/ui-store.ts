@@ -5,6 +5,7 @@ type DesktopUpdatePhase = "idle" | "downloading" | "ready" | "failed"
 
 export interface DesktopUpdateState {
   phase: DesktopUpdatePhase
+  stage?: "check" | "download"
   version?: string
   percent?: number
   transferred?: number

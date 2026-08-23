@@ -33,9 +33,8 @@ def _replace_embedding_downloads(monkeypatch: pytest.MonkeyPatch) -> None:
         def embed_query(self, query: str) -> list[float]:
             return [float(len(query))] * 384
 
-    from agent.rag import fastembed_runtime
 
-    monkeypatch.setattr(fastembed_runtime, "FastEmbedEmbeddings", _FakeEmbeddings)
+    monkeypatch.setattr("langchain_community.embeddings.fastembed.FastEmbedEmbeddings", _FakeEmbeddings)
 
 
 class TestReciprocalRankFusion:
@@ -458,9 +457,8 @@ def test_project_retriever_reuses_persisted_doc_indexes(monkeypatch, tmp_path):
     )
 
     monkeypatch.setenv("AGENT_PROJECT_INDEX_CACHE_DIR", str(tmp_path / "project_indexes"))
-    from agent.rag import fastembed_runtime
 
-    monkeypatch.setattr(fastembed_runtime, "FastEmbedEmbeddings", _FakeEmbeddings)
+    monkeypatch.setattr("langchain_community.embeddings.fastembed.FastEmbedEmbeddings", _FakeEmbeddings)
     monkeypatch.setattr(hybrid_module, "load_agent_settings", lambda: fake_settings)
 
     documents = [
@@ -529,9 +527,8 @@ def test_project_retriever_returns_empty_for_low_relevance(monkeypatch, tmp_path
     )
 
     monkeypatch.setenv("AGENT_PROJECT_INDEX_CACHE_DIR", str(tmp_path / "project_indexes"))
-    from agent.rag import fastembed_runtime
 
-    monkeypatch.setattr(fastembed_runtime, "FastEmbedEmbeddings", _FakeEmbeddings)
+    monkeypatch.setattr("langchain_community.embeddings.fastembed.FastEmbedEmbeddings", _FakeEmbeddings)
     monkeypatch.setattr(hybrid_module, "load_agent_settings", lambda: fake_settings)
 
     documents = [
@@ -588,9 +585,8 @@ def test_project_retriever_uses_similarity_score(monkeypatch, tmp_path):
     )
 
     monkeypatch.setenv("AGENT_PROJECT_INDEX_CACHE_DIR", str(tmp_path / "project_indexes"))
-    from agent.rag import fastembed_runtime
 
-    monkeypatch.setattr(fastembed_runtime, "FastEmbedEmbeddings", _FakeEmbeddings)
+    monkeypatch.setattr("langchain_community.embeddings.fastembed.FastEmbedEmbeddings", _FakeEmbeddings)
     monkeypatch.setattr(hybrid_module, "load_agent_settings", lambda: fake_settings)
 
     documents = [

@@ -110,6 +110,10 @@ function reportMainError(context, error) {
 const updates = createUpdateService({
   app,
   autoUpdater,
+  // Networks that cannot reach GitHub Releases fail every update check; an
+  // operator-provided generic feed (latest.yml base URL) is tried as a
+  // fallback before a check surfaces as failed.
+  mirrorFeed: process.env.PAPERSAGE_UPDATE_FEED || "",
   logger: { error: (message, error) => reportMainError(message, error) },
   notify: (status) => BrowserWindow.getAllWindows().forEach((window) => window.webContents.send("updates:status", status)),
   notifySystem: () => {

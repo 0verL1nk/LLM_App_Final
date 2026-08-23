@@ -3,6 +3,7 @@ from typing import Any
 
 from .document import build_document_tools
 from .human import build_human_tools
+from .paper import build_paper_tools
 from .planning import build_planning_tools
 from .skill import build_skill_tools
 from .web import build_web_tools
@@ -13,6 +14,7 @@ def build_capability_tools(capability_ids: Iterable[str], deps: Any) -> list[Any
     builders: dict[str, Callable[[Any], list[Any]]] = {
         "document_pack": build_document_tools,
         "human_pack": build_human_tools,
+        "paper_pack": build_paper_tools,
         "planning_pack": build_planning_tools,
         "skill_pack": build_skill_tools,
         "web_pack": build_web_tools,
