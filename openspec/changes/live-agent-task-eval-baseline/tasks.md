@@ -60,7 +60,7 @@
 - [x] 8.5 pass^k=3 全量基线完成（`task-completion-live-passk3-20260823.json` + HTML）：pass^3 5/19（26%）、final 全过 42%、process 全过 63%。方差判决：委派触发在无委派契约的 hybrid 用例上 ~50%/次（真抛硬币）；compare/hybrid_research 每次都委派但仍败于 reviewer 角色从不被派 / 角色名幻觉（`research-analyst` 不在注册表）；web 类用例随 DDG 内容漂移在两轮基线间翻转。对策：域提示枚举合法角色 + 对比/评估类强制 reviewer 核验（已落地）；web 用例标记为已知波动层，冻结检索快照列入 backlog（借鉴 DeepResearchGym）
 - [ ] 8.6 （后续，源自框架调研 docs/references/eval-frameworks-assessment.md）两段式评测：先落原始轨迹再离线 judge，judge 迭代不再重跑 agent 执行
 - [x] 8.8 迭代 3 验证（5 委派用例 × 2 试验）：prose 级 reviewer 强制令两轮无效且引发振荡（compare 恒 researcher-only；hybrid_research 摆到 reviewer-only）。按"评产出不评路径"原则，`required_subagent_types` 降为 `["researcher"]`（保留委派数与并行契约——模型可稳定达成），独立审阅意图移交裁判 rubric 定性把关；更强模型接入后再恢复 reviewer 契约。评测进度页定位修正为开发工具（Vite DEV 构建专属，产品构建不出现）
-- [ ] 8.9 （后续）全量 19 用例在放宽契约 + dev-only 页面定稿后复跑收官基线
+- [x] 8.9 收官全量基线（放宽契约后，`task-completion-live-final-20260823.json` + HTML）：8/19（42%）、结果层 58%、证据覆盖 100%。与基线 2（53%）的差额全部落在已量化的方差源（web 类 DDG 漂移三连退、compare 本轮委派未同轮并行）——单轮数字在 pass^k 噪声带内，稳定层（单跳文档用例）保持全绿。另：CLI 跑批进度桥上线（进度快照文件 + 服务端发现），评测页（DEV 构建）现在同列展示 CLI 与页面发起的跑批
 - [ ] 8.7 （后续）reducer 家族（at_least_n / pass_at_k / pass_k_k）独立成聚合层；错误预算三级语义 + 重试样本分布偏移对照
 
 ## 6. 首轮 live 基线发现（2026-08-17，MiniMax-M3，19 用例）

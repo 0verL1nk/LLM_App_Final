@@ -28,6 +28,9 @@ from .selection import select_eval_cases
 
 DEFAULT_FIXTURE_PATH = "tests/evals/fixtures/agent_task_eval_set_v1.jsonl"
 EVAL_ARTIFACT_DIR = Path("data/evals")
+# CLI eval runs persist progress snapshots beside their reports; the service
+# surfaces them so the dev evals page shows CLI-started runs too.
+CLI_PROGRESS_DIR = Path("docs/plans/baselines")
 
 RunnerFactory = Callable[[], Any]
 JudgeFactory = Callable[[], Any]
@@ -159,13 +162,32 @@ class TaskCompletionEvalService:
     def get(self, uid: str) -> dict[str, Any]:
         with self._lock:
             state = self._runs.get(uid)
-            if state is None:
-                raise KeyError(f"Unknown eval run: {uid}")
-            return state.snapshot()
+            if state is not None:
+                return state.snapshot()
+        for snapshot in self._discover_cli_progress_runs():
+            if snapshot.get("uid") == uid:
+                return snapshot
+        raise KeyError(f"Unknown eval run: {uid}")
 
     def list_runs(self) -> list[dict[str, Any]]:
         with self._lock:
-            return [state.snapshot() for state in self._runs.values()]
+            runs = [state.snapshot() for state in self._runs.values()]
+        runs.extend(self._discover_cli_progress_runs())
+        return runs
+
+    @staticmethod
+    def _discover_cli_progress_runs() -> list[dict[str, Any]]:
+        if not CLI_PROGRESS_DIR.is_dir():
+            return []
+        snapshots: list[dict[str, Any]] = []
+        for path in sorted(CLI_PROGRESS_DIR.glob("*.progress.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if isinstance(payload, dict) and payload.get("uid"):
+                snapshots.append(payload)
+        return snapshots
 
     def _wait_until_settled(self, uid: str, timeout_seconds: float = 30.0) -> dict[str, Any]:
         """Poll until the run leaves the running state (used by tests)."""

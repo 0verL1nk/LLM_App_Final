@@ -12,7 +12,7 @@
 | Ruff 全仓 | `uv run --extra dev ruff check .` | 通过 |
 | openspec 校验 | `make spec-validate`（`openspec validate <slug> --strict`） | 通过 |
 | scenario 校准基线 | `make eval-baseline` | 19/19（回归层，必过——校准裁判与评分管线，非模型质量） |
-| live 度量基线 | `make eval-live-smoke EVAL_LIMIT=0` | 首轮 6/19（31.6%，结果层 52.6%）；迭代 1 后失败子集结果层 92%、证据覆盖 100% |
+| live 度量基线 | `make eval-live-smoke EVAL_LIMIT=0`（`--repeat 3 --parallel 3` 可选） | 单轮基线：首轮 6/19（31.6%）→ 基线 2 10/19（53%）→ 收官 8/19（42%，结果层 58%）；pass^3=3 方差基线 5/19（26%）——单轮波动在 pass^k 噪声带内，web 类为已知漂移层 |
 | 前端 lint/类型/单测 | `make web-lint web-typecheck web-test` | 通过（随 `make check`/`make ci` 执行） |
 
 单套命令入口：`make check`（快速门）与 `make ci`（完整离线 CI 等价）。

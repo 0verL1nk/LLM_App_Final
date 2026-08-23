@@ -313,6 +313,85 @@ def main() -> int:
         project_name="Task Completion Live Smoke",
     )
 
+    # Progress bridge: CLI runs write a snapshot beside the report so the
+    # dev evals page can display them live (the in-app registry only knows
+    # about runs started via the API service).
+    progress_path = output_path.with_suffix(".progress.json")
+    progress_state: dict[str, Any] = {
+        "uid": output_path.stem,
+        "status": "running",
+        "fixture_path": str(fixture_path),
+        "trials": max(1, int(args.repeat)),
+        "started_at": datetime.now(UTC).isoformat(),
+        "finished_at": None,
+        "total_cases": len(cases),
+        "finished_cases": 0,
+        "completed_cases": 0,
+        "case_ids": [case.case_id for case in cases],
+        "cases": [
+            {"case_id": case.case_id, "category": case.category, "status": "pending",
+             "started_at": None, "finished_at": None, "summary": {}}
+            for case in cases
+        ],
+        "report": None,
+        "artifact_path": str(output_path),
+        "error": None,
+    }
+
+    def _flush_progress() -> None:
+        progress_path.write_text(
+            json.dumps(progress_state, ensure_ascii=False), encoding="utf-8"
+        )
+
+    def _on_progress_start(case_id: str) -> None:
+        for item in progress_state["cases"]:
+            if item["case_id"] == case_id:
+                item["status"] = "running"
+                item["started_at"] = datetime.now(UTC).isoformat()
+        _flush_progress()
+
+    def _on_progress_result(case_id: str, result: dict[str, Any]) -> None:
+        summary = {
+            key: result.get("process_checks", {}).get(key)
+            for key in ("delegation_count", "max_delegations_per_message")
+        }
+        coverage = result.get("evidence_coverage") or {}
+        diagnostics = result.get("diagnostics") or {}
+        summary.update(
+            {
+                "completed": bool(result.get("completed")),
+                "final_success": bool(result.get("final_success")),
+                "process_success": bool(result.get("process_success")),
+                "evidence_count": coverage.get("count"),
+                "evidence_required": coverage.get("required_count"),
+                "run_latency_ms": diagnostics.get("run_latency_ms"),
+                "total_tool_calls": diagnostics.get("total_tool_calls"),
+                "error_type": diagnostics.get("error_type"),
+                "failure_reason": (result.get("feedback") or {}).get("failure_reason"),
+            }
+        )
+        trials_info = result.get("trials")
+        if trials_info:
+            summary["trials"] = trials_info
+        for item in progress_state["cases"]:
+            if item["case_id"] == case_id:
+                item["status"] = (
+                    "errored" if summary.get("error_type")
+                    else ("passed" if summary.get("completed") else "failed")
+                )
+                item["finished_at"] = datetime.now(UTC).isoformat()
+                item["summary"] = summary
+        progress_state["finished_cases"] = sum(
+            1 for item in progress_state["cases"]
+            if item["status"] in {"passed", "failed", "errored"}
+        )
+        progress_state["completed_cases"] = sum(
+            1 for item in progress_state["cases"] if item["status"] == "passed"
+        )
+        _flush_progress()
+
+    _flush_progress()
+
     report = run_agent_evals(
         cases,
         runner=runner,
@@ -320,6 +399,8 @@ def main() -> int:
         fixture_path=str(fixture_path),
         trials=max(1, int(args.repeat)),
         parallel=max(1, int(args.parallel)),
+        on_case_start=_on_progress_start,
+        on_case_result=_on_progress_result,
         run_config={
             "runner_mode": "live_model",
             "agent_model": str(os.getenv("OPENAI_MODEL_NAME") or ""),
@@ -333,6 +414,16 @@ def main() -> int:
         },
     )
     output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    progress_state["status"] = "completed"
+    progress_state["finished_at"] = datetime.now(UTC).isoformat()
+    progress_state["report"] = {
+        "completion_rate": report.get("completion_rate"),
+        "final_success_rate": report.get("final_success_rate"),
+        "process_success_rate": report.get("process_success_rate"),
+        "evidence_coverage_rate": report.get("evidence_coverage_rate"),
+    }
+    _flush_progress()
 
     print(f"fixture: {fixture_path}")
     print(f"cases: {report['total_cases']}")
