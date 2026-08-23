@@ -361,9 +361,44 @@ def main() -> int:
     trajectory_rows: list[dict[str, Any]] = []
     live_runner = runner
 
+    def _serialize_turn_result(result: Any) -> dict[str, Any]:
+        """JSON-safe turn result: messages and evidence items become plain dicts."""
+        serialized: dict[str, Any] = {}
+        for key, value in dict(result).items():
+            if isinstance(value, (str, int, float, bool)) or value is None:
+                serialized[key] = value
+            elif key == "output_messages":
+                serialized[key] = [
+                    {
+                        "role": str(getattr(m, "type", "assistant")),
+                        "content": str(getattr(m, "content", "") or ""),
+                        "tool_calls": [
+                            {
+                                "name": str(call.get("name") or ""),
+                                "args": call.get("args") or {},
+                            }
+                            for call in (getattr(m, "tool_calls", None) or [])
+                        ],
+                    }
+                    for m in value
+                ]
+            elif isinstance(value, list):
+                serialized[key] = [
+                    item.model_dump() if hasattr(item, "model_dump")
+                    else (dict(item) if isinstance(item, dict) else str(item))
+                    for item in value
+                ]
+            elif isinstance(value, dict):
+                serialized[key] = value
+            else:
+                serialized[key] = str(value)
+        return serialized
+
     def _runner_with_trajectory_dump(case: AgentEvalCase) -> dict[str, Any]:
         result = live_runner(case)
-        trajectory_rows.append({"case_id": case.case_id, "turn_result": result})
+        trajectory_rows.append(
+            {"case_id": case.case_id, "turn_result": _serialize_turn_result(result)}
+        )
         return result
 
     report = run_agent_evals(
@@ -396,10 +431,7 @@ def main() -> int:
 
     if args.dump_trajectories:
         Path(args.dump_trajectories).write_text(
-            "\n".join(
-                json.dumps(row, ensure_ascii=False, default=str)
-                for row in trajectory_rows
-            )
+            "\n".join(json.dumps(row, ensure_ascii=False) for row in trajectory_rows)
             + ("\n" if trajectory_rows else ""),
             encoding="utf-8",
         )
