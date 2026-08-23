@@ -126,8 +126,15 @@ def test_execute_turn_core_keeps_markdown_answer_with_inline_ui_surface() -> Non
     )
 
     assert result["answer"].startswith("结论来自文档")
-    assert result["a2ui_surface"]["title"] == "方法结构"
-    assert result["a2ui_surface"]["mindmap"]["citation_ids"] == ["chunk-1"]
+    component_parts = [
+        part for part in result["response_parts"] if part.get("type") == "component"
+    ]
+    assert len(component_parts) == 1
+    assert component_parts[0]["component"] == "research-map"
+    assert component_parts[0]["state"] == "ready"
+    assert '<map title="方法结构">' in component_parts[0]["xml"]
+    assert "a2ui_surface" not in result
+    assert "a2ui_surfaces" not in result
 
 
 def test_execute_turn_core_without_document_rag_skips_evidence():
@@ -159,7 +166,6 @@ def test_execute_turn_core_without_document_rag_skips_evidence():
     assert called["evidence"] == 0
     assert result["used_document_rag"] is False
     assert result["evidence_items"] == []
-    assert result["mindmap_data"] is None or isinstance(result["mindmap_data"], dict)
 
 
 def test_execute_turn_core_uses_search_document_tool_result_evidence_without_reretrieval():
@@ -476,6 +482,35 @@ def test_execute_turn_core_logs_final_answer(caplog) -> None:
 
     assert result["answer"] == "最终回答内容"
     assert "TURN_FINAL_ANSWER: 最终回答内容" in caplog.text
+
+
+def test_execute_turn_core_keeps_error_component_for_unterminated_fragment() -> None:
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    mock_agent = Mock()
+    mock_agent.invoke.return_value = {
+        "messages": [
+            SimpleNamespace(
+                content='正文在前\n<ui type="research-map"><map title="半成品"><node label="x" />',
+            )
+        ]
+    }
+
+    result = execute_turn_core(
+        prompt="画图",
+        leader_agent=mock_agent,
+        leader_runtime_config={},
+    )
+
+    component_parts = [
+        part for part in result["response_parts"] if part.get("type") == "component"
+    ]
+    assert len(component_parts) == 1
+    assert component_parts[0]["state"] == "error"
+    assert "component-0" == component_parts[0]["id"]
+    # The salvaged fragment text flows back into the visible answer.
+    assert "正文在前" in result["answer"]
 
 
 def test_maybe_to_dict_handles_none_and_noncallable_values():

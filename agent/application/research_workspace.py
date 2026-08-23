@@ -301,7 +301,7 @@ class ResearchWorkspaceService:
                     "evidence": result["evidence_items"],
                     "retrieved_evidence": result["retrieved_evidence_items"],
                     "plan": result.get("plan"),
-                    "a2ui": result.get("a2ui_surfaces", []),
+                    "a2ui": [],
                     "parts": result.get("response_parts", []),
                     "context_snapshot": public_result["context_snapshot"],
                 }
@@ -510,10 +510,9 @@ def execute_research_run(
         )
         raise
     a2ui_surfaces = result.get("a2ui_surfaces") if isinstance(result, dict) else None
-    if not isinstance(a2ui_surfaces, list) and isinstance(result, dict):
-        legacy_surface = result.get("a2ui_surface")
-        a2ui_surfaces = [legacy_surface] if isinstance(legacy_surface, dict) else []
     if isinstance(a2ui_surfaces, list):
+        # Legacy pre-component-parts runs replayed through this worker still
+        # carry ready-built surfaces; new turns store raw fragment content.
         for surface in a2ui_surfaces:
             if isinstance(surface, dict):
                 _append_surface_events(
@@ -663,7 +662,24 @@ def _complete_response_part_items(*, run_uid: str, result: dict[str, Any]) -> No
         part_id = str(part.get("id") or "").strip()
         part_type = str(part.get("type") or "")
         text = part.get("text")
-        if not part_id or not isinstance(text, str) or part_type not in {"markdown", "reasoning"}:
+        if not part_id:
+            continue
+        if part_type == "component":
+            append_run_item_event(
+                run_uid=run_uid,
+                item_uid=f"item_component_{part_id}",
+                item_type="component",
+                status="completed",
+                event_type="item.completed",
+                payload={
+                    "partId": part_id,
+                    "component": str(part.get("component") or "research-map"),
+                    "state": str(part.get("state") or "ready"),
+                    "xml": str(part.get("xml") or ""),
+                },
+            )
+            continue
+        if not isinstance(text, str) or part_type not in {"markdown", "reasoning"}:
             continue
         item_type = "assistant_message" if part_type == "markdown" else "reasoning_summary"
         append_run_item_event(

@@ -18,17 +18,29 @@ def test_research_run_emits_validated_surface_as_v2_presentation_item(monkeypatc
     monkeypatch.setattr(
         research_workspace.research_workspace_service,
         "execute_turn",
-        lambda **_kwargs: {"a2ui_surface": {"catalogId": "https://papersage.local/a2ui/catalogs/mindmap-v1.json", "surfaceId": "research-map-1", "title": "论文结构", "messages": [{"version": "v0.9", "createSurface": {"surfaceId": "research-map-1"}}]}},
+        lambda **_kwargs: {
+            "response_parts": [
+                {"id": "text-0", "type": "markdown", "text": "正文"},
+                {
+                    "id": "component-0",
+                    "type": "component",
+                    "component": "research-map",
+                    "state": "ready",
+                    "xml": '<map title="论文结构"><node label="论文" /></map>',
+                },
+            ]
+        },
     )
 
     research_workspace.execute_research_run(run_uid="run-1", project_uid="project-1", session_uid="session-1", user_uuid="user-1", prompt="梳理结构")
 
-    presentation = next(item for item in items if item["item_type"] == "presentation")
-    assert presentation["event_type"] == "item.delta"
-    assert presentation["payload"] == {
-        "partId": "",
-        "envelope": {"version": "v0.9", "createSurface": {"surfaceId": "research-map-1"}},
-        "surface": {"catalogId": "https://papersage.local/a2ui/catalogs/mindmap-v1.json", "surfaceId": "research-map-1", "title": "论文结构"},
+    component = next(item for item in items if item["item_type"] == "component")
+    assert component["event_type"] == "item.completed"
+    assert component["payload"] == {
+        "partId": "component-0",
+        "component": "research-map",
+        "state": "ready",
+        "xml": '<map title="论文结构"><node label="论文" /></map>',
     }
 
 

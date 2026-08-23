@@ -12,6 +12,7 @@ import { lazy, Suspense, type ReactNode, useCallback, useEffect, useMemo, useRef
 import { toast } from "sonner";
 
 import { A2UIMindmap } from "@/components/a2ui-mindmap";
+import { ComponentPart } from "@/components/component-parts";
 import { EvidenceCitations } from "@/components/evidence-citations";
 import { ResearchOrbs } from "@/components/agent-status";
 import { ContextCompositionCard } from "@/components/context-composition";
@@ -168,6 +169,18 @@ function MessageBubble({
                   return <MessageResponse key={part.id} className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-pre:bg-background" components={evidenceMarkdownComponents}>{content}</MessageResponse>;
                 }
                 if (part.type === "reasoning") return null;
+                if (part.type === "component") {
+                  return (
+                    <ComponentPart
+                      key={part.id}
+                      component={part.component}
+                      state={part.state}
+                      xml={part.xml}
+                      error={part.error}
+                      onInspectEvidence={() => onInspect("evidence")}
+                    />
+                  );
+                }
                 const surface = part.surfaceId ? surfaces[part.surfaceId] : undefined;
                 return surface ? (
                   <A2UIMindmap key={part.id} surface={surface} onInspectEvidence={() => onInspect("evidence")} />

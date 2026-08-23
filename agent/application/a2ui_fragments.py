@@ -42,10 +42,15 @@ class ResearchMapDecision(BaseModel):
 
 @dataclass(frozen=True)
 class PresentationDecision:
-    """A validated product-level UI intent extracted from the stream."""
+    """A validated product-level UI intent extracted from the stream.
+
+    ``raw_xml`` keeps the fragment exactly as the model authored it; storage
+    persists the content verbatim and the frontend owns rendering.
+    """
 
     type: str
     payload: dict[str, Any]
+    raw_xml: str = ""
 
 
 class A2UIFragmentStreamParser:
@@ -171,6 +176,7 @@ def parse_ui_fragment(fragment_type: str, raw_xml: str) -> PresentationDecision 
     return PresentationDecision(
         type=fragment_type,
         payload=decision.model_dump(exclude={"kind"}),
+        raw_xml=raw_xml.strip(),
     )
 
 

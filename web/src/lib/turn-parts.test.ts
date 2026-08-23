@@ -55,6 +55,45 @@ describe("turn completion keeps the inline part order", () => {
   })
 })
 
+describe("component parts", () => {
+  it("streams a component part from created through ready with the raw xml", () => {
+    let run = createLiveRun()
+    run = reduceLiveRun(run, itemEvent({ id: "item_component_component-0", type: "component", status: "in_progress", payload: { partId: "component-0", component: "research-map", state: "streaming" } }, 1))
+    run = reduceLiveRun(run, itemEvent({ id: "item_component_component-0", type: "component", status: "in_progress", payload: { partId: "component-0", component: "research-map", state: "ready", delta: '<map title="结构"><node label="根" /></map>' } }, 2))
+    const part = run.parts.find((candidate) => candidate.id === "component-0")
+    expect(part).toMatchObject({
+      type: "component",
+      component: "research-map",
+      state: "ready",
+      xml: '<map title="结构"><node label="根" /></map>',
+    })
+  })
+
+  it("keeps error components instead of dropping them", () => {
+    let run = createLiveRun()
+    run = reduceLiveRun(run, itemEvent({ id: "item_component_component-0", type: "component", status: "in_progress", payload: { partId: "component-0", component: "research-map", state: "streaming" } }, 1))
+    run = reduceLiveRun(run, itemEvent({ id: "item_component_component-0", type: "component", status: "in_progress", payload: { partId: "component-0", component: "research-map", state: "error", error: "UI fragment ended before its closing tag" } }, 2))
+    expect(run.parts.find((candidate) => candidate.id === "component-0")).toMatchObject({
+      state: "error",
+      error: "UI fragment ended before its closing tag",
+    })
+  })
+
+  it("passes persisted component parts through assistantParts", () => {
+    const message: Message = {
+      role: "assistant",
+      content: "全文",
+      parts: [
+        { id: "text-0", type: "markdown", text: "正文" },
+        { id: "component-0", type: "component", component: "research-map", state: "ready", xml: '<map title="结构"><node label="根" /></map>' },
+      ],
+    }
+    const parts = assistantParts(message)
+    expect(parts).toHaveLength(2)
+    expect(parts[1]).toMatchObject({ type: "component", component: "research-map", state: "ready" })
+  })
+})
+
 describe("live presentation failure", () => {
   it("drops the placeholder part when the fragment fails so no skeleton lingers", () => {
     let run = createLiveRun()
