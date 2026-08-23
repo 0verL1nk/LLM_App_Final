@@ -265,6 +265,21 @@ def main() -> int:
         help="Concurrent cases; results stay in fixture order.",
     )
     parser.add_argument(
+        "--web-fixture",
+        default="",
+        help="Web fixture name: replay mode without --record-web, capture target with it.",
+    )
+    parser.add_argument(
+        "--record-web",
+        action="store_true",
+        help="Record live web results into --web-fixture (default name 'v1') instead of replaying.",
+    )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="With --record-web: discard existing entries and re-capture.",
+    )
+    parser.add_argument(
         "--judge-model",
         default="",
         help="Optional judge model override; defaults to OPENAI_MODEL_NAME (same as agent).",
@@ -277,6 +292,17 @@ def main() -> int:
     args = parser.parse_args()
 
     _load_env_file(Path(args.env_file))
+
+    fixture_name = args.web_fixture.strip() or ("v1" if args.record_web else "")
+    web_fixture_checksum = ""
+    if args.record_web:
+        from agent.application.evals import web_fixture
+
+        web_fixture.activate_record(fixture_name, refresh=args.refresh)
+    elif fixture_name:
+        from agent.application.evals import web_fixture
+
+        web_fixture_checksum = web_fixture.activate_replay(fixture_name)
 
     fixture_path = Path(args.fixture)
     output_path = Path(args.output) if args.output else _default_output_path()
@@ -405,6 +431,11 @@ def main() -> int:
             "runner_mode": "live_model",
             "agent_model": str(os.getenv("OPENAI_MODEL_NAME") or ""),
             "judge_model": judge_model_name,
+            "web_fixture": (
+                {"name": fixture_name, "mode": "record", "refresh": args.refresh}
+                if args.record_web
+                else ({"name": fixture_name, "checksum": web_fixture_checksum} if fixture_name else None)
+            ),
             "web_search_fallback": bool(os.getenv("AGENT_WEB_ENABLE_DDG_FALLBACK")),
             "document_corpus": str(FIXTURE_DIR),
             "delegation_note": (

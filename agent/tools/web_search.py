@@ -451,6 +451,17 @@ def _run_web_search_internal(query: str) -> tuple[str | None, str | None, str | 
     return None, None, f"Web search failed: {' | '.join(errors)}"
 
 
+# Redirect hook for eval fixtures and tests: when set, search_web routes
+# through this callable instead of the live provider chain.
+_web_search_override: Any = None
+
+
+def set_web_search_override(fn: Any) -> None:
+    """Redirect search_web (frozen eval fixtures, tests); None restores live."""
+    global _web_search_override
+    _web_search_override = fn
+
+
 @tool(
     "search_web",
     description=(
@@ -462,6 +473,8 @@ def _run_web_search_internal(query: str) -> tuple[str | None, str | None, str | 
     ),
     args_schema=SearchWebInput,
 )
+
+
 def search_web(query: str) -> str:
     safe_query = _sanitize_query(query)
     logger.info(
@@ -475,6 +488,8 @@ def search_web(query: str) -> str:
     if _is_dangerous_query(safe_query):
         logger.warning("tool.search_web blocked by policy")
         return "Blocked by tool policy: query appears unsafe for web search."
+    if _web_search_override is not None:
+        return str(_web_search_override(safe_query))
     provider_name, response_text, error_text = _run_web_search_internal(safe_query)
     if response_text is None:
         logger.warning("tool.search_web unavailable: %s", error_text)
