@@ -280,6 +280,16 @@ def main() -> int:
         help="With --record-web: discard existing entries and re-capture.",
     )
     parser.add_argument(
+        "--dump-trajectories",
+        default="",
+        help="Write per-case turn results to this JSONL for later offline judging.",
+    )
+    parser.add_argument(
+        "--judge-trajectories",
+        default="",
+        help="Offline mode: judge a dumped trajectory JSONL instead of running the agent.",
+    )
+    parser.add_argument(
         "--judge-model",
         default="",
         help="Optional judge model override; defaults to OPENAI_MODEL_NAME (same as agent).",
@@ -317,10 +327,46 @@ def main() -> int:
     if not cases:
         raise ValueError("No eval cases selected for live smoke run.")
 
-    documents = _load_project_documents()
-    llm = _build_live_llm()
     judge_model_name = args.judge_model.strip() or str(os.getenv("OPENAI_MODEL_NAME") or "")
     judge_base_url = args.judge_base_url.strip() or str(os.getenv("OPENAI_BASE_URL") or "")
+
+    if args.judge_trajectories:
+        # Offline judging (two-stage eval): reuse dumped turn results, only
+        # the judge runs - no agent execution, no document corpus needed.
+        with open(args.judge_trajectories, encoding="utf-8") as handle:
+            trajectories = {
+                row["case_id"]: row["turn_result"]
+                for row in (json.loads(line) for line in handle if line.strip())
+            }
+        cases = [case for case in cases if case.case_id in trajectories]
+        judge_llm = create_chat_model(
+            api_key=str(os.getenv("OPENAI_API_KEY") or ""),
+            model_name=judge_model_name,
+            base_url=judge_base_url or None,
+            temperature=0.0,
+        )
+        judge = build_trajectory_llm_as_judge(model=judge_llm)
+
+        def _offline_runner(case: Any) -> dict[str, Any]:
+            return trajectories[case.case_id]
+
+        report = run_agent_evals(
+            cases,
+            runner=_offline_runner,
+            judge=judge,
+            fixture_path=str(fixture_path),
+            run_config={
+                "runner_mode": "offline_judge",
+                "judge_model": judge_model_name,
+                "trajectories": args.judge_trajectories,
+            },
+        )
+        output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"offline judge: {report['completed_cases']}/{report['total_cases']} | report: {output_path}")
+        return 0
+
+    documents = _load_project_documents()
+    llm = _build_live_llm()
     judge_llm = (
         llm
         if judge_model_name == str(os.getenv("OPENAI_MODEL_NAME") or "")
@@ -333,10 +379,31 @@ def main() -> int:
         )
     )
     judge = build_trajectory_llm_as_judge(model=judge_llm)
+    activity_counters: dict[str, dict[str, int]] = {}
+
+    def _on_activity(case_id: str, event: dict) -> None:
+        performative = str(event.get("performative") or "")
+        if performative not in {"tool_call", "tool_result"}:
+            return
+        counters = activity_counters.setdefault(case_id, {"tool_calls": 0, "tool_results": 0})
+        if performative == "tool_call":
+            counters["tool_calls"] += 1
+        else:
+            counters["tool_results"] += 1
+        for item in progress_state["cases"]:
+            if item["case_id"] == case_id:
+                item["activity"] = {
+                    **counters,
+                    "last": performative,
+                    "updated_at": datetime.now(UTC).isoformat(),
+                }
+        _flush_progress()
+
     runner = LivePaperSageEvalRunner(
         llm=llm,
         documents=documents,
         project_name="Task Completion Live Smoke",
+        on_activity=_on_activity,
     )
 
     # Progress bridge: CLI runs write a snapshot beside the report so the
@@ -418,9 +485,17 @@ def main() -> int:
 
     _flush_progress()
 
+    trajectory_rows: list[dict[str, Any]] = []
+    live_runner = runner
+
+    def _runner_with_trajectory_dump(case: AgentEvalCase) -> dict[str, Any]:
+        result = live_runner(case)
+        trajectory_rows.append({"case_id": case.case_id, "turn_result": result})
+        return result
+
     report = run_agent_evals(
         cases,
-        runner=runner,
+        runner=_runner_with_trajectory_dump if args.dump_trajectories else runner,
         judge=judge,
         fixture_path=str(fixture_path),
         trials=max(1, int(args.repeat)),
@@ -445,6 +520,17 @@ def main() -> int:
         },
     )
     output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    if args.dump_trajectories:
+        Path(args.dump_trajectories).write_text(
+            "\n".join(
+                json.dumps(row, ensure_ascii=False, default=str)
+                for row in trajectory_rows
+            )
+            + ("\n" if trajectory_rows else ""),
+            encoding="utf-8",
+        )
+        print(f"trajectories: {args.dump_trajectories} ({len(trajectory_rows)} cases)")
 
     progress_state["status"] = "completed"
     progress_state["finished_at"] = datetime.now(UTC).isoformat()

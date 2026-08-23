@@ -7,6 +7,7 @@ both drive the exact same canonical turn path.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -186,6 +187,8 @@ class LivePaperSageEvalRunner:
     llm: Any
     documents: list[dict[str, str]]
     project_name: str
+    on_activity: Callable[[str, dict[str, Any]], None] | None = None
+    """Optional (case_id, event) sink receiving turn events for live progress."""
 
     def __call__(self, case: AgentEvalCase) -> dict[str, Any]:
         context = build_case_document_context(case, self.documents)
@@ -212,10 +215,15 @@ class LivePaperSageEvalRunner:
                 system_prompt=system_prompt,
             ),
         )
+        runtime_config = dict(session.runtime_config)
+        if self.on_activity is not None:
+            configurable = dict(runtime_config.get("configurable") or {})
+            configurable["on_event"] = lambda event: self.on_activity(case.case_id, event)
+            runtime_config["configurable"] = configurable
         return execute_turn_core(
             prompt=case.prompt,
             leader_agent=session.agent,
-            leader_runtime_config=session.runtime_config,
+            leader_runtime_config=runtime_config,
             search_document_evidence_fn=context["search_document_evidence_fn"],
             leader_tool_specs=session.tool_specs,
         )

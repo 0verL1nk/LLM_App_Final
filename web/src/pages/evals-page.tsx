@@ -244,7 +244,15 @@ export function EvalsPage() {
                   return (
                     <TableRow key={item.case_id}>
                       <TableCell className="font-mono text-xs">{item.case_id}</TableCell>
-                      <TableCell>{statusBadge(item.status)}</TableCell>
+                      <TableCell>
+                        {statusBadge(item.status)}
+                        {item.status === "running" && item.activity ? (
+                          <div className="mt-1 text-xs text-muted-foreground tabular-nums">
+                            工具调用 {String(item.activity.tool_calls ?? 0)} · 结果{" "}
+                            {String(item.activity.tool_results ?? 0)}
+                          </div>
+                        ) : null}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {typeof summary.evidence_count === "number" ? `${summary.evidence_count}/${summary.evidence_required ?? 0}` : "-"}
                       </TableCell>

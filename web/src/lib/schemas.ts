@@ -157,6 +157,7 @@ export const evalCaseProgressSchema = z.object({
   started_at: z.string().nullish(),
   finished_at: z.string().nullish(),
   summary: z.record(z.string(), z.unknown()).default({}),
+  activity: z.record(z.string(), z.unknown()).nullish(),
 })
 
 export const evalRunSnapshotSchema = z.object({
