@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.10.2](https://github.com/0verL1nk/PaperSage/compare/v1.10.1...v1.10.2) (2026-08-23)
+
+
+### Bug Fixes
+
+* **web:** visible marker for unvalidated a2ui parts + turn-engine baseline reset ([#153](https://github.com/0verL1nk/PaperSage/issues/153)) ([0e38275](https://github.com/0verL1nk/PaperSage/commit/0e38275be3185a096710510317f00dc79fced8aa))
+
 ## [1.10.1](https://github.com/0verL1nk/PaperSage/compare/v1.10.0...v1.10.1) (2026-08-17)
 
 
