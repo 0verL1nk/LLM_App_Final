@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.1](https://github.com/0verL1nk/PaperSage/compare/v1.11.0...v1.11.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **agent:** sanitize replayed history at the provider boundary ([#160](https://github.com/0verL1nk/PaperSage/issues/160)) ([e2da9e6](https://github.com/0verL1nk/PaperSage/commit/e2da9e6108e1e2712d689e711dc32e095d792cf8))
+
 ## [1.11.0](https://github.com/0verL1nk/PaperSage/compare/v1.10.2...v1.11.0) (2026-08-23)
 
 
