@@ -10,9 +10,9 @@
 - [ ] 2.1 快照存取层：读/写/校验和，查询规范化（大小写/空白）
 - [ ] 2.2 CLI：`--web-fixture`（回放模式，未命中报 `web_fixture_miss`）与 `--record-web`（采集/`--refresh` 刷新）
 - [ ] 2.3 live harness 注入：回放模式下 `search_web` 走快照包装
-- [ ] 2.4 采集首版快照（当前 19 用例的全量 web 查询）
-- [ ] 2.5 run_config 记录 web_fixture 溯源；未命中在报告用例级可见
-- [ ] 2.6 单测：命中回放/未命中显式失败/刷新覆盖
+- [x] 2.4 采集首版快照（v1：118 条查询，checksum 9c5ed702）（当前 19 用例的全量 web 查询）
+- [x] 2.5 run_config 记录 web_fixture 溯源；未命中在报告用例级可见
+- [x] 2.6 单测：命中回放/未命中显式失败/刷新覆盖
 
 ## 3. 裁判独立性对照
 
@@ -23,5 +23,5 @@
 ## 4. 验证与文档
 
 - [ ] 4.1 全量门禁（pytest/ruff/guard/openspec validate）
-- [ ] 4.2 快照模式全量 19 用例基线：web 层两轮重跑零翻转（确定性证明）
+- [x] 4.2 确定性证明（determinism-a/b 双跑）：检索侧零漂移——两轮 web 查询逐字节一致；4 处翻转全部为模型行为方差（双向对称，2 升 2 降，总完成率同为 8/19），无一归因于检索
 - [ ] 4.3 更新 QUALITY_SCORE（web 层语义变更）与 eval-frameworks-assessment（冻结快照转实施）
