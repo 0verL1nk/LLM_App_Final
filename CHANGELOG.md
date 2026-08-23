@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.12.0](https://github.com/0verL1nk/PaperSage/compare/v1.11.1...v1.12.0) (2026-08-23)
+
+
+### Features
+
+* slash command palette with builtin commands and skills ([#152](https://github.com/0verL1nk/PaperSage/issues/152)) ([18558e1](https://github.com/0verL1nk/PaperSage/commit/18558e10f497ebbd87dca667bf3e340aa1d56572))
+
+
+### Documentation
+
+* release and CI debugging playbook ([#163](https://github.com/0verL1nk/PaperSage/issues/163)) ([b793a0f](https://github.com/0verL1nk/PaperSage/commit/b793a0ffe5765ba21aecdfa0a8a2448e56e8bdc7))
+
 ## [1.11.1](https://github.com/0verL1nk/PaperSage/compare/v1.11.0...v1.11.1) (2026-08-23)
 
 
