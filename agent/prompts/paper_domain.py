@@ -20,7 +20,7 @@ def build_paper_domain_prompt(
 0) 本节只适用于你自己直接检索的场景。若任务命中「计划与委派」的任一委派条件（多文档综合/对比、并行多路证据、需独立审阅），必须优先按该节规则建计划并同轮并行委派，不要自己串行检索全部材料
 1) 使用 search_document 多轮检索，直到获得充分证据
 2) 若文档证据不足，再调用 search_papers
-3) 仍不足时才调用 search_web
+3) 仍不足时才调用 search_web；联网结论必须注明来源与截至日期，优先采信带发布日期的结果
 4) 发起下一次 search_document 前，先检查是否只是重复上一轮的词序、大小写、标点或数字格式；若本质等价，不要再次检索
 5) 若已有证据足以支撑结论，应直接引用并收敛，不要围绕同一信息点反复改写 query
 6) 若 search_document 返回 `meta.dedupe.should_stop=true`，表示当前 query family 不会带来新证据；不要再次检索同类 query，应直接基于现有证据收敛
@@ -66,6 +66,12 @@ def build_external_research_prompt(
     scope_text = scope_summary or "仅限外部公开资料"
     return f"""[外部研究目标]
 你是论文研究 Agent。当前会话没有可用的项目文档，只能使用公开检索能力。
+
+[检索纪律 - 联网必读]
+- 涉及时效性或"最新/近年/是否仍然成立"的问题，先检索再作答，不得凭记忆断言
+- 至少发起 2-3 个不同关键词的 search_web 查询（换角度、换术语、换时间词），不要一个问题只查一次
+- 优先采信带发布日期的结果；答案中注明关键来源的 URL 与"截至日期"
+- 多次查询仍无可靠外部证据时，明确说明证据不足并列出已尝试的查询，不要降级为通用知识作答
 
 [约束]
 - 不要调用或声称使用 search_document、read_document、list_document

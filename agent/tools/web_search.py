@@ -67,7 +67,7 @@ def _build_brave_web_search_client():
                 headers={
                     "X-Subscription-Token": self.api_key,
                     "Accept": "application/json",
-                    "User-Agent": "llm-app/1.0 (+search_web)",
+                    "User-Agent": WIKIPEDIA_COMPLIANT_USER_AGENT,
                 },
                 timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
             )
@@ -108,7 +108,7 @@ def _build_searxng_web_search_client():
                             "format": "json",
                             "safesearch": "1",
                         },
-                        headers={"User-Agent": "llm-app/1.0 (+search_web)"},
+                        headers={"User-Agent": WIKIPEDIA_COMPLIANT_USER_AGENT},
                         timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
                     )
                     if response.status_code >= 400:
@@ -148,7 +148,7 @@ def _build_wikipedia_web_search_client():
                     "format": "json",
                     "srlimit": DEFAULT_WEB_MAX_RESULTS,
                 },
-                headers={"User-Agent": "llm-app/1.0 (+search_web)"},
+                headers={"User-Agent": WIKIPEDIA_COMPLIANT_USER_AGENT},
                 timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
             )
             if response.status_code >= 400:
@@ -206,11 +206,19 @@ def _build_native_web_search_client():
     return _NativeDuckDuckGoSearch()
 
 
-# Firecrawl 429 retry: exponential backoff (2s -> 4s -> 8s), honoring a
-# larger server-provided Retry-After when present.
-FIRECRAWL_RETRY_MAX_ATTEMPTS = 3
+# Firecrawl 429 retry: exponential backoff capped at a maximum delay,
+# honoring a larger server-provided Retry-After when present.
+FIRECRAWL_RETRY_MAX_ATTEMPTS = 5
 FIRECRAWL_RETRY_INITIAL_DELAY_SECONDS = 2.0
+FIRECRAWL_RETRY_MAX_DELAY_SECONDS = 30.0
 FIRECRAWL_RETRY_MIN_DELAY_SECONDS = 1.0
+
+# Wikimedia's UA policy rejects generic clients with 403; every outbound
+# search request carries this descriptive product UA instead.
+WIKIPEDIA_COMPLIANT_USER_AGENT = (
+    "PaperSage/1.8 (+search_web; local-first research assistant; "
+    "https://github.com/0verL1nk/PaperSage)"
+)
 
 
 def _build_firecrawl_web_search_client():
@@ -234,7 +242,7 @@ def _build_firecrawl_web_search_client():
         def run(self, query: str) -> str:
             headers = {
                 "Content-Type": "application/json",
-                "User-Agent": "llm-app/1.0 (+search_web)",
+                "User-Agent": WIKIPEDIA_COMPLIANT_USER_AGENT,
             }
             if self.api_key:
                 headers["Authorization"] = f"Bearer {self.api_key}"
@@ -272,7 +280,10 @@ def _build_firecrawl_web_search_client():
                     return max(FIRECRAWL_RETRY_MIN_DELAY_SECONDS, float(retry_after))
                 except ValueError:
                     pass
-            return FIRECRAWL_RETRY_INITIAL_DELAY_SECONDS * (2 ** (attempt - 1))
+            return min(
+                FIRECRAWL_RETRY_INITIAL_DELAY_SECONDS * (2 ** (attempt - 1)),
+                FIRECRAWL_RETRY_MAX_DELAY_SECONDS,
+            )
 
     return _FirecrawlWebSearch(api_key, search_url)
 
@@ -358,7 +369,13 @@ def _run_web_search_internal(query: str) -> tuple[str | None, str | None, str | 
 
 @tool(
     "search_web",
-    description="Search public web content for supplemental context.",
+    description=(
+        "Search public web content. For time-sensitive questions run 2-3 queries with "
+        "different keywords before answering; prefer results that carry a publication "
+        "date, cite the source URL in the answer, and state an explicit as-of date. "
+        "If repeated queries still yield no reliable external evidence, say the evidence "
+        "is insufficient instead of falling back to generic knowledge."
+    ),
     args_schema=SearchWebInput,
 )
 def search_web(query: str) -> str:

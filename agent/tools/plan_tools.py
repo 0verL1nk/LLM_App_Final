@@ -94,7 +94,13 @@ def _read_plan(runtime: ToolRuntime) -> str:
 
 update_plan = StructuredTool.from_function(
     name="update_plan",
-    description="Replace the plan only when the supplied revision follows the current one.",
+    description=(
+        "Create or rewrite the execution plan. Use it whenever the task has multiple steps "
+        "or involves multiple documents: the first call creates a plan with concrete, "
+        "verifiable steps (never a single-step plan); after finishing each step, call again "
+        "with its status updated - keep exactly one step in_progress and mark steps completed "
+        "immediately. Skip planning for trivial single-lookup questions."
+    ),
     func=_update_plan,
     args_schema=UpdatePlanInput,
     infer_schema=False,

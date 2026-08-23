@@ -94,7 +94,7 @@ def _provider_supports_reasoning_effort(base_url: str) -> bool:
     return _provider_host(base_url) == "api.openai.com"
 
 
-OPENAI_COMPATIBLE_MAX_RETRIES = 4
+OPENAI_COMPATIBLE_MAX_RETRIES = 6
 
 
 def _thinking_extra_body(
