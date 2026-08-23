@@ -55,6 +55,88 @@ function formatPercent(value: unknown) {
   return typeof value === "number" ? `${(value * 100).toFixed(0)}%` : "-"
 }
 
+function avgMetric(
+  cases: unknown,
+  key: string,
+  format: (value: unknown) => string,
+): string {
+  if (!Array.isArray(cases)) return "-"
+  const values = cases
+    .map((item) => (item as Record<string, unknown>).diagnostics)
+    .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+    .map((item) => item[key])
+    .filter((value): value is number => typeof value === "number" && !Number.isNaN(value))
+  if (!values.length) return "-"
+  return format(values.reduce((sum, value) => sum + value, 0) / values.length)
+}
+
+function categoryRows(cases: unknown) {
+  if (!Array.isArray(cases) || !cases.length) return null
+  const groups = new Map<string, { total: number; passed: number }>()
+  for (const item of cases) {
+    const record = item as Record<string, unknown>
+    const category = String(record.category ?? "")
+    const group = groups.get(category) ?? { total: 0, passed: 0 }
+    group.total += 1
+    if (record.completed === true) group.passed += 1
+    groups.set(category, group)
+  }
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">分类通过情况</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>分类</TableHead>
+              <TableHead className="text-right">用例数</TableHead>
+              <TableHead>完成比例</TableHead>
+              <TableHead>未过用例</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...groups.entries()].map(([category, group]) => {
+              const failed = (cases as Array<Record<string, unknown>>)
+                .filter((item) => item.category === category && item.completed !== true)
+                .map((item) => String(item.case_id))
+              return (
+                <TableRow key={category}>
+                  <TableCell className="font-mono text-xs">{category}</TableCell>
+                  <TableCell className="text-right tabular-nums">{group.total}</TableCell>
+                  <TableCell>
+                    <div className="barcell">
+                      <div className="bartrack">
+                        <div
+                          className="bar"
+                          style={{ width: `${(group.passed / group.total) * 100}%` }}
+                        />
+                      </div>
+                      <span className="barlabel">
+                        {group.passed}/{group.total}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {failed.join(", ") || "-"}
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </CardContent>
+      <style>{`
+        .barcell { display: flex; align-items: center; gap: 8px; min-width: 180px; }
+        .bartrack { flex: 1; height: 8px; background: color-mix(in srgb, currentColor 8%, transparent); border-radius: 4px; }
+        .bar { height: 8px; border-radius: 0 4px 4px 0; background: var(--color-primary, #2a78d6); }
+        .barlabel { font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 65%, transparent); }
+      `}</style>
+    </Card>
+  )
+}
+
 export function EvalsPage() {
   const [trials, setTrials] = useState("1")
   const [activeUid, setActiveUid] = useState<string | null>(null)
@@ -181,22 +263,42 @@ export function EvalsPage() {
       )}
 
       {report && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {(
-            [
-              ["完成率", report.completion_rate],
-              ["结果层通过", report.final_success_rate],
-              ["过程层通过", report.process_success_rate],
-              ["证据覆盖", report.evidence_coverage_rate],
-            ] as Array<[string, unknown]>
-          ).map(([label, value]) => (
-            <Card key={label}>
-              <CardContent className="space-y-1">
-                <div className="text-xs text-muted-foreground">{label}</div>
-                <div className="text-xl font-semibold tabular-nums">{formatPercent(value)}</div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+            {(
+              [
+                ["完成率", report.completion_rate],
+                ["结果层通过", report.final_success_rate],
+                ["过程层通过", report.process_success_rate],
+                ["证据覆盖", report.evidence_coverage_rate],
+                ["计划完成度", report.average_execution_completion_ratio],
+              ] as Array<[string, unknown]>
+            ).map(([label, value]) => (
+              <Card key={label}>
+                <CardContent className="space-y-1">
+                  <div className="text-xs text-muted-foreground">{label}</div>
+                  <div className="text-xl font-semibold tabular-nums">{formatPercent(value)}</div>
+                </CardContent>
+              </Card>
+            ))}
+            {[
+              ["平均时延", avgMetric(report.cases, "run_latency_ms", (v) => formatLatency(v))],
+              [
+                "平均工具调用",
+                avgMetric(report.cases, "total_tool_calls", (v) =>
+                  typeof v === "number" ? v.toFixed(1) : "-",
+                ),
+              ],
+            ].map(([label, value]) => (
+              <Card key={label}>
+                <CardContent className="space-y-1">
+                  <div className="text-xs text-muted-foreground">{label}</div>
+                  <div className="text-xl font-semibold tabular-nums">{value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {categoryRows(report.cases)}
         </div>
       )}
     </div>
