@@ -6,6 +6,7 @@ import importlib
 import logging
 import os
 import sqlite3
+import sys
 import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
 from enum import Enum
@@ -35,7 +36,12 @@ try:
 except Exception as exc:
     rq_module = None
     rq_job_module = None
-    logger.warning("RQ unavailable, falling back to local queue backend: %s", exc)
+    if sys.platform == "win32":
+        # RQ's worker model requires fork; on Windows the local backend is the
+        # expected path, not a degradation worth a warning.
+        logger.info("RQ requires fork (POSIX); using local queue backend on Windows: %s", exc)
+    else:
+        logger.warning("RQ unavailable, falling back to local queue backend: %s", exc)
 
 
 def _supports_fork_start_method() -> bool:
