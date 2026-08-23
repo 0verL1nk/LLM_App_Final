@@ -1,7 +1,7 @@
 /**
  * @typedef {{ isPackaged: boolean, getVersion: () => string }} ElectronApp
- * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, quitAndInstall: (isSilent: boolean, isForceRunAfter: boolean) => void, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean }} ElectronUpdater
- * @typedef {{ status: "downloading" | "progress" | "ready" | "failed", version?: string, percent?: number, transferred?: number, total?: number, bytesPerSecond?: number }} UpdateStatus
+ * @typedef {{ checkForUpdates: () => Promise<unknown>, downloadUpdate: () => Promise<unknown>, quitAndInstall: (isSilent: boolean, isForceRunAfter: boolean) => void, on: (event: string, listener: (...args: unknown[]) => void) => void, autoDownload: boolean, autoInstallOnAppQuit: boolean, setFeedURL?: (url: string) => void }} ElectronUpdater
+ * @typedef {{ status: "downloading" | "progress" | "ready" | "failed", stage?: "check" | "download", version?: string, percent?: number, transferred?: number, total?: number, bytesPerSecond?: number }} UpdateStatus
  */
 
 /**
@@ -26,11 +26,12 @@ function unsupportedUpdateReason({ isPackaged, platform, appImage }) {
  * @param {{ app: ElectronApp, autoUpdater: ElectronUpdater, logger?: Pick<Console, "error">, notify?: (status: UpdateStatus) => void, notifySystem?: () => void, platform?: NodeJS.Platform, appImage?: string, checkIntervalMs?: number }} dependencies
  * @returns {{ checkForUpdates: () => Promise<{ supported: boolean, status: "unsupported" | "up-to-date" | "available" | "failed", version?: string, reason?: "development" | "system-managed" | "unavailable" }>, installUpdate: () => { supported: boolean, status: "unsupported" | "not-ready" | "installing", reason?: "development" | "system-managed" | "unavailable" }, scheduleCheck: () => void }}
  */
-function createUpdateService({ app, autoUpdater, logger = console, notify = () => undefined, notifySystem = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE, checkIntervalMs = 6 * 60 * 60 * 1000 }) {
+function createUpdateService({ app, autoUpdater, logger = console, notify = () => undefined, notifySystem = () => undefined, platform = process.platform, appImage = process.env.APPIMAGE, checkIntervalMs = 6 * 60 * 60 * 1000, mirrorFeed = "", checkRetryDelayMs = 30_000, schedule = (callback, delay) => setTimeout(callback, delay), interval = (callback, delay) => setInterval(callback, delay) }) {
   const supported = supportsAutomaticUpdates({ isPackaged: app.isPackaged, platform, appImage })
   let checking = false
   let downloading = false
   let readyToInstall = false
+  let feedSwitchedToMirror = false
   const reportError = (error) => logger.error("PaperSage update check failed", error)
   const download = async (version) => {
     if (downloading) return
@@ -41,7 +42,7 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
       await autoUpdater.downloadUpdate()
     } catch (error) {
       reportError(error)
-      notify({ status: "failed" })
+      notify({ status: "failed", stage: "download" })
     } finally {
       downloading = false
     }
@@ -63,7 +64,7 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
     autoUpdater.autoInstallOnAppQuit = true
     autoUpdater.on("error", (error) => {
       reportError(error)
-      if (downloading) notify({ status: "failed" })
+      if (downloading) notify({ status: "failed", stage: "download" })
     })
     autoUpdater.on("update-available", async (info) => { await download(info.version) })
     autoUpdater.on("download-progress", (progress) => notify({
@@ -79,6 +80,11 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
     })
   }
 
+  const checkWithFeed = async (feed) => {
+    if (feed && typeof autoUpdater.setFeedURL === "function") autoUpdater.setFeedURL(feed)
+    return autoUpdater.checkForUpdates()
+  }
+
   const checkForUpdates = async () => {
     if (!supported || checking) return {
       supported,
@@ -87,11 +93,26 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
     }
     checking = true
     try {
-      const result = await autoUpdater.checkForUpdates()
+      const result = await checkWithFeed(null)
       const version = String(result?.updateInfo?.version || "")
       return { supported, status: version && version !== app.getVersion() ? "available" : "up-to-date", version: version || undefined }
-    } catch (error) {
-      reportError(error)
+    } catch (primaryError) {
+      // GitHub-hosted feeds are unreachable from some networks; a configured
+      // mirror gets one attempt before the check surfaces as failed.
+      if (mirrorFeed && !feedSwitchedToMirror) {
+        feedSwitchedToMirror = true
+        reportError(primaryError)
+        try {
+          const result = await checkWithFeed(mirrorFeed)
+          const version = String(result?.updateInfo?.version || "")
+          return { supported, status: version && version !== app.getVersion() ? "available" : "up-to-date", version: version || undefined }
+        } catch (mirrorError) {
+          reportError(mirrorError)
+        }
+      } else {
+        reportError(primaryError)
+      }
+      notify({ status: "failed", stage: "check" })
       return { supported, status: "failed" }
     } finally { checking = false }
   }
@@ -101,9 +122,16 @@ function createUpdateService({ app, autoUpdater, logger = console, notify = () =
     installUpdate,
     scheduleCheck: () => {
       if (!supported) return
-      setTimeout(() => { void checkForUpdates() }, 12_000)
+      const runCheck = () => {
+        void checkForUpdates().then((result) => {
+          // One deferred retry per scheduled cycle: transient DNS/TLS hiccups
+          // should not cost a whole six-hour interval.
+          if (result.status === "failed") schedule(() => { void checkForUpdates() }, checkRetryDelayMs)
+        })
+      }
+      schedule(runCheck, 12_000)
       // Sessions that stay open for days would otherwise never see a release.
-      setInterval(() => { void checkForUpdates() }, checkIntervalMs)
+      interval(() => { runCheck() }, checkIntervalMs)
     },
   }
 }

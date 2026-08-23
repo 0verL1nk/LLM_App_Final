@@ -43,7 +43,14 @@ export function DesktopUpdateStatusListener(): null {
         })
         return
       }
-      setDesktopUpdate({ phase: "failed" })
+      setDesktopUpdate({ phase: "failed", stage: status.stage })
+      if (status.stage === "check") {
+        toast.error("检查更新失败", {
+          id: "desktop-update",
+          description: "无法连接更新源，稍后会自动重试。受限网络可设置 PAPERSAGE_UPDATE_FEED 镜像源。",
+        })
+        return
+      }
       toast.error("下载未完成", { id: "desktop-update", description: "请检查网络后再试一次。" })
     })
   }, [desktop, setDesktopUpdate, setDesktopVersion])

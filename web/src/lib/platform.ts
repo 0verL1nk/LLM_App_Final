@@ -24,6 +24,7 @@ export interface DesktopGpuPackStatus {
 
 export interface DesktopUpdateStatus {
   status: "downloading" | "progress" | "ready" | "failed"
+  stage?: "check" | "download"
   version?: string
   percent?: number
   transferred?: number
