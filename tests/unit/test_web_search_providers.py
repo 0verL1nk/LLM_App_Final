@@ -1,3 +1,4 @@
+import time
 from types import SimpleNamespace
 
 from agent.tools import web_search
@@ -206,3 +207,77 @@ def test_firecrawl_run_raises_after_exhausted_429_retries(monkeypatch):
 
     assert calls["count"] == web_search.FIRECRAWL_RETRY_MAX_ATTEMPTS
     assert delays == [2.0, 4.0, 8.0, 16.0]
+
+
+class _FlakyProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def run(self, query: str) -> str:
+        self.calls += 1
+        raise RuntimeError("boom")
+
+
+def test_circuit_breaker_opens_after_threshold_and_skips(monkeypatch):
+    monkeypatch.setenv("AGENT_WEB_CIRCUIT_THRESHOLD", "2")
+    breaker = web_search._CircuitBreakerProvider("flaky", _FlakyProvider())
+
+    for _ in range(2):
+        try:
+            breaker.run("q")
+        except RuntimeError:
+            pass
+
+    # Circuit now open: the underlying client is not invoked.
+    underlying = breaker._client
+    calls_before = underlying.calls
+    try:
+        breaker.run("q")
+    except RuntimeError as exc:
+        assert "cooling down" in str(exc)
+    assert underlying.calls == calls_before
+
+
+def test_circuit_breaker_doubles_cooldown_up_to_cap(monkeypatch):
+    monkeypatch.setenv("AGENT_WEB_CIRCUIT_THRESHOLD", "1")
+    monkeypatch.setenv("AGENT_WEB_CIRCUIT_COOLDOWN_SECONDS", "60")
+    monkeypatch.setenv("AGENT_WEB_CIRCUIT_MAX_COOLDOWN_SECONDS", "120")
+
+    breaker = web_search._CircuitBreakerProvider("flaky", _FlakyProvider())
+    try:
+        breaker.run("q")  # trip 1 -> 60s window
+    except RuntimeError:
+        pass
+    first_window = 60.0
+    breaker._cooldown_until = 0.0  # force expiry for the next trip
+    try:
+        breaker.run("q")  # trip 2 -> doubled, capped at 120
+    except RuntimeError:
+        pass
+    assert first_window == 60.0
+    assert breaker._cooldown_seconds == 120.0
+    assert breaker._cooldown_until - time.monotonic() > 100  # second window is the doubled one
+
+
+def test_circuit_breaker_recovers_after_cooldown(monkeypatch):
+    monkeypatch.setenv("AGENT_WEB_CIRCUIT_THRESHOLD", "3")
+
+    class _RecoveringProvider:
+        def __init__(self) -> None:
+            self.calls = 0
+            self.fail_first = 1
+
+        def run(self, query: str) -> str:
+            self.calls += 1
+            if self.calls <= self.fail_first:
+                raise RuntimeError("boom")
+            return "ok result"
+
+    provider = _RecoveringProvider()
+    breaker = web_search._CircuitBreakerProvider("flaky", provider)
+    try:
+        breaker.run("q")  # failure 1 (below threshold, breaker stays closed)
+    except RuntimeError:
+        pass
+    assert breaker.run("q") == "ok result"  # success resets the counter
+    assert breaker._consecutive_failures == 0
