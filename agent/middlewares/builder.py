@@ -19,6 +19,7 @@ from .model_output_validation import (
     model_output_validation_middleware,
 )
 from .plan import plan_middleware
+from .provider_history_hygiene import provider_history_hygiene_middleware
 from .steering_input import steering_input_middleware
 from .tool_selector import build_tool_selector_middleware
 from .trace import TraceMiddleware
@@ -71,6 +72,9 @@ def build_middleware_list(
 
     middleware_list.append(turn_context_middleware)
     middleware_list.append(steering_input_middleware)
+    # Legacy threads replay provider-error artifacts and consecutive human
+    # turns; strict providers (e.g. MiniMax) answer those with 400 forever.
+    middleware_list.append(provider_history_hygiene_middleware)
 
     if _is_enabled(profile, "subagent"):
         if deps is None:
