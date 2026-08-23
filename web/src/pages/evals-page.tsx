@@ -145,7 +145,10 @@ export function EvalsPage() {
   const startEval = useStartEvalRun()
 
   useEffect(() => {
-    if (!activeUid && runs.data?.length) setActiveUid(runs.data[runs.data.length - 1]!.uid)
+    if (!activeUid && runs.data?.length) {
+      const running = runs.data.find((item) => item.status === "running")
+      setActiveUid((running ?? runs.data[runs.data.length - 1]!).uid)
+    }
   }, [activeUid, runs.data])
 
   const snapshot = run.data
