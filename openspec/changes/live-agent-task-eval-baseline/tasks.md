@@ -57,7 +57,7 @@
 - [x] 8.2 live harness 与生产对齐：提供 `list_documents_fn` 使 `list_document` 工具真实注册（此前域提示提及该工具但 harness 未注册，模型调用报 invalid tool）
 - [x] 8.3 `run_agent_evals` 支持 `trials`（pass^k 全过门控 + 逐试验明细 + 方差归因）与 `on_case_start` / `on_case_result` 进度回调
 - [x] 8.4 内置评测服务与进度前端：`agent/application/evals/run_service.py`（后台线程执行 + 进度注册表 + 报告落盘 data/evals/，单实例并发拒绝）；`api/eval_routes.py`（start/runs/runs/{uid}，信封契约）；web 新增「评测」页面（试验次数选择、逐用例进度表、聚合指标、运行历史切换，轮询快照）
-- [ ] 8.5 （后续）pass^k=3 的全量基线与裁判独立模型对照跑（进行中：`task-completion-live-passk3-20260823.json`，3 并发）
+- [x] 8.5 pass^k=3 全量基线完成（`task-completion-live-passk3-20260823.json` + HTML）：pass^3 5/19（26%）、final 全过 42%、process 全过 63%。方差判决：委派触发在无委派契约的 hybrid 用例上 ~50%/次（真抛硬币）；compare/hybrid_research 每次都委派但仍败于 reviewer 角色从不被派 / 角色名幻觉（`research-analyst` 不在注册表）；web 类用例随 DDG 内容漂移在两轮基线间翻转。对策：域提示枚举合法角色 + 对比/评估类强制 reviewer 核验（已落地）；web 用例标记为已知波动层，冻结检索快照列入 backlog（借鉴 DeepResearchGym）
 - [ ] 8.6 （后续，源自框架调研 docs/references/eval-frameworks-assessment.md）两段式评测：先落原始轨迹再离线 judge，judge 迭代不再重跑 agent 执行
 - [ ] 8.7 （后续）reducer 家族（at_least_n / pass_at_k / pass_k_k）独立成聚合层；错误预算三级语义 + 重试样本分布偏移对照
 
