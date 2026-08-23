@@ -1,13 +1,11 @@
 import argparse
 import json
 import os
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from agent.adapters.llm import create_chat_model
-from agent.adapters.rag import create_project_evidence_retriever
 from agent.application.evals import (
     AgentEvalCase,
     build_trajectory_llm_as_judge,
@@ -16,10 +14,6 @@ from agent.application.evals import (
     select_eval_cases,
 )
 from agent.application.evals.live_harness import LivePaperSageEvalRunner
-from agent.application.turn_engine import execute_turn_core
-from agent.profiles import paper_leader_profile
-from agent.prompts.paper_domain import build_external_research_prompt
-from agent.session_factory import AgentDependencies, AgentRuntimeOptions, create_agent_session
 
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "papers" / "rag_agentic_reasoning"
 
