@@ -59,7 +59,7 @@ def test_research_run_uses_v2_items_for_parts_and_presentation(monkeypatch) -> N
     monkeypatch.setattr(research_workspace.research_workspace_service, "execute_turn", execute_turn)
     research_workspace.execute_research_run(run_uid="run-1", project_uid="project-1", session_uid="session-1", user_uuid="user-1", prompt="梳理结构")
 
-    assert [item["event_type"] for item in items] == ["item.delta", "item.created", "item.delta", "item.delta", "item.delta", "item.delta"]
+    assert [item["event_type"] for item in items] == ["item.delta", "item.created", "item.delta", "item.delta", "item.delta"]
     assert items[1]["item_type"] == "presentation"
     assert items[1]["payload"] == {"partId": "surface-0", "presentation": "a2ui"}
     assert not [event for event in lifecycle if event["event_type"].startswith("message.") or event["event_type"] == "ui.a2ui"]

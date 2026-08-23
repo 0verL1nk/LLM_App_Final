@@ -466,10 +466,9 @@ def execute_research_run(
             metadata: dict[str, Any] = (
                 dict(event["metadata"]) if isinstance(event.get("metadata"), dict) else {}
             )
-            surface = metadata.get("surface") if isinstance(metadata.get("surface"), dict) else None
-            part_id = str(metadata.get("part_id") or "")
-            if surface is not None:
-                _append_surface_events(run_uid=run_uid, surface=surface, part_id=part_id)
+            surface = metadata.get("surface")
+            if isinstance(surface, dict):
+                _append_surface_events(run_uid=run_uid, surface=surface, part_id=str(metadata.get("part_id") or ""))
             return
         item_event = project_runtime_item_event(event)
         if item_event is not None:
@@ -509,18 +508,6 @@ def execute_research_run(
             payload={"message": public_message},
         )
         raise
-    a2ui_surfaces = result.get("a2ui_surfaces") if isinstance(result, dict) else None
-    if isinstance(a2ui_surfaces, list):
-        # Legacy pre-component-parts runs replayed through this worker still
-        # carry ready-built surfaces; new turns store raw fragment content.
-        for surface in a2ui_surfaces:
-            if isinstance(surface, dict):
-                _append_surface_events(
-                    run_uid=run_uid,
-                    surface=surface,
-                    part_id=str(surface.get("partId") or ""),
-                    data_only=True,
-                )
     _complete_response_part_items(run_uid=run_uid, result=result)
     from ..adapters.orm.task_parent_repository import has_nonterminal_child_tasks
 

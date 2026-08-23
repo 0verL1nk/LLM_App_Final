@@ -27,4 +27,4 @@
 - [x] research_run_events:component item.completed 事件断言。
 - [x] 前端:research-map 解析器(完整/截断/不可识别)、component 部件流式归约、
   error 保留、持久化透传。
-- [ ] 全量后端单测与全量 vitest 通过(运行中)。
+- [x] 全量后端单测(365 passed)与全量 vitest(38 passed)通过;债务棘轮内(research_workspace 679/679,test_turn_engine 拆出 test_turn_component_parts)。
