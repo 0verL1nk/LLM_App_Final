@@ -79,7 +79,7 @@ def build_add_paper_to_library_tool(*, project_uid: str, user_uuid: str) -> Base
         url: str,
         title: str,
         tool_call_id: Annotated[str, InjectedToolCallId] = "",
-        state: Annotated[dict[str, Any], InjectedState] = None,
+        state: Annotated[dict[str, Any] | None, InjectedState] = None,
     ):
         """Ingest one paper PDF; returns a Command so the result stays in message flow."""
         from langgraph.types import Command
