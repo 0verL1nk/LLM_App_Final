@@ -15,6 +15,7 @@ from agent.application.evals import (
     run_agent_evals,
     select_eval_cases,
 )
+from agent.application.evals.live_harness import LivePaperSageEvalRunner
 from agent.application.turn_engine import execute_turn_core
 from agent.profiles import paper_leader_profile
 from agent.prompts.paper_domain import build_external_research_prompt
@@ -73,89 +74,6 @@ def _load_project_documents(max_chars_per_doc: int = 30000) -> list[dict[str, st
     return docs
 
 
-def _normalized_document_access(case: AgentEvalCase) -> str:
-    raw_access = case.metadata.get("document_access", "scoped")
-    normalized = str(raw_access or "scoped").strip().lower()
-    return "none" if normalized == "none" else "scoped"
-
-
-def _normalized_document_scope(case: AgentEvalCase) -> list[str]:
-    raw_scope = case.metadata.get("document_scope")
-    if not isinstance(raw_scope, list):
-        return []
-    scope: list[str] = []
-    for item in raw_scope:
-        value = str(item or "").strip()
-        if value:
-            scope.append(value)
-    return scope
-
-
-def build_case_document_context(
-    case: AgentEvalCase,
-    documents: list[dict[str, str]],
-) -> dict[str, Any]:
-    access_mode = _normalized_document_access(case)
-    if access_mode == "none":
-        return {
-            "document_access": "none",
-            "documents": [],
-            "document_name": None,
-            "scope_summary": "当前会话不提供项目文档，仅允许外部检索。",
-            "search_document_fn": None,
-            "search_document_evidence_fn": None,
-        }
-
-    requested_scope = _normalized_document_scope(case)
-    documents_by_uid = {
-        str(item.get("doc_uid") or "").strip(): item
-        for item in documents
-        if isinstance(item, dict) and str(item.get("doc_uid") or "").strip()
-    }
-    if requested_scope:
-        missing = [doc_uid for doc_uid in requested_scope if doc_uid not in documents_by_uid]
-        if missing:
-            raise ValueError(
-                f"Eval case '{case.case_id}' requested unknown document_scope entries: {missing}"
-            )
-        scoped_documents = [documents_by_uid[doc_uid] for doc_uid in requested_scope]
-    else:
-        scoped_documents = list(documents)
-
-    retriever = create_project_evidence_retriever(
-        documents=scoped_documents,
-        project_uid=f"task-completion-live-smoke:{case.case_id}",
-    )
-
-    def _search_document(query: str) -> str:
-        payload = retriever(query)
-        evidences = payload.get("evidences") if isinstance(payload, dict) else []
-        if not isinstance(evidences, list):
-            return ""
-        return "\n".join(
-            str(item.get("text") or "")
-            for item in evidences
-            if isinstance(item, dict) and str(item.get("text") or "").strip()
-        )
-
-    doc_names = [str(item.get("doc_name") or item.get("doc_uid") or "").strip() for item in scoped_documents]
-    preview_names = [item for item in doc_names if item][:3]
-    preview = ", ".join(preview_names)
-    if len(doc_names) > 3:
-        preview = f"{preview} 等 {len(doc_names)} 篇文档"
-    scope_summary = preview or f"仅限项目内 {len(scoped_documents)} 篇文档"
-    document_name = scoped_documents[0]["doc_name"] if len(scoped_documents) == 1 else None
-
-    return {
-        "document_access": "scoped",
-        "documents": scoped_documents,
-        "document_name": document_name,
-        "scope_summary": scope_summary,
-        "search_document_fn": _search_document,
-        "search_document_evidence_fn": retriever,
-    }
-
-
 def _build_live_llm() -> Any:
     api_key = str(os.getenv("OPENAI_API_KEY") or "").strip()
     model_name = str(os.getenv("OPENAI_MODEL_NAME") or "").strip()
@@ -177,45 +95,6 @@ def _build_live_llm() -> Any:
         base_url=base_url,
         temperature=0.0,
     )
-
-
-@dataclass(frozen=True)
-class LivePaperSageEvalRunner:
-    llm: Any
-    documents: list[dict[str, str]]
-    project_name: str
-
-    def __call__(self, case: AgentEvalCase) -> dict[str, Any]:
-        context = build_case_document_context(case, self.documents)
-        document_access = str(context["document_access"])
-        system_prompt = None
-        if document_access == "none":
-            system_prompt = build_external_research_prompt(
-                project_name=self.project_name,
-                scope_summary=str(context["scope_summary"]),
-            )
-        session = create_agent_session(
-            profile=paper_leader_profile,
-            deps=AgentDependencies(
-                search_document_fn=context["search_document_fn"],
-                search_document_evidence_fn=context["search_document_evidence_fn"],
-                document_access=document_access,
-            ),
-            options=AgentRuntimeOptions(
-                llm=self.llm,
-                project_name=self.project_name,
-                scope_summary=str(context["scope_summary"]),
-                document_name=context["document_name"],
-                system_prompt=system_prompt,
-            ),
-        )
-        return execute_turn_core(
-            prompt=case.prompt,
-            leader_agent=session.agent,
-            leader_runtime_config=session.runtime_config,
-            search_document_evidence_fn=context["search_document_evidence_fn"],
-            leader_tool_specs=session.tool_specs,
-        )
 
 
 def _default_output_path() -> Path:
