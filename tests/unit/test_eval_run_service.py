@@ -94,6 +94,24 @@ def test_run_agent_evals_trials_gate_on_all_trials_passing() -> None:
     assert "trial variance" in flaky["feedback"]["failure_reason"]
 
 
+def test_run_agent_evals_parallel_keeps_fixture_order_and_reports_all_callbacks() -> None:
+    events: list[tuple[str, str]] = []
+    report = run_agent_evals(
+        [_case("a"), _case("b"), _case("c")],
+        runner=_StaticRunner(),
+        judge=_passing_judge,
+        parallel=2,
+        on_case_start=lambda case_id: events.append(("start", case_id)),
+        on_case_result=lambda case_id, _result: events.append(("result", case_id)),
+    )
+
+    assert report["completed_cases"] == 3
+    assert [case["case_id"] for case in report["cases"]] == ["a", "b", "c"]
+    assert sorted(events) == sorted(
+        [("start", key) for key in "abc"] + [("result", key) for key in "abc"]
+    )
+
+
 def test_eval_service_runs_to_completion_with_injected_factories() -> None:
     service = TaskCompletionEvalService(
         runner_factory=_StaticRunner,

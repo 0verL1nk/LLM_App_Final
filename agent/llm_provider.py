@@ -94,6 +94,9 @@ def _provider_supports_reasoning_effort(base_url: str) -> bool:
     return _provider_host(base_url) == "api.openai.com"
 
 
+OPENAI_COMPATIBLE_MAX_RETRIES = 4
+
+
 def _thinking_extra_body(
     base_url: str,
     model_name: str,
@@ -174,5 +177,8 @@ def build_openai_compatible_chat_model(
         timeout=resolved_timeout,
         reasoning_effort=resolved_reasoning,
         extra_body=resolved_extra_body,
+        # SDK-level exponential backoff (honors Retry-After) for 429/5xx; the
+        # agent path adds ModelRetry middleware on top of this.
+        max_retries=OPENAI_COMPATIBLE_MAX_RETRIES,
         profile={"max_input_tokens": max_input_tokens},
     )

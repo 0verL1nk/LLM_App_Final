@@ -253,6 +253,18 @@ def main() -> int:
         help="Optional max number of cases to run after filtering. Defaults to 1; 0 runs all cases.",
     )
     parser.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="Trials per case; >1 enables pass^k gating (a case passes only if all trials pass).",
+    )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Concurrent cases; results stay in fixture order.",
+    )
+    parser.add_argument(
         "--judge-model",
         default="",
         help="Optional judge model override; defaults to OPENAI_MODEL_NAME (same as agent).",
@@ -306,6 +318,8 @@ def main() -> int:
         runner=runner,
         judge=judge,
         fixture_path=str(fixture_path),
+        trials=max(1, int(args.repeat)),
+        parallel=max(1, int(args.parallel)),
         run_config={
             "runner_mode": "live_model",
             "agent_model": str(os.getenv("OPENAI_MODEL_NAME") or ""),
