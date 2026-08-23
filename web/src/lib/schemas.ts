@@ -140,6 +140,24 @@ export const steeringInputSchema = z.object({
   status: z.string(),
 })
 
+export const skillSchema = z.object({
+  name: z.string(),
+  description: z.string().default(""),
+})
+
+export const compactStatsSchema = z.object({
+  compacted: z.boolean(),
+  messages_before: z.number(),
+  messages_after: z.number(),
+  tokens_before: z.number(),
+  tokens_after: z.number(),
+})
+
+export const sessionCommandResultSchema = z.object({
+  message: messageSchema,
+  stats: compactStatsSchema.nullable(),
+})
+
 export const researchArtifactSchema = z.object({
   artifact_uid: z.string(),
   run_uid: z.string(),
@@ -159,4 +177,6 @@ export type TurnResult = z.infer<typeof turnResultSchema>
 export type AgentEvent = z.infer<typeof agentEventSchema>
 export type Run = z.infer<typeof runSchema>
 export type SteeringInput = z.infer<typeof steeringInputSchema>
+export type Skill = z.infer<typeof skillSchema>
+export type SessionCommandResult = z.infer<typeof sessionCommandResultSchema>
 export type ResearchArtifact = z.infer<typeof researchArtifactSchema>

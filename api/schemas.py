@@ -37,6 +37,11 @@ class SteeringInputCreate(TurnCreate):
     client_request_id: str = Field(min_length=8, max_length=200)
 
 
+class SessionCommandCreate(BaseModel):
+    command: str = Field(min_length=1, max_length=64)
+    args: str = Field(default="", max_length=8000)
+
+
 class MemoryItemWrite(BaseModel):
     title: str = Field(default="", max_length=240)
     content: str = Field(min_length=1, max_length=4000)
