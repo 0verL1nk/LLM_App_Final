@@ -39,12 +39,54 @@ def test_consecutive_human_messages_merge_into_one_turn() -> None:
 def test_alternating_history_passes_through_untouched() -> None:
     messages = [
         HumanMessage(content="第一问"),
-        AIMessage(content="第一答"),
+        AIMessage(content="", tool_calls=[{"name": "search", "args": {}, "id": "c1"}]),
         ToolMessage(content="tool", tool_call_id="c1"),
+        AIMessage(content="第一答"),
         HumanMessage(content="第二问"),
     ]
 
     assert sanitize_messages_for_provider(messages) == messages
+
+
+def test_orphaned_tool_messages_are_dropped() -> None:
+    sanitized = sanitize_messages_for_provider(
+        [
+            HumanMessage(content='你好'),
+            ToolMessage(content='{}', tool_call_id='orphan-1'),
+            ToolMessage(content='{}', tool_call_id='orphan-2'),
+            HumanMessage(content='继续'),
+        ]
+    )
+
+    assert [type(m).__name__ for m in sanitized] == ['HumanMessage']
+    assert '你好' in sanitized[0].content and '继续' in sanitized[0].content
+
+
+def test_matched_tool_call_pairs_survive_including_multiples() -> None:
+    ai_with_calls = AIMessage(
+        content='',
+        tool_calls=[
+            {'name': 'search_document', 'args': {'query': 'a'}, 'id': 'call-1'},
+            {'name': 'search_document', 'args': {'query': 'b'}, 'id': 'call-2'},
+        ],
+    )
+    sanitized = sanitize_messages_for_provider(
+        [
+            HumanMessage(content='查一下'),
+            ai_with_calls,
+            ToolMessage(content='r1', tool_call_id='call-2'),
+            ToolMessage(content='r2', tool_call_id='call-1'),
+            AIMessage(content='结论'),
+        ]
+    )
+
+    assert [type(m).__name__ for m in sanitized] == [
+        'HumanMessage',
+        'AIMessage',
+        'ToolMessage',
+        'ToolMessage',
+        'AIMessage',
+    ]
 
 
 def test_hygiene_middleware_is_wired_into_the_default_stack() -> None:

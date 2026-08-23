@@ -22,13 +22,36 @@ _FAILURE_ARTIFACT_PREFIX = "Model call failed after"
 
 
 def sanitize_messages_for_provider(messages: list[Any]) -> list[Any]:
-    """Drop failure artifacts and merge consecutive same-role human turns."""
+    """Drop failure artifacts, orphaned tool turns, and merged human runs.
+
+    A tool message is only valid when the message right before it is an ai
+    message carrying the matching tool_call_id; mid-stream failures and
+    manual history surgery both leave orphans behind, and strict providers
+    (MiniMax 2013, seen live) reject the whole request for them.
+    """
     cleaned: list[Any] = []
+    open_call_ids: set[str] = set()
     for message in messages:
-        if getattr(message, "type", "") == "ai" and str(
+        kind = getattr(message, "type", "")
+        if kind == "ai" and str(
             getattr(message, "content", "") or ""
         ).startswith(_FAILURE_ARTIFACT_PREFIX):
             continue
+        if kind == "tool":
+            call_id = str(getattr(message, "tool_call_id", "") or "")
+            if call_id not in open_call_ids:
+                continue
+            open_call_ids.discard(call_id)
+            cleaned.append(message)
+            continue
+        if kind == "ai":
+            open_call_ids = {
+                str(call.get("id") or "")
+                for call in (getattr(message, "tool_calls", None) or [])
+                if isinstance(call, dict) and str(call.get("id") or "")
+            }
+        else:
+            open_call_ids = set()
         cleaned.append(message)
     merged: list[Any] = []
     for message in cleaned:

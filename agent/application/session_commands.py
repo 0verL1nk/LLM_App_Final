@@ -23,7 +23,7 @@ from ..adapters.user_settings import (
     read_base_url_for_user,
     read_model_name_for_user,
 )
-from ..context_governance import estimate_message_tokens
+from ..context_governance import build_context_usage_snapshot, estimate_message_tokens
 from ..llm_provider import build_openai_compatible_chat_model
 from ..skills.loader import discover_available_skills
 from .workspace import require_project
@@ -324,7 +324,13 @@ def _execute_compact(*, project_uid: str, session_uid: str, user_uuid: str, args
     final_messages = [
         *kept_messages,
         {"role": "user", "content": user_text},
-        {"role": "assistant", "content": confirmation},
+        {
+            "role": "assistant",
+            "content": confirmation,
+            # The composer's context card reads the newest assistant message;
+            # without a fresh snapshot the indicator disappears after compact.
+            "context_snapshot": build_context_usage_snapshot(messages=kept_messages),
+        },
     ]
     save_project_session_messages(
         session_uid=session_uid, project_uid=project_uid, uuid=user_uuid, messages=final_messages
