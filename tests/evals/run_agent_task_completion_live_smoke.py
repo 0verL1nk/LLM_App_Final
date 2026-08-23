@@ -249,8 +249,8 @@ def main() -> int:
     parser.add_argument(
         "--limit",
         type=int,
-        default=1,
-        help="Optional max number of cases to run after filtering. Defaults to 1; 0 runs all cases.",
+        default=0,
+        help="Optional max number of cases to run after filtering. 0 (default) runs all selected cases.",
     )
     parser.add_argument(
         "--repeat",

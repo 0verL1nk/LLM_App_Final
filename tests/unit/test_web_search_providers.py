@@ -8,7 +8,11 @@ def _reset_clients(monkeypatch) -> None:
 
 
 def _fake_response(status_code: int, payload: dict) -> SimpleNamespace:
-    return SimpleNamespace(status_code=status_code, json=lambda: payload)
+    return SimpleNamespace(
+        status_code=status_code,
+        headers={},
+        json=lambda: payload,
+    )
 
 
 FIRECRAWL_OK_PAYLOAD = {
@@ -139,3 +143,66 @@ def test_searxng_off_alias_also_disables(monkeypatch):
     monkeypatch.setenv("AGENT_SEARXNG_BASE_URLS", "off")
 
     assert web_search._parse_searxng_instances() == []
+
+
+def test_firecrawl_run_retries_429_with_backoff_then_succeeds(monkeypatch):
+    _reset_clients(monkeypatch)
+    calls = {"count": 0}
+    delays: list[float] = []
+
+    class _FakeResponse:
+        def __init__(self, status_code: int, headers: dict[str, str] | None = None):
+            self.status_code = status_code
+            self.headers = headers or {}
+
+        def json(self):
+            return {"data": {"web": [{"title": "t", "url": "https://a", "description": "d"}]}}
+
+    def _fake_post(url, json=None, headers=None, timeout=None):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return _FakeResponse(429, {"Retry-After": "3"})
+        return _FakeResponse(200)
+
+    monkeypatch.setattr(web_search.httpx, "post", _fake_post)
+    monkeypatch.setattr(web_search.time, "sleep", delays.append)
+    monkeypatch.delenv("FIRECRAWL_API_KEY", raising=False)
+    monkeypatch.setenv("AGENT_WEB_FIRECRAWL_ENABLED", "1")
+
+    client = web_search._build_firecrawl_web_search_client()
+    result = client.run("Self-RAG 最新进展")
+
+    assert calls["count"] == 2
+    assert delays == [3.0]
+    assert "https://a" in result
+
+
+def test_firecrawl_run_raises_after_exhausted_429_retries(monkeypatch):
+    _reset_clients(monkeypatch)
+    calls = {"count": 0}
+    delays: list[float] = []
+
+    class _FakeResponse:
+        status_code = 429
+        headers: dict[str, str] = {}
+
+    def _fake_post(url, json=None, headers=None, timeout=None):
+        calls["count"] += 1
+        return _FakeResponse()
+
+    monkeypatch.setattr(web_search.httpx, "post", _fake_post)
+    monkeypatch.setattr(web_search.time, "sleep", delays.append)
+    monkeypatch.delenv("FIRECRAWL_API_KEY", raising=False)
+    monkeypatch.setenv("AGENT_WEB_FIRECRAWL_ENABLED", "1")
+
+    client = web_search._build_firecrawl_web_search_client()
+
+    try:
+        client.run("Self-RAG 最新进展")
+    except RuntimeError as exc:
+        assert "status=429" in str(exc)
+    else:
+        raise AssertionError("Expected RuntimeError after exhausted retries")
+
+    assert calls["count"] == web_search.FIRECRAWL_RETRY_MAX_ATTEMPTS
+    assert delays == [2.0, 4.0]

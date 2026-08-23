@@ -2,6 +2,7 @@
 import logging
 import os
 import re
+import time
 from typing import Any
 from urllib.parse import quote
 
@@ -205,6 +206,13 @@ def _build_native_web_search_client():
     return _NativeDuckDuckGoSearch()
 
 
+# Firecrawl 429 retry: exponential backoff (2s -> 4s -> 8s), honoring a
+# larger server-provided Retry-After when present.
+FIRECRAWL_RETRY_MAX_ATTEMPTS = 3
+FIRECRAWL_RETRY_INITIAL_DELAY_SECONDS = 2.0
+FIRECRAWL_RETRY_MIN_DELAY_SECONDS = 1.0
+
+
 def _build_firecrawl_web_search_client():
     """Firecrawl /v2/search provider.
 
@@ -230,14 +238,22 @@ def _build_firecrawl_web_search_client():
             }
             if self.api_key:
                 headers["Authorization"] = f"Bearer {self.api_key}"
-            response = httpx.post(
-                self.search_url,
-                json={"query": query, "limit": DEFAULT_WEB_MAX_RESULTS},
-                headers=headers,
-                timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
-            )
-            if response.status_code >= 400:
-                raise RuntimeError(f"firecrawl status={response.status_code}")
+            body = {"query": query, "limit": DEFAULT_WEB_MAX_RESULTS}
+            response = None
+            for attempt in range(1, FIRECRAWL_RETRY_MAX_ATTEMPTS + 1):
+                response = httpx.post(
+                    self.search_url,
+                    json=body,
+                    headers=headers,
+                    timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
+                )
+                if response.status_code < 400:
+                    break
+                if response.status_code != 429:
+                    raise RuntimeError(f"firecrawl status={response.status_code}")
+                if attempt == FIRECRAWL_RETRY_MAX_ATTEMPTS:
+                    raise RuntimeError(f"firecrawl status={response.status_code}")
+                time.sleep(self._retry_delay(attempt, response))
             payload = response.json()
             data_block = payload.get("data") if isinstance(payload, dict) else None
             results = data_block.get("web") if isinstance(data_block, dict) else None
@@ -247,6 +263,16 @@ def _build_firecrawl_web_search_client():
                 url_key="url",
                 snippet_key="description",
             )
+
+        @staticmethod
+        def _retry_delay(attempt: int, response: Any) -> float:
+            retry_after = response.headers.get("Retry-After")
+            if retry_after:
+                try:
+                    return max(FIRECRAWL_RETRY_MIN_DELAY_SECONDS, float(retry_after))
+                except ValueError:
+                    pass
+            return FIRECRAWL_RETRY_INITIAL_DELAY_SECONDS * (2 ** (attempt - 1))
 
     return _FirecrawlWebSearch(api_key, search_url)
 

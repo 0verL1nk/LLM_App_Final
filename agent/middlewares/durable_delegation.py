@@ -39,7 +39,10 @@ class DurableDelegationMiddleware(AgentMiddleware):
             "evidence gathering (per-document analysis, multi-source synthesis) or an "
             "independent review pass. When subtasks are independent, emit multiple "
             "delegate_task calls in the SAME turn so they run concurrently; the runtime "
-            "joins their results asynchronously. Do not delegate recursively and do not "
+            "joins their results asynchronously. For comparison or adoption-decision "
+            "tasks, the same-turn fan-out MUST include one reviewer delegation to "
+            "verify the collected evidence - researcher-only fan-outs are incomplete. "
+            "Do not delegate recursively and do not "
             "delegate trivial single-lookup work.\n\nAvailable roles:\n" + available
         )
         self.tools = [self._build_tool()]
