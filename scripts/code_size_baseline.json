@@ -9,7 +9,6 @@
     "tools/mindmap-cli/main.go": 589,
     "utils/utils.py": 1772,
     "web/src/components/ai-elements/code-block.tsx": 562,
-    "web/src/components/ai-elements/prompt-input.tsx": 1466,
-    "web/src/pages/research-page.tsx": 588
+    "web/src/components/ai-elements/prompt-input.tsx": 1466
   }
 }
