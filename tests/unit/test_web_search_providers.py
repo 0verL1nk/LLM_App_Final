@@ -206,7 +206,7 @@ def test_firecrawl_run_raises_after_exhausted_429_retries(monkeypatch):
         raise AssertionError("Expected RuntimeError after exhausted retries")
 
     assert calls["count"] == web_search.FIRECRAWL_RETRY_MAX_ATTEMPTS
-    assert delays == [2.0, 4.0, 8.0, 16.0]
+    assert delays == [2.0, 4.0, 8.0] + [10.0] * (web_search.FIRECRAWL_RETRY_MAX_ATTEMPTS - 4)
 
 
 class _FlakyProvider:
