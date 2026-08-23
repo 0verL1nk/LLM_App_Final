@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.0](https://github.com/0verL1nk/PaperSage/compare/v1.10.2...v1.11.0) (2026-08-23)
+
+
+### Features
+
+* **desktop:** resilient update checks with mirror fallback and visible failures ([#157](https://github.com/0verL1nk/PaperSage/issues/157)) ([63876a9](https://github.com/0verL1nk/PaperSage/commit/63876a9285baa987a9b19bf55611b3d458026f03))
+
+
+### Performance Improvements
+
+* **desktop:** defer lancedb, fastembed and langchain_community out of startup ([#158](https://github.com/0verL1nk/PaperSage/issues/158)) ([c552421](https://github.com/0verL1nk/PaperSage/commit/c5524219f144480bee9393e86dce881db90419d3))
+
 ## [1.10.2](https://github.com/0verL1nk/PaperSage/compare/v1.10.1...v1.10.2) (2026-08-23)
 
 
