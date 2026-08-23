@@ -34,6 +34,20 @@ def project_runtime_item_event(event: dict[str, Any]) -> dict[str, Any] | None:
     metadata = dict(event["metadata"]) if isinstance(event.get("metadata"), dict) else {}
     if performative == "answer_part_delta":
         part_id = str(metadata.get("part_id") or "text-0")
+        if metadata.get("part_type") == "component":
+            return _item_event(
+                item_uid=f"item_component_{part_id}",
+                item_type="component",
+                status="in_progress",
+                event_type="item.delta",
+                payload={
+                    "partId": part_id,
+                    "component": str(metadata.get("component") or "research-map"),
+                    "state": str(metadata.get("part_state") or "streaming"),
+                    "delta": _safe_text(event.get("content") or ""),
+                    **({"error": _safe_text(metadata.get("error") or "")} if metadata.get("error") else {}),
+                },
+            )
         item_type = "reasoning_summary" if part_id.startswith("reasoning-") else "assistant_message"
         return _item_event(
             item_uid=f"item_{item_type}_{part_id}",
@@ -45,8 +59,20 @@ def project_runtime_item_event(event: dict[str, Any]) -> dict[str, Any] | None:
     if performative == "answer_part_insert":
         part_id = str(metadata.get("part_id") or "").strip()
         part_type = str(metadata.get("part_type") or "")
-        if not part_id or part_type not in {"reasoning", "a2ui"}:
+        if not part_id or part_type not in {"reasoning", "a2ui", "component"}:
             return None
+        if part_type == "component":
+            return _item_event(
+                item_uid=f"item_component_{part_id}",
+                item_type="component",
+                status="in_progress",
+                event_type="item.created",
+                payload={
+                    "partId": part_id,
+                    "component": str(metadata.get("component") or "research-map"),
+                    "state": "streaming",
+                },
+            )
         item_type = "reasoning_summary" if part_type == "reasoning" else "presentation"
         return _item_event(
             item_uid=f"item_{item_type}_{part_id}",

@@ -4,7 +4,11 @@ import httpx
 import pytest
 
 from agent.capabilities import build_capability_tools
-from agent.scholarly_search import ScholarlySearchError, download_paper_pdf, fetch_semantic_scholar_citations
+from agent.scholarly_search import (
+    ScholarlySearchError,
+    download_paper_pdf,
+    fetch_semantic_scholar_citations,
+)
 from agent.subagent.loader import load_subagent_definitions
 from agent.tools import paper_library
 from agent.tools.paper_library import build_add_paper_to_library_tool, get_paper_citations

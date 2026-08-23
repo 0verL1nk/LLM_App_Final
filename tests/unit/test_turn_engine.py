@@ -100,36 +100,6 @@ def test_execute_turn_core_streams_provider_thinking_as_a_separate_part() -> Non
     ]
 
 
-def test_execute_turn_core_keeps_markdown_answer_with_inline_ui_surface() -> None:
-    from types import SimpleNamespace
-    from unittest.mock import Mock
-
-    mock_agent = Mock()
-    mock_agent.invoke.return_value = {
-        "messages": [
-            SimpleNamespace(
-                content='结论来自文档。<evidence>chunk-1|p1|o0-10</evidence>\n<ui type="research-map"><map title="方法结构"><node label="论文"><evidence ref="chunk-1" /></node></map></ui>',
-                tool_calls=[
-                    {"name": "search_document", "args": {"query": "方法"}},
-                ],
-            )
-        ]
-    }
-
-    result = execute_turn_core(
-        prompt="梳理方法",
-        leader_agent=mock_agent,
-        leader_runtime_config={},
-        search_document_evidence_fn=lambda _query: {
-            "evidences": [{"chunk_id": "chunk-1", "text": "证据文本", "page_no": 1}]
-        },
-    )
-
-    assert result["answer"].startswith("结论来自文档")
-    assert result["a2ui_surface"]["title"] == "方法结构"
-    assert result["a2ui_surface"]["mindmap"]["citation_ids"] == ["chunk-1"]
-
-
 def test_execute_turn_core_without_document_rag_skips_evidence():
     from unittest.mock import Mock
 
@@ -159,7 +129,6 @@ def test_execute_turn_core_without_document_rag_skips_evidence():
     assert called["evidence"] == 0
     assert result["used_document_rag"] is False
     assert result["evidence_items"] == []
-    assert result["mindmap_data"] is None or isinstance(result["mindmap_data"], dict)
 
 
 def test_execute_turn_core_uses_search_document_tool_result_evidence_without_reretrieval():

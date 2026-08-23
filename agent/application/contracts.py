@@ -20,9 +20,8 @@ class TurnCoreResult(TypedDict):
     trace_payload: list[TraceEvent]
     evidence_items: list[dict[str, Any]]
     retrieved_evidence_items: NotRequired[list[dict[str, Any]]]
-    mindmap_data: dict[str, Any] | None
-    a2ui_surface: NotRequired[dict[str, Any] | None]
-    a2ui_surfaces: NotRequired[list[dict[str, Any]]]
+    # UI fragments ride as component parts (content-only, rendered client
+    # side); the server no longer builds presentation surfaces.
     response_parts: NotRequired[list[dict[str, str]]]
     method_compare_data: dict[str, Any] | None
     run_latency_ms: float

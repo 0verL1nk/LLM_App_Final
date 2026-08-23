@@ -79,13 +79,14 @@ def build_add_paper_to_library_tool(*, project_uid: str, user_uuid: str) -> Base
         url: str,
         title: str,
         tool_call_id: Annotated[str, InjectedToolCallId] = "",
-        state: Annotated[dict[str, Any], InjectedState] = None,
+        state: Annotated[dict[str, Any] | None, InjectedState] = None,
     ):
         """Ingest one paper PDF; returns a Command so the result stays in message flow."""
         from langgraph.types import Command
 
-        from ..application.document_library import upload_project_document
         from utils.task_queue import enqueue_background_task
+
+        from ..application.document_library import upload_project_document
 
         safe_title = " ".join(title.split())[:200] or "paper"
         file_name = f"{safe_title}.pdf"
