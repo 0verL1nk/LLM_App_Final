@@ -360,7 +360,7 @@ def test_ingestion_reports_real_embedding_batches_and_publishes_atomically(
         def embed_query(self, _query):
             return [1.0, 10.0]
 
-    monkeypatch.setattr("agent.rag.fastembed_runtime.FastEmbedEmbeddings", _Embeddings)
+    monkeypatch.setattr("langchain_community.embeddings.fastembed.FastEmbedEmbeddings", _Embeddings)
     monkeypatch.setenv("AGENT_PROJECT_INDEX_CACHE_DIR", str(tmp_path / "indexes"))
     monkeypatch.setenv("LOCAL_RAG_CHUNK_SIZE", "12")
     monkeypatch.setenv("LOCAL_RAG_CHUNK_OVERLAP", "0")

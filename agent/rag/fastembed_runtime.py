@@ -2,8 +2,11 @@
 
 import shutil
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+if TYPE_CHECKING:
+    from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+
 
 
 def _is_missing_model_error(exc: BaseException) -> bool:
@@ -16,7 +19,9 @@ def _model_cache_dir(cache_dir: str, model_name: str) -> Path:
     return Path(cache_dir) / f"models--{org}--{name}"
 
 
-def build_fastembed_embeddings(*, model_name: str, cache_dir: str) -> FastEmbedEmbeddings:
+def build_fastembed_embeddings(*, model_name: str, cache_dir: str) -> "FastEmbedEmbeddings":
+    # Deferred for startup cost; see agent/embedding_provider.py.
+    from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
     try:
         return FastEmbedEmbeddings(model_name=model_name, cache_dir=cache_dir)
     except Exception as exc:

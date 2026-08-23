@@ -6,7 +6,6 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
-from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
@@ -239,6 +238,9 @@ def _ensure_web_search_clients() -> list[tuple[str, Any]]:
                 logger.info("tool.search_web provider fallback initialized: native_duckduckgo_search")
             else:
                 try:
+                    # langchain_community import costs seconds; pay it on use only.
+                    from langchain_community.tools import DuckDuckGoSearchRun
+
                     native_client = DuckDuckGoSearchRun()
                     clients.append(("langchain_duckduckgo_search", native_client))
                     logger.info("tool.search_web provider fallback initialized: langchain_duckduckgo_search")
