@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from langchain_core.exceptions import OutputParserException
+from openai import BadRequestError
 from pydantic import BaseModel, Field
 
 from ...llm_provider import invoke_structured_model
@@ -224,6 +225,18 @@ def build_trajectory_llm_as_judge(
                 )
             state["prefer_fallback"] = True
             return _fallback_verdict(case, outputs, reference_outputs)
+        except BadRequestError as exc:
+            # Provider rejects the protocol-level response_format schema
+            # (e.g. official DeepSeek "response_format type is unavailable"):
+            # switch this judge instance to the prompt-level structured path.
+            if fallback_llm is None:
+                return FinalAnswerJudgeResult(
+                    passed=False,
+                    score=0.0,
+                    reasoning=f"judge_bad_request: {exc}",
+                )
+            state["prefer_fallback"] = True
+            return _fallback_verdict(case, outputs, reference_outputs)
         if not isinstance(result, dict):
             raise TypeError("Trajectory judge returned a non-dict result.")
 
@@ -234,3 +247,4 @@ def build_trajectory_llm_as_judge(
         )
 
     return _judge
+
