@@ -100,12 +100,14 @@ function WorkspaceSidebar({
           </Button>
         )}
         <CreateProjectDialog />
-        <Button variant="ghost" className="w-full justify-start" asChild>
-          <Link to="/evals">
-            <FlaskConical />
-            评测
-          </Link>
-        </Button>
+        {import.meta.env.DEV && (
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/evals">
+              <FlaskConical />
+              评测
+            </Link>
+          </Button>
+        )}
       </nav>
       {currentProject && (
         <>

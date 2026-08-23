@@ -23,7 +23,16 @@ const researchRoute = createRoute({ getParentRoute: () => rootRoute, path: "/pro
 const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/settings", component: lazyRouteComponent(() => import("@/pages/settings-page"), "SettingsPage") })
 const evalsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/evals", component: lazyRouteComponent(() => import("@/pages/evals-page"), "EvalsPage") })
 
-const routeTree = rootRoute.addChildren([indexRoute, projectsRoute, projectRoute, libraryRoute, researchRoute, settingsRoute, evalsRoute])
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  projectsRoute,
+  projectRoute,
+  libraryRoute,
+  researchRoute,
+  settingsRoute,
+  // Dev-only tooling routes: excluded from production builds.
+  ...(import.meta.env.DEV ? [evalsRoute] : []),
+])
 export const router = createRouter({ routeTree, defaultPreload: "intent", scrollRestoration: true })
 
 declare module "@tanstack/react-router" {
