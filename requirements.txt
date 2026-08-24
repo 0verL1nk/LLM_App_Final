@@ -76,7 +76,7 @@ charset-normalizer==3.4.5
     #   requests
 chroma-hnswlib==0.7.6
     # via chromadb
-chromadb==0.6.3
+chromadb==1.5.9
     # via
     #   paper-sage (pyproject.toml)
     #   langchain-chroma
