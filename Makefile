@@ -176,3 +176,6 @@ eval-report: ## Render a baseline JSON into a self-contained HTML report. EVAL_R
 
 db-schema: ## Regenerate docs/generated/db-schema.md.
 	$(PYTHON) scripts/generate_db_schema.py
+
+eval-judge-agreement: ## Compare two eval reports' judge verdicts. EVAL_A=<json> EVAL_B=<json>.
+	$(PYTHON) scripts/eval_judge_agreement.py $(EVAL_A) $(EVAL_B)
