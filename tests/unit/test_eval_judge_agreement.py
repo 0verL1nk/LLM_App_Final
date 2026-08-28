@@ -1,7 +1,6 @@
 from scripts.eval_judge_agreement import build_agreement
 
 
-
 def _report(finals: dict[str, bool]) -> dict:
     return {
         "run_config": {"judge_model": "j"},

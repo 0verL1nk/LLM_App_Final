@@ -34,6 +34,8 @@ def test_firecrawl_client_enabled_by_default_without_key(monkeypatch):
     _reset_clients(monkeypatch)
     monkeypatch.delenv("AGENT_WEB_FIRECRAWL_ENABLED", raising=False)
     monkeypatch.delenv("FIRECRAWL_API_KEY", raising=False)
+    # Keep the test hermetic: never fall back to a developer's local .env key.
+    monkeypatch.setattr(web_search, "_load_secret", lambda name: "")
 
     client = web_search._build_firecrawl_web_search_client()
 
@@ -56,6 +58,7 @@ def test_firecrawl_run_sends_keyless_request_and_parses_data_web(monkeypatch):
 
     monkeypatch.setattr(web_search.httpx, "post", fake_post)
     monkeypatch.delenv("FIRECRAWL_API_KEY", raising=False)
+    monkeypatch.setattr(web_search, "_load_secret", lambda name: "")
     client = web_search._build_firecrawl_web_search_client()
 
     rendered = client.run("Self-RAG")

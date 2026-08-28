@@ -8,6 +8,10 @@ from typing import Literal
 ExecutionMode = Literal["auto", "react", "plan_execute", "agent_teams"]
 ResolvedExecutionMode = Literal["react", "plan_execute", "agent_teams"]
 
+# Structural escalation threshold: at least this many READY (retrievable)
+# documents in the project escalates auto runs to the planning profile.
+MULTI_DOCUMENT_PLAN_THRESHOLD = 2
+
 
 @dataclass(frozen=True)
 class ExecutionRoute:
@@ -18,22 +22,35 @@ class ExecutionRoute:
     reason: str
 
 
-def resolve_execution_route(*, prompt: str, requested_mode: str) -> ExecutionRoute:
-    """Resolve a bounded mode without an LLM preflight or legacy interceptor."""
+def resolve_execution_route(
+    *,
+    prompt: str,
+    requested_mode: str,
+    document_count: int = 0,
+) -> ExecutionRoute:
+    """Resolve a bounded mode from structural signals only.
+
+    The prompt is accepted for audit context but never parsed: keyword tables
+    and length thresholds are pseudo-intelligence (behavior that looks like
+    judgment but is string matching) and are deliberately absent. agent_teams
+    is never auto-assigned - recursive delegation capability requires explicit
+    user selection.
+    """
     requested = str(requested_mode or "auto").strip().lower()
     if requested in {"react", "plan_execute", "agent_teams"}:
         return ExecutionRoute(requested, requested, "user_selected")  # type: ignore[arg-type]
     if requested != "auto":
         return ExecutionRoute("auto", "react", "invalid_override_fallback")
 
-    text = " ".join(str(prompt or "").lower().split())
-    team_markers = ("对比", "比较", "审查", "review", "compare", "多个论文", "多篇", "分别")
-    plan_markers = ("步骤", "计划", "方案", "分析", "调研", "研究", "实现", "设计", "plan")
-    if sum(marker in text for marker in team_markers) >= 2 or ("对比" in text and "证据" in text):
-        return ExecutionRoute("auto", "agent_teams", "independent_comparison_or_review")
-    if any(marker in text for marker in plan_markers) or len(text) >= 180:
-        return ExecutionRoute("auto", "plan_execute", "multi_step_or_long_request")
+    if int(document_count) >= MULTI_DOCUMENT_PLAN_THRESHOLD:
+        return ExecutionRoute("auto", "plan_execute", "multi_document_scope")
     return ExecutionRoute("auto", "react", "bounded_direct_request")
 
 
-__all__ = ["ExecutionMode", "ExecutionRoute", "ResolvedExecutionMode", "resolve_execution_route"]
+__all__ = [
+    "MULTI_DOCUMENT_PLAN_THRESHOLD",
+    "ExecutionMode",
+    "ExecutionRoute",
+    "ResolvedExecutionMode",
+    "resolve_execution_route",
+]
