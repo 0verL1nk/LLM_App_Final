@@ -8,4 +8,7 @@
 ## 2. 验证与文档
 
 - [x] 2.1 门禁：目标单测 + ruff + repository_guard + openspec validate
-- [ ] 2.2 全量 19 用例快照跑一轮（v2 证据），对比 10/19 基线观察 plan_passed 变化，数字回填本变更
+- [x] 2.2 验证轮与数字回填（两轮）：
+  - v1 工具结果内提示：**被评测抓出污染 bug**——追加文本破坏 search_document JSON 证据载荷（覆盖 100%→79%）、委派行为紊乱（hybrid 3→0）；修复为 wrap_model_call 系统消息注入（提交 d4a9e31 前置）
+  - v2 修复后：证据恢复 89%、 18/19（基线含 2 个 False，达成设计目标）；单轮 5/19 对 10/19 落在已知噪声带内不能定论，但暴露交互：建计划后不回写步骤状态（ratio 失败）→ nudge 文案已补「完成每步后回写状态」
+  - 结论：结构路由+nudge 保留（计划在场率是设计目标且已验证）；完整 A/B 需双臂 pass^k（登记 live-agent-task-eval-baseline §8.5 承接）

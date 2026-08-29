@@ -20,7 +20,8 @@ from .types import AgentState
 PLAN_NUDGE_MARKER = "[plan-nudge]"
 PLAN_NUDGE_INSTRUCTION = (
     f"{PLAN_NUDGE_MARKER} [系统提示] 检索已开始但尚无执行计划:若本任务涉及多篇文档或多个"
-    "子目标,请立即调用 update_plan 建立带步骤与状态的计划再继续;简单单点查询可忽略本提示。"
+    "子目标,请立即调用 update_plan 建立带步骤与状态的计划再继续,并在完成每个步骤后回写其"
+    "状态;简单单点查询可忽略本提示。"
 )
 
 
