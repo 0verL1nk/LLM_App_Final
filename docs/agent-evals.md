@@ -152,3 +152,8 @@ Use `recommended_actions` as the starting point for the next change, not as an a
 ## Relationship To Router Baseline
 
 `tests/evals/run_phase0_router_baseline.py` remains useful for routing checks, but it does not tell you whether the user task was actually completed. Treat router baseline and task-completion evals as complementary signals.
+
+## 两段式评测（轨迹落盘 → 离线判分）
+
+采集：live 跑批带 `--dump-trajectories <path>.jsonl`，逐用例落盘序列化后的轨迹（消息/证据为纯 dict）。
+判分：`make eval-offline-judge EVAL_TRAJ=<path>.jsonl [JUDGE_MODEL=...]` 复用轨迹只跑裁判——迭代裁判提示词、换裁判模型、双裁判对照（`make eval-judge-agreement EVAL_A=.. EVAL_B=..`）都不再重跑昂贵的 agent 执行。
