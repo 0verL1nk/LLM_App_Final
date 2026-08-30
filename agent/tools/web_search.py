@@ -265,14 +265,13 @@ def _build_firecrawl_web_search_client():
             if self.api_key:
                 headers["Authorization"] = f"Bearer {self.api_key}"
             body = {"query": query, "limit": DEFAULT_WEB_MAX_RESULTS}
-            response = None
+            response = httpx.post(
+                self.search_url,
+                json=body,
+                headers=headers,
+                timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
+            )
             for attempt in range(1, self._max_attempts + 1):
-                response = httpx.post(
-                    self.search_url,
-                    json=body,
-                    headers=headers,
-                    timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
-                )
                 if response.status_code < 400:
                     break
                 if response.status_code != 429:
@@ -280,6 +279,12 @@ def _build_firecrawl_web_search_client():
                 if attempt == self._max_attempts:
                     raise RuntimeError(f"firecrawl status={response.status_code}")
                 time.sleep(self._retry_delay(attempt, response, self._max_delay))
+                response = httpx.post(
+                    self.search_url,
+                    json=body,
+                    headers=headers,
+                    timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
+                )
             payload = response.json()
             data_block = payload.get("data") if isinstance(payload, dict) else None
             results = data_block.get("web") if isinstance(data_block, dict) else None
