@@ -1,0 +1,216 @@
+{
+  "generated_at_utc": "2026-08-23T04:50:40.547857+00:00",
+  "fixture_path": "tests\\evals\\fixtures\\agent_task_eval_set_v1.jsonl",
+  "run_config": {
+    "runner_mode": "live_model",
+    "agent_model": "MiniMax-M3",
+    "judge_model": "MiniMax-M3",
+    "web_search_fallback": true,
+    "document_corpus": "E:\\Web-leaning\\PaperSage\\.claude\\worktrees\\nice-lamarr-1ba065\\tests\\fixtures\\papers\\rag_agentic_reasoning",
+    "delegation_note": "turn-level harness: delegate_task returns durable_run_required; delegation contracts measure leader behavior only"
+  },
+  "total_cases": 3,
+  "completed_cases": 3,
+  "completion_rate": 1.0,
+  "final_success_rate": 1.0,
+  "process_success_rate": 1.0,
+  "evidence_coverage_rate": 1.0,
+  "average_execution_completion_ratio": 0.0,
+  "failed_case_ids": [],
+  "remediation_area_counts": {},
+  "cases": [
+    {
+      "case_id": "project_rag_fact_001",
+      "category": "project_rag",
+      "prompt": "请在当前项目文档范围内概括 RAG 论文的核心结论。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 11,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "The rubric asks whether the answer: (1) stays within current project documents, (2) accurately summarizes the RAG paper's core conclusion for this project context, and (3) grounds the answer in cited project evidence without inventing web updates.\n\n1. **Stays within current project documents**: The assistant explicitly states \"下面是项目文档范围内 RAG 论文的核心结论梳理\" and all evidence chunks are from the project's document store (retrieved via search_document). No web sources are cited. ✓\n\n2. **Accurately summarizes the RAG paper's core conclusion**: The answer covers the core conclusion: combining parametric and non-parametric memory with generation for knowledge-intensive tasks, achieving SOTA on multiple tasks. Key findings (open-domain QA SOTA, MS-MARCO improvements, Jeopardy generation, FEVER, index hot-swapping, no need for re-ranker/extractive reader, no expensive pre-training) are all accurately summarized based on the retrieved chunks. ✓\n\n3. **Grounds the answer in cited project evidence without inventing web updates**: Every claim is accompanied by an inline evidence tag (e.g., `<evidence>chunk_1|o1-489</evidence>`, `<evidence>chunk_4|o313-313</evidence>`, etc.). The evidence tags reference chunks that match the quoted text in the retrieved documents. No web updates or external information are introduced. ✓\n\nAll rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "我先检索当前项目文档中关于 RAG（检索增强生成）的核心证据。已收集到充足证据。再补一次关于模型架构（RAG-Sequence vs RAG-Token）和主要贡献/结论段落的检索，以覆盖摘要级论断。证据已经充分，可以直接基于文档中的原文表述来概括 RAG 论文的核心结论。下面是项目文档范围内 RAG 论文的核心结论梳理。\n\n## RAG 论文核心结论\n\n### 1. 研究动机与总体结论\n论文指出，大型预训练语言模型虽然将事实知识存储在参数中，并在下游 NLP 任务上取得 SOTA，但在知识密集型任务上仍落后于任务特定架构，并且难以提供决策溯源和更新世界知识<evidence>chunk_1|o1-489</evidence>。RAG 的核心结论是：**将参数化记忆与非参数化记忆结合并用于生成，对知识密集型任务具有显著优势**——这是人类在没有外部知识源的情况下也无法合理完成的任务<evidence>chunk_4|o423-440</evidence>。\n\n### 2. 模型与方法核心要点\n- **架构**：RAG 利用一个检索器 pη(z|x) 返回 top-K 文本片段作为额外上下文，再由生成器 BART 生成目标序列<evidence>chunk_27|o523-523</evidence>。\n- **两种变体**：\n  - **RAG-Sequence**：用同一篇检索文档生成完整序列<evidence>chunk_29|o495-495</evidence>。\n  - **RAG-Token**：每个目标 token 可以基于不同检索文档生成<evidence>chunk_29|o495-495</evidence>。\n- **训练**：直接将问答视为输入-输出文本对 (x, y)，通过最小化答案的负对数似然训练<evidence>chunk_22|o22-507</evidence>。\n\n### 3. 主要实验结论**① 开放域问答**：在四个开放域 QA 任务上 RAG 都取得新的 SOTA（在 TQA 的 T5-可比 split 上），优于使用强检索监督的 pipeline 模型<evidence>chunk_2|o435-435</evidence>，并在 Natural Questions、WebQuestions、CuratedTrec 上取得 SOTA 且大幅领先<evidence>chunk_21|o440-440</evidence>。即使正确答案不在任何检索文档中，RAG 仍能在 NQ 上达到 11.8% 的准确率（抽取式模型为 0%）<evidence>chunk_0|o458-458</evidence>。\n\n**② 抽象问答（MS-MARCO NLG）**：RAG-Sequence 相对 BART 在 Open MS-MARCO NLG 上提升 2.6 BLEU 和 2.6 Rouge-L，且接近使用 gold段落的 SOTA 模型性能<evidence>chunk_0|o458-458</evidence>。\n\n**③ Jeopardy 问题生成**：RAG-Token 优于 RAG-Sequence，二者在 Q-BLEU-1 上都优于 BART。人工评估452 对生成结果：BART 仅在 7.1% 情况下比 RAG 更真实，RAG 在 42.7% 情况下更真实，二者同样真实的情况占 17%；RAG 生成结果也更具体<evidence>chunk_10|o448-448</evidence><evidence>chunk_27|o491-491</evidence>。\n\n**④ FEVER 事实核查**：在仅给定声明、由模型自行检索证据的条件下，RAG 与 SOTA 模型差距在 2.7% 以内；top-1 检索文档来自 gold 文章的比例71%，top-10 内出现 gold 文章的比例 90%<evidence>chunk_19|o515-515</evidence>。\n\n### 4. 关键设计/消融结论\n- **生成 vs 抽取**：RAG 表明重排序器与抽取式阅读器对 SOTA 性能并非必需；生成式回答在仅有线索而非答案原文的文档上仍可受益<evidence>chunk_29|o507-507</evidence>。\n- **可微检索 vs BM25**：除 FEVER 外，可微检索在所有任务上更优，对开放域 QA 尤为关键<evidence>chunk_23|o500-500</evidence>。\n- **检索文档数量**：训练时使用 5 或 10 篇检索文档，性能差异不显著<evidence>chunk_4|o313-313</evidence>。\n- **生成多样性**：RAG-Sequence 比 RAG-Token 多样性更高，二者都显著高于 BART<evidence>chunk_10|o506-506</evidence>。\n\n### 5. 实践意义\n- **无需昂贵的 salient span masking 预训练**：与 REALM、T5+SSM 不同，RAG 在没有这类专门预训练的情况下也取得强结果<evidence>chunk_10|o496-496</evidence>。\n- **知识热替换**：通过替换非参数化记忆（即索引）即可更新世界知识——以 2016/2018 世界领导人为例，匹配索引下准确率约 68–70%，错配时降至 4–12%<evidence>chunk_4|o313-313</evidence><evidence>chunk_21|o490-490</evidence>。\n\n### 一句话总结\nRAG 论文的核心结论是：**预训练生成式模型（BART）+ 可微稠密检索器（DPR）的端到端组合，在多个知识密集型任务（开放域 QA、抽象 QA、问题生成、事实验证）上取得 SOTA 或与之相当的结果，无需重排序/抽取阅读器、无需专门预训练，并支持通过替换检索索引即时更新世界知识**。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 8,
+        "run_latency_ms": 25711.974300000293,
+        "total_tool_calls": 4,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_abstain_001",
+      "category": "project_abstain",
+      "prompt": "当前项目文档中，哪篇论文系统讨论了多智能体协作框架的设计？请给出结论和引用。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 24,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Let me evaluate each rubric item against the agent's final answer.\n\n(1) States clearly that current project documents do not cover multi-agent collaboration framework design.\n- The answer states: \"在当前项目所收录的 8 篇文档...中，**没有任何一篇论文以\"多智能体协作框架设计\"作为系统讨论的主题**\" and \"当前项目文档中**不存在**一篇系统讨论多智能体协作框架设计的论文。\" — clearly satisfied.\n\n(2) Does not fabricate citations or stretch an unrelated paper to claim coverage.\n- The answer does not claim any paper covers multi-agent collaboration framework design. It clearly distinguishes that the papers found (Reflexion, ReAct, Self-RAG, Tree of Thoughts) are single-agent frameworks, not multi-agent collaboration frameworks. No fabrication of citations. — satisfied.\n\n(3) Suggests a concrete way to close the gap, such as web research or adding relevant documents.\n- The answer states: \"建议你确认这 8 篇文档的完整列表，或将相关论文加入项目后再做对比。\" This suggests adding relevant documents to the project. It also names specific candidates like AutoGen/ChatDev/MetaGPT. — satisfied.\n\nAll three items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "list_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "我来帮你在项目文档中查找系统讨论多智能体协作框架的论文。第一轮检索主要返回了 Reflexion 和 Self-RAG 的内容，这些都涉及单智能体反思而非真正的多智能体协作框架。我换更精准的查询。检索结果都集中在 Reflexion、ReAct、ToT 这些单智能体框架，并未发现专门讨论多智能体协作框架的论文。我先确认下项目里究竟有哪些文档，再决定是否需要更深入的检索。经过多轮检索，命中结果始终集中在 Reflexion、ReAct、Self-RAG、Tree of Thoughts 等单智能体框架，且多次返回重复片段，search_document 的去重信号提示该 query family 已收敛。下面是基于现有证据的判断。\n\n## 结论\n\n在当前项目所收录的 8 篇文档（基于检索返回覆盖：Reflexion、ReAct、Self-RAG、Tree of Thoughts，以及从 Reflexion 引文中提到的 SayCan、Toolformer、HuggingGPT、generative agents、WebGPT 等相关工作）中，**没有任何一篇论文以\"多智能体协作框架设计\"作为系统讨论的主题**。多次多角度检索（\"multi-agent collaboration framework\"、\"multi-agent system roles coordination\"、\"AutoGen ChatDev agent communication protocol role\"）均未命中符合该主题的文档证据。\n\n最接近的若干候选都只是\"单智能体\"框架，而非多智能体协作框架：\n\n- **Reflexion**：讨论的是单一 LLM 智能体通过语言化自我反思（verbal reflection）和情景记忆（episodic memory）进行强化学习——\"Reflexion agents verbally reflect on task feedback signals, then maintain their own reflective text in an episodic memory buffer\"<evidence>arxiv:2303.11366:chunk_360|p1|o858-1341</evidence>。其中 Actor / Evaluator / Self-Reflection 是单个智能体内部的组件，而非多个独立智能体的协作<evidence>arxiv:2303.11366:chunk_379|p3|o8907-9402</evidence>。\n- **ReAct**：讨论单一智能体内\"推理 + 行动\"的交替，而非多智能体协同<evidence>arxiv:2210.03629:chunk_243|p3|o13136-13535</evidence>。\n- **Self-RAG / Tree of Thoughts**：均为单模型内的反思与搜索策略<evidence>arxiv:2310.11511:chunk_503|p1|o966-1450</evidence><evidence>arxiv:2305.10601:chunk_443|p2|o5728-6219</evidence>。\n\nReflexion 在引言中确实点名提及了若干\"agents\"类工作（generative agents、HuggingGPT 等）<evidence>arxiv:2303.11366:chunk_362|p1|o1827-2266</evidence>，但它们只是作为相关工作被引用，并非本文系统讨论的对象；而且检索到的内容并不足以确认本项目文档中是否包含这些工作的全文。\n\n## 引用汇总\n\n- Reflexion 摘要（单智能体反思框架，非多智能体）<evidence>arxiv:2303.11366:chunk_360|p1|o858-1341</evidence>\n- Reflexion 框架图（Actor/Evaluator/Reflection 三组件属单智能体内部）<evidence>arxiv:2303.11366:chunk_379|p3|o8907-9402</evidence>\n- Reflexion 引言中提到 generative agents / HuggingGPT 等相关工作<evidence>arxiv:2303.11366:chunk_362|p1|o1827-2266</evidence>\n- ReAct（单智能体推理+行动）<evidence>arxiv:2210.03629:chunk_243|p3|o13136-13535</evidence>\n- Self-RAG（单模型自反思 RAG）<evidence>arxiv:2310.11511:chunk_503|p1|o966-1450</evidence>\n- Tree of Thoughts（单模型树搜索）<evidence>arxiv:2305.10601:chunk_443|p2|o5728-6219</evidence>\n\n**结论性回答**：当前项目文档中**不存在**一篇系统讨论多智能体协作框架设计的论文。如果你的目标是 AutoGen / ChatDev / MetaGPT 这类工作，它们并未出现在本次检索可命中的 8 篇文档范围内；建议你确认这 8 篇文档的完整列表，或将相关论文加入项目后再做对比。如果你确认要查的\"多智能体协作框架\"另有指代（比如上面 Reflexion 中提到的 generative agents 或 HuggingGPT），请告诉我，我可以针对那一篇再做深入精读。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 12,
+        "run_latency_ms": 32330.5534000001,
+        "total_tool_calls": 6,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "routing_discrimination_local_001",
+      "category": "routing_discrimination",
+      "prompt": "Toolformer 的消融实验去掉了哪些组件？只基于当前项目文档回答。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 4,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "The rubric requires three items:\n\n(1) The answer must use cited project-document evidence only. The agent cites chunks from the project document (e.g., chunk_20, chunk_26, chunk_14, chunk_8) with specific numbers from Tables in the Toolformer paper. All quoted figures (ASDiv 40.4→14.8, SVAMP 29.4→6.3, etc.) appear in the retrieved chunks. Evidence is cited from the project document.\n\n(2) The answer must not consult or mention external web sources. The agent only used internal document search (search_document tool) and did not mention any external web sources or URLs.\n\n(3) The answer must name the ablated components accurately. The agent identifies: (a) API call tool usage (Toolformer disabled variant), (b) API-call-augmented fine-tuning data (GPT-J + CC variant), (c) the entire fine-tuning step (GPT-J baseline), and (d) filtering assumption validation via perplexity. These correspond to actual components in the paper. The agent also correctly notes that the paper doesn't have a section explicitly labeled 'ablation study' and that per-tool ablation tables weren't found in retrieved chunks. The named components are accurate based on the cited evidence.\n\nAll three items appear satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "我来检索当前项目文档中关于 Toolformer 消融实验的内容。我看到了几处与\"消融\"相关的内容，但还需要查找明确以\"ablation\"命名的部分。让我继续检索。我看到文档中提到 Toolformer (disabled) 这个变体（即关闭 API 调用），并且对比了不同模型。让我再检索是否有更明确的消融实验分析。让我再查找 Section 4.3 这部分的具体消融实验内容。基于对当前项目文档（Toolformer 论文）的检索结果，我可以回答您的问题。\n\n## 回答\n\n严格来说，**Toolformer 论文中并没有一个被明确命名为\"ablation study\"的独立小节**。但论文确实通过**模型变体对比**（本质上等同于消融）来研究各个组件的作用。在当前项目文档中能识别出的\"消融\"对比，主要涉及以下被去掉的组件：\n\n### 1. 去掉 API 调用工具（推理阶段）\n**变体：`Toolformer (disabled)`** —— 与完整 Toolformer 训练相同，但在推理时禁用 API 调用。\n\n- 用于评估\"使用工具\"本身带来的提升- 在数学推理任务上，禁用 API 后 ASDiv 从 40.4 降到 14.8，SVAMP 从 29.4 降到 6.3，MAWPS 从 44.0 降到 15.0<evidence>chunk_20|p7|o100-300</evidence>\n- 在 LAMA 任务上，禁用 API 后 SQuAD 从 33.8 降到 22.1，T-REx 从 53.5 降到 34.9<evidence>chunk_26|p7|o100-250</evidence>\n\n### 2. 去掉 API 调用增强的微调数据（即仅去掉\"工具学习\"这一步）\n**变体：`GPT-J + CC`** —— GPT-J 在不含任何 API 调用的 CCNet 子集 C 上微调。\n\n- 用于评估\"自监督工具学习数据构造\"这一步的贡献\n-论文指出：GPT-J 与 GPT-J + CC 表现差不多，Toolformer 即使在禁用 API 时也更强，这归因于\"模型在大量 API 调用及其结果示例上做了微调，提升了自身的数学能力\"<evidence>chunk_14|p7|o100-280</evidence>\n\n### 3. 去掉整个微调步骤\n**变体：`GPT-J`** —— 完全不做任何微调的原始 GPT-J 基线。\n\n- 用于评估微调（含工具学习）的整体收益<evidence>chunk_8|p7|o80-300</evidence>\n\n### 4. 验证过滤假设（Section 4.3，间接消融）\n论文在脚注中提到，过滤操作虽然改变了训练样本分布，但他们假设剩余样本与原分布足够接近、不会损害语言建模能力，并通过 **perplexity 实验**对该假设做了\"实证验证\"<evidence>chunk_8|p7|o40-200</evidence>。但这部分在当前检索到的文档片段中并未展开具体的数字结果。\n\n---\n\n**说明**：当前项目文档（论文正文片段）未提供关于\"去掉某个具体工具（如 calculator / Wikipedia search / QA / translation / calendar 中之一）\"的逐工具消融对比实验结果。如果需要这部分（论文 Table 8 附近的内容），可能在附录或未被检索到的段落中。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 14,
+        "run_latency_ms": 21339.00580000045,
+        "total_tool_calls": 7,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    }
+  ]
+}

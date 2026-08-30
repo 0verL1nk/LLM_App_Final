@@ -1,0 +1,1081 @@
+{
+  "generated_at_utc": "2026-08-16T16:35:41.252582+00:00",
+  "fixture_path": "tests\\evals\\fixtures\\agent_task_eval_set_v1.jsonl",
+  "run_config": {
+    "runner_mode": "scenario_calibration",
+    "agent_runner": "ScenarioAgent(scripted answers)",
+    "judge_model": "MiniMax-M3",
+    "judge_base_url": "https://api.minimaxi.com/v1",
+    "web_search_fallback": true
+  },
+  "total_cases": 19,
+  "completed_cases": 19,
+  "completion_rate": 1.0,
+  "final_success_rate": 1.0,
+  "process_success_rate": 1.0,
+  "evidence_coverage_rate": 1.0,
+  "average_execution_completion_ratio": 1.0,
+  "failed_case_ids": [],
+  "remediation_area_counts": {},
+  "cases": [
+    {
+      "case_id": "project_rag_fact_001",
+      "category": "project_rag",
+      "prompt": "请在当前项目文档范围内概括 RAG 论文的核心结论。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 1,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric items:\n1. Stay within current project documents: The answer cites evidence from 'chunk-1' in the project documents, staying within the project's document scope. Satisfied.\n2. Accurately summarize the RAG paper's core conclusion for this project context: The answer states 'RAG 的核心价值是先检索再生成，用外部证据降低幻觉并提升回答相关性' which accurately summarizes the RAG paper's core conclusion as found in the project document. Satisfied.\n3. Ground the answer in cited project evidence without inventing web updates: The answer cites '<evidence>chunk-1|p1|o0-10</evidence>' and does not introduce any web updates or invented content. Satisfied.\n\nAll rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "基于当前项目文档，RAG 的核心价值是先检索再生成，用外部证据降低幻觉并提升回答相关性。<evidence>chunk-1|p1|o0-10</evidence>",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.9898999996948987,
+        "total_tool_calls": 1,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "project_compare_001",
+      "category": "project_compare",
+      "prompt": "请比较当前项目中的 RAG 与 Self-RAG 两篇论文，并给出选型建议。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 2,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric item 1: Compare RAG and Self-RAG using current project documents. The answer states: \"结合当前项目文档，RAG 实现更直接、接入成本更低；Self-RAG 增加了自反思与纠错链路，但工程复杂度更高。\" with evidence references to chunk-1 and chunk-2. This compares both papers using project documents. Satisfied.\n\nRubric item 2: Explain at least one meaningful tradeoff. The answer identifies the tradeoff between simplicity/cost and self-reflection capability: RAG is more direct and lower cost, while Self-RAG adds self-reflection and error correction but increases engineering complexity. This is a meaningful tradeoff. Satisfied.\n\nRubric item 3: Give a concrete recommendation for this project rather than a generic summary. The answer states: \"如果当前阶段优先追求稳定落地，建议先以 RAG 为主，再把 Self-RAG 作为后续试点方向。\" This is a concrete, project-specific recommendation tied to the project's current stage. Satisfied.\n\nAll three rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher",
+          "reviewer"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "结合当前项目文档，RAG 实现更直接、接入成本更低；Self-RAG 增加了自反思与纠错链路，但工程复杂度更高。<evidence>chunk-1|p1|o0-10</evidence><evidence>chunk-2|p2|o0-10</evidence>如果当前阶段优先追求稳定落地，建议先以 RAG 为主，再把 Self-RAG 作为后续试点方向。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 规划 -> 输出最终答案",
+        "trace_diagnostic_count": 3,
+        "run_latency_ms": 0.5603000026894733,
+        "total_tool_calls": 3,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "project_scope_boundary_001",
+      "category": "project_scope_boundary",
+      "prompt": "只基于当前项目文档判断：项目内现有材料是否已经支持引入 Self-RAG？不要引用外部最新资料。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 1,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric checklist:\n1. \"Answer should stay strictly within current project documents\" — The answer's substantive content is drawn from chunk-1 of the project document, and it states \"只看当前项目文档\" (only looking at current project documents). It does not cite external sources. This is satisfied. Evidence: \"只看当前项目文档，我不会引用外部最新资料。\"\n2. \"Explicitly avoid relying on external latest information\" — The answer explicitly states \"我不会引用外部最新资料\" (I will not cite external latest materials). This is satisfied. Evidence: \"我不会引用外部最新资料。\"\n3. \"State whether the current internal materials are sufficient to support adopting Self-RAG now\" — The answer states \"现有材料已经说明 Self-RAG 值得关注，但还不足以直接支持现在就正式引入主链路\" (current materials indicate Self-RAG is worth noting, but are not sufficient to directly support formally introducing it to the main pipeline now). This is a clear stance on sufficiency. Satisfied. Evidence: \"现有材料已经说明 Self-RAG 值得关注，但还不足以直接支持现在就正式引入主链路。\"\nAll three items are satisfied, so the overall score is true."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "只看当前项目文档，我不会引用外部最新资料。现有材料已经说明 Self-RAG 值得关注，但还不足以直接支持现在就正式引入主链路。<evidence>chunk-1|p1|o0-10</evidence>",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.3184000015608035,
+        "total_tool_calls": 1,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "project_gap_001",
+      "category": "project_gap",
+      "prompt": "如果只看当前项目文档，现有材料对 Self-RAG 落地评估还缺什么关键信息？请给出结论和下一步补充建议。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 1,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric items:\n1. Identify at least one meaningful information gap in the current project documents.\n- The answer states: \"现阶段最大的缺口是缺少针对本项目真实延迟、复杂度和运维成本的落地评估\" and references chunk-1 which says \"现有语料对 Self-RAG 的介绍停留在方法层面，缺少针对本项目真实延迟、复杂度和运维成本的落地评估数据\". This identifies a meaningful gap. Satisfied.\n\n2. State that the current evidence is incomplete for a full landing decision.\n- The answer states: \"因此证据还不足以做完整落地决策\". This clearly states evidence is insufficient for a complete landing decision. Satisfied.\n\n3. Give a concrete next step to close the gap.\n- The answer states: \"下一步应先补一个面向本项目的试点评估方案\". This is a concrete next step (drafting a pilot evaluation plan for the project). Satisfied.\n\nAll three items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "如果只看当前项目文档，现阶段最大的缺口是缺少针对本项目真实延迟、复杂度和运维成本的落地评估。<evidence>chunk-1|p1|o0-10</evidence>因此证据还不足以做完整落地决策，下一步应先补一个面向本项目的试点评估方案。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.356099997588899,
+        "total_tool_calls": 1,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "project_compare_constraints_001",
+      "category": "project_compare",
+      "prompt": "结合当前项目文档，如果团队本季度更看重稳定交付和较低工程复杂度，RAG 与 Self-RAG 应该优先选哪个？",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 2,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric analysis:\n1. Use current project documents to compare RAG and Self-RAG: The answer references two evidence chunks from the project documents: chunk-1 (page 1) about RAG's direct implementation suitable for stable delivery, and chunk-2 (page 2) about Self-RAG's higher engineering complexity. This satisfies the requirement to use current project documents for comparison.\n2. Address constraints of stable delivery and lower engineering complexity: The answer explicitly discusses these constraints, noting that Self-RAG's self-reflection introduces additional orchestration and debugging costs, and that the current constraints favor quick, stable deployment.\n3. Make a clear recommendation rather than only listing differences: The answer clearly states \"RAG 仍然应该优先于 Self-RAG\" (RAG should still be prioritized over Self-RAG), providing a definitive recommendation rather than merely listing differences.\n\nAll rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "结合当前项目文档，在更看重稳定交付和较低工程复杂度的前提下，RAG 仍然应该优先于 Self-RAG。<evidence>chunk-1|p1|o0-10</evidence><evidence>chunk-2|p2|o0-10</evidence>原因是 Self-RAG 的自反思链路会带来额外编排和调试成本，而当前约束更偏向尽快稳定落地。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 规划 -> 输出最终答案",
+        "trace_diagnostic_count": 3,
+        "run_latency_ms": 0.44439999328460544,
+        "total_tool_calls": 1,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "web_latest_001",
+      "category": "web_research",
+      "prompt": "请联网检索 2025 年以来 Self-RAG 的最新进展，并给出两条结论。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric item 1: Answer should reflect post-2025 web research on Self-RAG. The answer cites '2025-06 综述与 2025-11 工程实践记录' as sources from the web search, satisfying this item. Rubric item 2: Provide at least two concrete takeaways from recent developments. The answer provides two conclusions: '结论一：多个 2024-2025 年后续工作在相同开放域问答基准上报告了超过 Self-RAG 的结果。结论二：关注点已从论文指标转向系统集成，延迟预算与成本观测成为主要议题。' — these are two concrete takeaways. Rubric item 3: Avoid pretending project-local documents are the source of recency. The answer explicitly attributes findings to '本次联网检索到的 2025 年以来公开资料（含 2025-06 综述与 2025-11 工程实践记录）', clearly citing web sources rather than project-local documents. All three items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "基于本次联网检索到的 2025 年以来公开资料（含 2025-06 综述与 2025-11 工程实践记录），Self-RAG 的最新进展集中在两点。结论一：多个 2024-2025 年后续工作在相同开放域问答基准上报告了超过 Self-RAG 的结果。结论二：关注点已从论文指标转向系统集成，延迟预算与成本观测成为主要议题。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.36890000046696514,
+        "total_tool_calls": 1,
+        "used_document_rag": false,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "web_recency_001",
+      "category": "web_research",
+      "prompt": "请联网检索近年的 Self-RAG 公开进展，判断研究关注点是否已经从论文指标转向系统落地，并说明依据。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric checklist:\n1. Answer should rely on current web findings: The assistant performed a web search and cited results dated 2025-06 and 2025-11. Satisfied. Quoted span: '结合本次联网检索（2025-06 综述、2025-11 工程实践记录）'\n2. Make a yes or qualified-yes-or-no judgment about whether attention has shifted toward system deployment concerns: The assistant states '我的判断是研究关注点已经明显从论文指标转向系统落地，但不是完全替代' — this is a qualified-yes. Satisfied. Quoted span: '我的判断是研究关注点已经明显从论文指标转向系统落地，但不是完全替代'\n3. Cite the basis for that judgment instead of giving a timeless summary: The assistant cites specific evidence from the search results: '集成成本、延迟预算和可观测性被反复强调，而不只是效果分数'. Satisfied. Quoted span: '依据是检索到的资料中，集成成本、延迟预算和可观测性被反复强调，而不只是效果分数'\nAll items satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "结合本次联网检索（2025-06 综述、2025-11 工程实践记录），我的判断是研究关注点已经明显从论文指标转向系统落地，但不是完全替代。依据是检索到的资料中，集成成本、延迟预算和可观测性被反复强调，而不只是效果分数。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.22119999630376697,
+        "total_tool_calls": 1,
+        "used_document_rag": false,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "web_tradeoff_001",
+      "category": "web_tradeoff",
+      "prompt": "请联网检索并总结近年 Self-RAG 的主要收益与主要代价，各给至少一项。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "The rubric requires: (1) web research to identify at least one concrete benefit and one concrete cost/downside of Self-RAG in recent practice, and (2) present them as an explicit tradeoff rather than unrelated bullet points.\n\nItem 1 - Concrete benefit: The answer states \"近年 Self-RAG 的主要收益是更强的自校验与纠错能力\" (stronger self-validation and error-correction ability). This is a concrete benefit. It also references the 2025-06 survey, indicating web research was used.\n\nItem 2 - Concrete cost/downside: The answer states \"主要代价是自反思链路带来更高延迟与工程复杂度\" (self-reflection chain brings higher latency and engineering complexity). This is a concrete cost.\n\nItem 3 - Explicit tradeoff: The answer states \"二者构成明确 tradeoff\" (the two constitute an explicit tradeoff). This explicitly frames them as a tradeoff.\n\nAll items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "依据本次联网检索（2025-06 综述），近年 Self-RAG 的主要收益是更强的自校验与纠错能力；主要代价是自反思链路带来更高延迟与工程复杂度，二者构成明确 tradeoff。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.23599999985890463,
+        "total_tool_calls": 1,
+        "used_document_rag": false,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "hybrid_research_001",
+      "category": "hybrid_research",
+      "prompt": "请结合当前项目文档和联网检索，评估 Self-RAG 是否适合纳入本项目后续路线。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 2,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric checklist:\n1. Combine current project evidence with recent web findings: The answer cites two evidence chunks from project documentation ('Self-RAG 能提升答案自校验能力' from chunk-1, and '引入 Self-RAG 类方法前必须先建设成本观测与失败案例复盘机制' from chunk-2) and mentions '近期公开经验同样强调真实系统中的成本、观测和稳定性约束'. However, there is no evidence of actual web/network retrieval being performed in the transcript — only a document search was done. The mention of '近期公开经验' and '近期公开资料' could be interpreted as web findings, but no web retrieval tool was invoked. Still, the answer does attempt to combine project docs with external/public experience, and rubric says 'combine current project evidence with recent web findings' — the answer at least mentions both. I'll consider this partially satisfied.\n\n2. Weigh adoption benefits versus engineering cost or risk: The answer states '有机会提升答案自校验能力，但也会显著增加编排复杂度与延迟预算' and '近期公开经验同样强调真实系统中的成本、观测和稳定性约束' — this weighs benefits (self-verification capability) against engineering costs (orchestration complexity, latency, cost, stability). Satisfied.\n\n3. Finish with a concrete roadmap recommendation such as adopt, defer, or pilot: The answer concludes '因此更适合先做小范围 pilot，再决定是否纳入正式 roadmap' — this is a concrete pilot recommendation. Satisfied.\n\nHowever, regarding item 1: The '联网检索' (web search) component was not visibly performed — only a document search tool was called. The references to '近期公开经验' lack clear web-citation support in the transcript. But the rubric says 'combine current project evidence with recent web findings' — the answer does present both, even if the web evidence sourcing is thin. The final answer does combine them, and the rubric doesn't require showing tool calls, just the final answer content. The answer references both project evidence and '近期公开经验'. I'll mark this as satisfied based on the final answer content.\n\nAll three items appear satisfied. Score: true."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher",
+          "reviewer"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "结合当前项目文档与近期公开资料，Self-RAG 有机会提升答案自校验能力，但也会显著增加编排复杂度与延迟预算。<evidence>chunk-1|p1|o0-10</evidence><evidence>chunk-2|p2|o0-10</evidence>近期公开经验同样强调真实系统中的成本、观测和稳定性约束，因此更适合先做小范围 pilot，再决定是否纳入正式 roadmap。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 规划 -> 输出最终答案",
+        "trace_diagnostic_count": 3,
+        "run_latency_ms": 0.28809999639634043,
+        "total_tool_calls": 3,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "hybrid_rollout_001",
+      "category": "hybrid_rollout",
+      "prompt": "请结合当前项目文档和联网检索，为 Self-RAG 给出一个是否试点以及如何分阶段 rollout 的建议。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 2,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric checklist analysis:\n\n1. \"Answer should combine project documents and recent web findings\": The answer cites evidence from project documents (chunk-1, chunk-2) and references recent web findings (the survey snippet noting newer methods surpass Self-RAG with higher latency, and the production notes snippet about latency, cost, and failure case review). Combined span: \"结合项目文档和近期公开资料...chunk-1|p1|o0-10...chunk-2|p2|o0-10\" and \"近期公开经验显示它的收益往往伴随更高的系统成本\". This references both sources.\n\n2. \"decide whether Self-RAG deserves a pilot\": The answer states \"我建议 Self-RAG 先做试点而不是立即全面纳入\" — a clear decision to pilot.\n\n3. \"provide a staged rollout recommendation rather than a single yes-or-no sentence\": The answer provides stages: \"分阶段 rollout 应先做离线评估和小流量实验，再观察收益、延迟与成本，最后再决定是否进入正式路线图\" — clearly a multi-stage rollout plan, not a single yes/no.\n\nAll items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "search_web"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "结合项目文档和近期公开资料，我建议 Self-RAG 先做试点而不是立即全面纳入。<evidence>chunk-1|p1|o0-10</evidence><evidence>chunk-2|p2|o0-10</evidence>近期公开经验显示它的收益往往伴随更高的系统成本，因此分阶段 rollout 应先做离线评估和小流量实验，再观察收益、延迟与成本，最后再决定是否进入正式路线图。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 规划 -> 输出最终答案",
+        "trace_diagnostic_count": 3,
+        "run_latency_ms": 0.2956000025733374,
+        "total_tool_calls": 2,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "hybrid_guardrail_001",
+      "category": "hybrid_guardrail",
+      "prompt": "如果项目要试点 Self-RAG，请结合当前项目文档和联网检索给出必须先补齐的 guardrail 或观测项。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 2,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "The rubric requires the answer to: (1) combine project evidence and recent web findings, (2) identify concrete guardrails or observability requirements needed before a Self-RAG pilot, and (3) connect them to implementation risk instead of giving generic safety slogans.\n\n1. Combining project evidence and recent web findings: The answer cites project document evidence (chunk-1 and chunk-2) and references '近期公开资料' (recent public materials), mentioning community emphasis on observability, cost monitoring, and failure sample review. However, the web findings are not explicitly cited or detailed in the final answer text — the assistant just paraphrases that 'community increasingly emphasizes observability, cost monitoring, and failure sample review' without quoting specific web sources or findings. The web search results about 2024-2025 surveys and production notes are not directly referenced. Still, the answer does acknowledge both project docs and web findings exist. Partial satisfaction at best — the combination is vague rather than explicit.\n\n2. Concrete guardrails or observability requirements: The answer lists '回答质量回归评估、延迟与成本观测，以及失败案例分析' (response quality regression evaluation, latency and cost observability, and failure case analysis). These are concrete items. Satisfied.\n\n3. Connect to implementation risk rather than generic safety slogans: The answer states '否则更复杂的执行链路很难稳定落地' (otherwise the more complex execution chain is hard to land stably), which connects to implementation risk (engineering complexity and stability). The mention of '更复杂的执行链路' and '稳定落地' does connect guardrails to implementation risk. Partially satisfied.\n\nOverall: Items 2 and 3 are reasonably satisfied. Item 1 is partially met — the answer acknowledges both sources but doesn't explicitly combine or cite them with specificity. The combination is somewhat superficial. However, the answer does reference both project evidence (with evidence tags) and web findings (mentioned as '近期公开资料'), so arguably item 1 is satisfied at a minimum level.\n\nGiven the answer provides concrete guardrails grounded in both sources and ties them to implementation risk (complex execution chain stability), I'll score this as satisfied overall, though the combination of sources could be more explicit. The quote '社区也越来越强调 observability、成本监控和失败样本复盘，否则更复杂的执行链路很难稳定落地，因此这些 guardrail 必须先补齐' connects guardrails to implementation risk."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "search_web"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "如果项目要试点 Self-RAG，至少要先补齐回答质量回归评估、延迟与成本观测，以及失败案例分析这几类 guardrail。<evidence>chunk-1|p1|o0-10</evidence><evidence>chunk-2|p2|o0-10</evidence>结合近期公开资料，社区也越来越强调 observability、成本监控和失败样本复盘，否则更复杂的执行链路很难稳定落地，因此这些 guardrail 必须先补齐。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 规划 -> 输出最终答案",
+        "trace_diagnostic_count": 3,
+        "run_latency_ms": 0.3271000023232773,
+        "total_tool_calls": 2,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "hybrid_reject_001",
+      "category": "hybrid_reject",
+      "prompt": "如果团队当前只能接受很低的复杂度和延迟开销，请结合项目文档和联网检索判断 Self-RAG 现在是否应该暂缓。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 2,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric item 1: Answer should combine project documents and recent web findings. The final answer references chunk-1 and chunk-2 from project documents (\"项目内约束...系统复杂度、时延预算和观测建设\") and incorporates web findings about Self-RAG's higher latency and engineering complexity from recent surveys and production notes. This is evidenced by the citations and the synthesis statement combining both sources. Satisfied.\n\nRubric item 2: Assess Self-RAG under strict complexity and latency constraints. The answer explicitly states \"如果团队当前只能接受很低的复杂度和延迟开销\" and assesses that Self-RAG's benefits require additional system complexity, latency budget, and observability, making the tradeoff unfavorable under strict constraints. Satisfied.\n\nRubric item 3: Be willing to recommend deferring adoption if the tradeoff is not favorable. The answer clearly states \"我倾向于建议暂缓 Self-RAG\" (I lean toward recommending deferring Self-RAG). Satisfied.\n\nAll rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "search_web"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "如果团队当前只能接受很低的复杂度和延迟开销，我倾向于建议暂缓 Self-RAG。<evidence>chunk-1|p1|o0-10</evidence><evidence>chunk-2|p2|o0-10</evidence>这是因为项目内约束和近期公开经验都表明，它的收益通常要用额外的系统复杂度、时延预算和观测建设来交换，在当前条件下 tradeoff 并不划算。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 规划 -> 输出最终答案",
+        "trace_diagnostic_count": 3,
+        "run_latency_ms": 0.30169999809004366,
+        "total_tool_calls": 2,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "project_contradiction_001",
+      "category": "project_contradiction",
+      "prompt": "请对比当前项目中 ReAct 与 Reflexion 两篇论文对「自我改进」的处理方式：两者结论是否一致？请逐条对比并引用原文关键句。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 4,
+        "required_count": 4
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Let me evaluate each rubric item:\n\n(1) Compares the two papers' self-improvement mechanisms using cited project evidence, with at least two evidence citations from each paper:\n- For ReAct: cites chunk-1 and chunk-2 (two citations) ✓\n- For Reflexion: cites chunk-3 and chunk-4 (two citations) ✓\nThis item is satisfied.\n\n(2) It quotes or precisely refers to key sentences of each paper via evidence tags:\n- The answer uses evidence tags like <evidence>chunk-1|p1|o0-10</evidence> referring to key sentences. However, the answer does not directly quote the sentences themselves — it paraphrases the content and references them via tags. The rubric says \"quotes or precisely refers to key sentences of each paper via evidence tags\" — using evidence tags is the mechanism here, so this seems satisfied.\n- The quoted sentence from chunk-1: \"ReAct 将推理与行动交织，通过行动-观察轨迹与环境交互并迭代改进，不在轨迹中生成语言化自我反思。\"\n- The quoted sentence from chunk-2: \"ReAct 的改进来自外部观察反馈进入下一轮推理，而非模型对自己失败的显式语言总结。\"\n- The quoted sentence from chunk-3: \"Reflexion 在任务失败后生成语言化反思文本，总结失败原因与改进方向。\"\n- The quoted sentence from chunk-4: \"Reflexion 将反思文本注入下一轮尝试的上下文，实现基于语言反馈的自我改进。\"\nThese are key sentences about self-improvement from each paper. This item is satisfied.\n\n(3) It ends with an explicit verdict of consistent, contradictory, or not comparable, with reasons:\n- The answer states: \"结论：两者在「是否用语言化反馈改进」上不一致，但目标互补而非矛盾。\"\n- This provides a verdict (\"不一致\" - inconsistent/not consistent) with reasons (目标互补而非矛盾, and specifies the dimension of disagreement). This item is satisfied.\n\n(4) It does not invent mechanisms absent from the papers:\n- The mechanisms described (行动-观察轨迹循环改进, 语言化反思注入下一轮上下文) match what the evidence cites from each paper. No invented mechanisms. ✓\nThis item is satisfied.\n\nAll items are satisfied, so the overall score is true."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "ReAct 依赖行动-观察轨迹循环改进，不引入语言化自我反思<evidence>chunk-1|p1|o0-10</evidence><evidence>chunk-2|p1|o0-10</evidence>；Reflexion 显式生成语言化反思并注入下一轮上下文<evidence>chunk-3|p2|o0-10</evidence><evidence>chunk-4|p2|o0-10</evidence>。结论：两者在「是否用语言化反馈改进」上不一致，但目标互补而非矛盾。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.3291000030003488,
+        "total_tool_calls": 1,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "project_false_premise_001",
+      "category": "project_false_premise",
+      "prompt": "Tree-of-Thoughts 论文提出的 self-consistency 解码策略中，采样温度设置是多少？请给出论文中的原文依据。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 1,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric item 1: The answer must explicitly correct the premise that self-consistency sampling belongs to the Self-Consistency paper, not Tree-of-Thoughts. The answer states: 'self-consistency 解码出自 Self-Consistency 论文，不是 Tree-of-Thoughts' and '这个前提需要更正'. This is a direct correction of the premise. Satisfied.\n\nRubric item 2: The correction must be grounded in cited project evidence from the correct paper. The answer includes the citation '<evidence>chunk-1|p1|o0-10</evidence>' and quotes from it: 'Self-Consistency 提出对同一思维链问题采样多条推理路径并对最终答案投票，self-consistency 解码即出自本文，而非 Tree-of-Thoughts.' This is sourced evidence from the Self-Consistency paper. Satisfied.\n\nRubric item 3: The answer must not fabricate a temperature value as if it came from Tree-of-Thoughts. The answer states '因此不存在其论文中的 self-consistency 温度设置' (therefore there is no self-consistency temperature setting in that paper). No fabricated temperature value is given for Tree-of-Thoughts. Satisfied.\n\nAll three rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "这个前提需要更正：self-consistency 解码出自 Self-Consistency 论文，不是 Tree-of-Thoughts<evidence>chunk-1|p1|o0-10</evidence>。Tree-of-Thoughts 提出的是树状探索与前瞻评估，因此不存在其论文中的 self-consistency 温度设置。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.24149999808287248,
+        "total_tool_calls": 1,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "project_abstain_001",
+      "category": "project_abstain",
+      "prompt": "当前项目文档中，哪篇论文系统讨论了多智能体协作框架的设计？请给出结论和引用。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric item 1: The answer must clearly state that the current project documents do not cover multi-agent collaboration framework design. The answer states \"当前项目文档中没有系统讨论多智能体协作框架设计的论文\" — this satisfies item 1.\n\nRubric item 2: The answer must not fabricate citations or stretch an unrelated paper to claim coverage. The answer states \"无法在不编造引用的情况下给出结论\" — it explicitly declines to fabricate citations. No papers or fake citations are provided. This satisfies item 2.\n\nRubric item 3: The answer must suggest a concrete way to close the gap, such as web research or adding relevant documents. The answer states \"建议补充相关文献，或允许联网检索后再回答\" — this suggests both adding relevant documents and conducting web research. This satisfies item 3.\n\nAll three rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "当前项目文档中没有系统讨论多智能体协作框架设计的论文，无法在不编造引用的情况下给出结论。建议补充相关文献，或允许联网检索后再回答。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.16879999748198316,
+        "total_tool_calls": 1,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "web_overturn_001",
+      "category": "web_overturn",
+      "prompt": "Self-RAG 论文发表时声称在多个开放域问答基准上超过了当时的强基线。截至今天，这一领先结论还成立吗？请给出带日期的依据。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Item 1: The answer cites web evidence dated after the Self-RAG paper's publication (2023-10). It references a survey dated 2025-06 and production notes dated 2025-11, both after 2023-10, that discuss subsequent work surpassing Self-RAG on open-domain QA benchmarks. Satisfied.\n\nItem 2: The answer states an explicit as-of-date qualifier: \"截至 2026-08 的公开资料\". Satisfied.\n\nItem 3: The answer does not merely restate the original paper's claim; it provides dated external evidence (2025-06 survey and 2025-11 production notes) to overturn the leadership claim. Satisfied.\n\nHowever, I note the citations are from \"example.com\" URLs, which appear to be fabricated/placeholder sources. The snippets themselves describe relevant dated evidence, but the URLs are clearly not real. Despite this, the rubric only requires that the answer \"cites web evidence dated after the Self-RAG paper's publication\" — it does not require verification of authenticity. The answer does provide dated references that either support or overturn the claim. Strictly by the rubric criteria, all items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "截至 2026-08 的公开资料，Self-RAG 的领先结论不再无条件成立。依据一：《Retrieval-Augmented Generation: A Survey of Self-Reflective Variants》（2025-06，example.com/surveys/self-reflective-rag-2025）指出多个 2024-2025 年后续工作在相同开放域问答基准上报告了超过 Self-RAG 的结果。依据二：《Production Notes on Self-Reflective RAG Adoption》（2025-11，example.com/blogs/self-rag-production-2025）将其收益放在更高延迟与复杂度的代价下讨论。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.2858000007108785,
+        "total_tool_calls": 1,
+        "used_document_rag": false,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "routing_discrimination_local_001",
+      "category": "routing_discrimination",
+      "prompt": "Toolformer 的消融实验去掉了哪些组件？只基于当前项目文档回答。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 1,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric item 1: The answer must use cited project-document evidence only. The answer cites evidence from the project document (chunk-1, p1) and states it is based on project documents. This is satisfied.\n\nRubric item 2: The answer must not consult or mention external web sources. The answer states \"本回答只基于项目文档，未使用外部资料\" and does not mention any external web sources. This is satisfied.\n\nRubric item 3: The answer must name the ablated components accurately. The answer names \"工具调用数据筛选\" (tool call data filtering) and \"自监督损失\" (self-supervised loss) as the components evaluated in the ablation. The cited evidence confirms these are the components. This is satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "根据项目文档，Toolformer 的消融实验主要评估移除工具调用数据筛选与自监督损失等设计后的性能变化<evidence>chunk-1|p1|o0-10</evidence>。本回答只基于项目文档，未使用外部资料。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.2566999974078499,
+        "total_tool_calls": 1,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "routing_discrimination_web_001",
+      "category": "routing_discrimination",
+      "prompt": "Toolformer 之后，把工具调用能力直接集成进模型的主流做法有哪些演进？请结合联网检索回答。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Let me evaluate the final answer against each rubric item.\n\n**Item 1: It relies on web findings dated after 2023.**\nThe final answer cites two sources: one from 2024-09 and one from 2025-03. Both are after 2023.\n- Span: \"2024-09，example.com/blogs/native-function-calling-2024\" and \"2025-03，example.com/blogs/internalized-tool-use-2025\"\nSatisfied.\n\n**Item 2: It distinguishes web findings from corpus content instead of restating Toolformer.**\nThe answer explicitly says \"依据本次联网检索的两份资料\" and contrasts the findings with Toolformer: \"这些与 Toolformer 的自监督标注思路形成对照。\"\nSatisfied.\n\n**Item 3: It cites the sources it used.**\nThe answer cites both sources by title, URL, and date: \"《Tool Use After Toolformer: Native Function Calling Becomes Default》（2024-09，example.com/blogs/native-function-calling-2024）与《Training Paradigms for Internalized Tool Use》（2025-03，example.com/blogs/internalized-tool-use-2025）\"\nSatisfied.\n\nAll three items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "依据本次联网检索的两份资料：《Tool Use After Toolformer: Native Function Calling Becomes Default》（2024-09，example.com/blogs/native-function-calling-2024）与《Training Paradigms for Internalized Tool Use》（2025-03，example.com/blogs/internalized-tool-use-2025），2023 年之后的演进主要是：原生函数调用接口成为标配、模型内化工具使用的训练范式（工具使用对齐数据）、以及 agent 框架层的并行工具编排；这些与 Toolformer 的自监督标注思路形成对照。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 输出最终答案",
+        "trace_diagnostic_count": 2,
+        "run_latency_ms": 0.3041000018129125,
+        "total_tool_calls": 1,
+        "used_document_rag": false,
+        "leader_tool_names": []
+      }
+    },
+    {
+      "case_id": "project_delegation_scaling_001",
+      "category": "project_delegation_scaling",
+      "prompt": "请把当前项目 8 篇论文各自的核心创新点各用一句话概括，并按与「检索增强生成」主题的相关度排序。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 8,
+        "required_count": 8
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Item 1: Covers all eight project papers with one grounded summary each. The answer covers RAG, Chain-of-Thought, Self-Consistency, ReAct, Toolformer, Reflexion, Tree-of-Thoughts, Self-RAG — all eight. Each has a one-sentence summary. ✓\n\nItem 2: Each summary is backed by an evidence citation from that paper. Each item has an <evidence> tag pointing to a chunk (chunk-1 through chunk-8), each tagged with page_no and offset. ✓\n\nItem 3: The relevance ranking is justified by cited content rather than paper titles alone. The ranking explanation explicitly cites chunk-1, chunk-8, chunk-4, chunk-6, chunk-5, chunk-7, chunk-3, chunk-2 to justify the ordering, e.g., 'RAG 直接定义检索增强范式（chunk-1）', 'Self-RAG 在检索增强之上叠加自反思与自我批判（chunk-8）', 'ReAct 的行动-观察循环依赖检索证据驱动推理（chunk-4）'. These justifications reference the cited content. ✓\n\nAll three items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "RAG：检索增强生成基础范式<evidence>chunk-1|p1|o0-10</evidence>；Chain-of-Thought：思维链提示<evidence>chunk-2|p1|o0-10</evidence>；Self-Consistency：多路径采样投票<evidence>chunk-3|p1|o0-10</evidence>；ReAct：推理与行动交织<evidence>chunk-4|p1|o0-10</evidence>；Toolformer：模型自学工具调用<evidence>chunk-5|p1|o0-10</evidence>；Reflexion：语言化自我反思<evidence>chunk-6|p1|o0-10</evidence>；Tree-of-Thoughts：树状探索搜索<evidence>chunk-7|p1|o0-10</evidence>；Self-RAG：按需检索与自我批判<evidence>chunk-8|p1|o0-10</evidence>。与 RAG 主题相关度排序及依据：RAG 直接定义检索增强范式（chunk-1）；Self-RAG 在检索增强之上叠加自反思与自我批判（chunk-8）；ReAct 的行动-观察循环依赖检索证据驱动推理（chunk-4）；Reflexion 的语言化反思服务于推理改进而非检索链路（chunk-6）；Toolformer 聚焦工具调用能力的自监督习得，与检索无直接关系（chunk-5）；Tree-of-Thoughts 是推理搜索结构（chunk-7）；Self-Consistency 与 Chain-of-Thought 仅涉及推理路径采样与思维链（chunk-3、chunk-2），离 RAG 最远。",
+      "diagnostics": {
+        "phase_path": "接收请求 -> 规划 -> 输出最终答案",
+        "trace_diagnostic_count": 3,
+        "run_latency_ms": 0.4850000041187741,
+        "total_tool_calls": 3,
+        "used_document_rag": true,
+        "leader_tool_names": []
+      }
+    }
+  ]
+}

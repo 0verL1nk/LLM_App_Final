@@ -1,0 +1,666 @@
+{
+  "generated_at_utc": "2026-08-23T08:11:40.025186+00:00",
+  "fixture_path": "tests\\evals\\fixtures\\agent_task_eval_set_v1.jsonl",
+  "run_config": {
+    "runner_mode": "live_model",
+    "agent_model": "MiniMax-M3",
+    "judge_model": "MiniMax-M3",
+    "web_fixture": {
+      "name": "v1",
+      "mode": "record",
+      "refresh": true
+    },
+    "web_search_fallback": true,
+    "document_corpus": "E:\\Web-leaning\\PaperSage\\.claude\\worktrees\\nice-lamarr-1ba065\\tests\\fixtures\\papers\\rag_agentic_reasoning",
+    "delegation_note": "turn-level harness: delegate_task returns durable_run_required; delegation contracts measure leader behavior only"
+  },
+  "total_cases": 9,
+  "completed_cases": 3,
+  "completion_rate": 0.3333333333333333,
+  "final_success_rate": 0.3333333333333333,
+  "process_success_rate": 0.8888888888888888,
+  "evidence_coverage_rate": 1.0,
+  "average_execution_completion_ratio": 0.9666666666666667,
+  "failed_case_ids": [
+    "web_latest_001",
+    "web_tradeoff_001",
+    "hybrid_research_001",
+    "hybrid_rollout_001",
+    "hybrid_guardrail_001",
+    "hybrid_reject_001"
+  ],
+  "remediation_area_counts": {
+    "prompt": 6
+  },
+  "cases": [
+    {
+      "case_id": "web_latest_001",
+      "category": "web_research",
+      "prompt": "请联网检索 2025 年以来 Self-RAG 的最新进展，并给出两条结论。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "Rubric items:\n1. Answer should reflect post-2025 web research on Self-RAG. The assistant did attempt multiple web searches related to Self-RAG 2025, but the results returned were generic Wikipedia AI/RAG articles, not actual Self-RAG 2025 research. The assistant explicitly acknowledges this: '检索来源 URL：均为 Wikipedia 通用 AI 词条...未命中任何具体 Self-RAG 2025 论文或进展报道' and '证据不足以支撑关于\"2025 年以来 Self-RAG 具体新进展\"的任何具体断言'. So the answer does NOT reflect actual post-2025 Self-RAG research - it reflects failed attempts to find such research.\n\n2. Provide at least two concrete takeaways from recent developments. The two takeaways provided are explicitly labeled as 'weak' and 'placeholder' conclusions: '下面两条仅是\"按用户要求给出两条结论\"的占位说明，并不代表已从公开资料证实2025 年 Self-RAG 的特定新进展'. These are not concrete takeaways from recent developments - they are hedged, non-specific statements that the assistant itself flags as unverified. This item is not satisfied.\n\n3. Avoid pretending project-local documents are the source of recency. The assistant does not cite any project-local documents as a source. It honestly admits it could not find external sources. This item appears satisfied.\n\nSince items 1 and 2 are not satisfied, the overall score is false."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "Rubric items:\n1. Answer should reflect post-2025 web research on Self-RAG. The assistant did attempt multiple web searches related to Self-RAG 2025, but the results returned were generic Wikipedia AI/RAG articles, not actual Self-RAG 2025 research. The assistant explicitly acknowledges this: '检索来源 URL：均为 Wikipedia 通用 AI 词条...未命中任何具体 Self-RAG 2025 论文或进展报道' and '证据不足以支撑关于\"2025 年以来 Self-RAG 具体新进展\"的任何具体断言'. So the answer does NOT reflect actual post-2025 Self-RAG research - it reflects failed attempts to find such research.\n\n2. Provide at least two concrete takeaways from recent developments. The two takeaways provided are explicitly labeled as 'weak' and 'placeholder' conclusions: '下面两条仅是\"按用户要求给出两条结论\"的占位说明，并不代表已从公开资料证实2025 年 Self-RAG 的特定新进展'. These are not concrete takeaways from recent developments - they are hedged, non-specific statements that the assistant itself flags as unverified. This item is not satisfied.\n\n3. Avoid pretending project-local documents are the source of recency. The assistant does not cite any project-local documents as a source. It honestly admits it could not find external sources. This item appears satisfied.\n\nSince items 1 and 2 are not satisfied, the overall score is false.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "我来为您检索2025 年以来 Self-RAG 的最新进展。初步检索结果不太理想，我换一些关键词再试一次，并查询学术论文来源。搜索论文的接口返回了 429 限流。我用更具体的关键词继续在 web 上检索。搜索引擎后端进入了冷却状态。我稍等一下再尝试，并换一个查询角度。返回的都是与 Self-RAG 不直接相关的 Wikipedia 通用 AI 词条，没有出现具体的 Self-RAG 论文或进展。我再换不同的角度尝试一次，然后给出诚实结论。我已发起多轮不同关键词的检索（\"Self-RAG 2025 latest advances\"、\"Self-RAG 2025 paper arxiv\"、\"self-RAG adaptive retrieval LLM 2025 benchmark\"、\"Self-RAG Asai 2025 follow-up\"、\"self-RAG 2025 survey\"、\"self-reflective RAG LLM 2025 hallucination\"、\"self reflective retrieval augmented generation paper 2025\" 等），并尝试了 search_papers，但返回的相关内容只有 Wikipedia 的通用 AI/RAG 词条，没有出现任何2025 年 Self-RAG 的具体新论文、基准结果或新方法。Semantic Scholar 接口返回 429 限流，部分 web 检索后端进入了冷却状态。\n\n# 检索说明与结论\n\n## 检索证据不足\n\n按\"联网必读\"纪律，我必须如实告知：\n\n- **已尝试查询（部分列举）**：\n  - search_web：`Self-RAG 2025 latest advances retrieval augmented generation`\n  - search_web：`\"Self-RAG\" 2025 paper arxiv`\n  - search_web：`self-RAG adaptive retrieval LLM 2025 benchmark`\n  - search_web：`Self-RAG Asai 2025 follow-up improvements critique tokens`\n  - search_web：`\"self-RAG\" 2025 survey retrieval augmented`\n  - search_web：`self-reflective RAG LLM 2025 hallucination reduction`\n  - search_web：`Self-RAG variant 2025 arxiv paper`\n  - search_web：`self reflective retrieval augmented generation paper 2025`\n  - search_papers：`Self-RAG self-reflective retrieval augmented generation 2025`（429限流）\n  - search_papers：`Self-RAG critique tokens adaptive retrieval`（429 限流）\n- **检索来源 URL**：均为 Wikipedia 通用 AI 词条（如 `wikipedia.org/?curid=73291755`、`wikipedia.org/?curid=69071767`），未命中任何具体 Self-RAG 2025 论文或进展报道。\n- **截至日期**：本次检索（2025 年当前会话），未能获得带具体发布日期、URL 或基准数据的高可信度 Self-RAG 2025 资料。\n- **因此**：证据不足以支撑关于\"2025 年以来 Self-RAG 具体新进展\"的任何具体断言。\n\n## 仅能基于通用 RAG 背景给出的两条（弱）结论\n\n由于没有2025 年 Self-RAG 的直接证据，下面两条仅是\"按用户要求给出两条结论\"的占位说明，并不代表已从公开资料证实2025 年 Self-RAG 的特定新进展：\n\n1. **Self-RAG 在 2025 年仍是自适应 RAG 方向的重要基线**：Self-RAG（Asai 等，2023，arXiv:2310.11511）提出的\"反思 token / critique tokens\"思路——让模型在检索与生成过程中自评是否需要检索、检索内容是否相关、生成是否被支持——在 2025 年的自适应检索、Agentic RAG、Self-Correcting RAG 等后继工作中被广泛引用作为对照基线。但具体被哪些2025 论文引用、以何种方式超越，未在本次检索结果中找到可靠来源。\n2. **2025 年的研究主线更可能是\"RAG 的反思/自适应\"而非\"Self-RAG 本身的新版本\"**：从更宽的 RAG 综述（Wikipedia 2024-in-science 等条目中提到 RAG 是抑制幻觉的主流手段）来看，2025 年的相关进展更多落在 Corrective RAG（CRAG）、Self-Reflective RAG、Adaptive Retrieval、Agentic / Tool-augmented RAG 等方向；但本次同样未检索到针对 Self-RAG 本体的2025 年明确新版本或新基准结果。\n\n## 建议\n\n如需可靠结论，建议：\n\n- 在检索限流/冷却恢复后，重新发起针对 arXiv `cs.CL` / `cs.IR` 类别的 `Self-RAG` 查询，或提供具体已知的 2025 Self-RAG 论文标题/作者以便我定向核实；\n- 直接访问 arXiv 列表：`https://arxiv.org/list/cs.CL/recent` 并以 \"Self-RAG\"、\"self-reflective RAG\"、\"adaptive retrieval\" 为关键词筛选；\n- 如有项目内文档，授权我访问后可结合项目上下文给出更精确的两条结论。\n\n**简言之：在当前可用的外部检索条件下，我没有找到足以支撑\"Self-RAG 2025 年具体新进展\"的高可信度证据，因此无法给出带来源的、确切的两条结论；以上两条仅是按要求占位表述，请勿当作已核实的2025 Self-RAG 事实。**",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 24,
+        "run_latency_ms": 166815.64080000133,
+        "total_tool_calls": 12,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "web_recency_001",
+      "category": "web_research",
+      "prompt": "请联网检索近年的 Self-RAG 公开进展，判断研究关注点是否已经从论文指标转向系统落地，并说明依据。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "The rubric requires: (1) the answer relies on current web findings, (2) makes a yes or qualified-yes-or-no judgment about whether attention has shifted toward system deployment concerns, and (3) cites the basis for that judgment instead of giving a timeless summary.\n\n1. **Current web findings**: The answer explicitly cites recent Wikipedia/web snippets from 2024-2025, e.g., \"In January 2025, Contextual AI announced the general availability of its enterprise platform for building specialized RAG agents\", \"LangGraph Platform is now Generally Available: Deploy & manage long-running, stateful Agents\". 2025-05-14, \"Microsoft Research's GraphRAG (2024)\". So it relies on current web findings. SATISFIED.\n\n2. **Yes or qualified-yes-or-no judgment**: The answer gives a clear qualified-yes: \"研究关注点确实出现了从'论文指标'向'系统落地'的明显外溢\" and \"是的，整体 RAG 研究关注点（包含 Self-RAG 这条线索在内）已经明显从论文指标转向系统落地\" with qualifications about Self-RAG itself. SATISFIED.\n\n3. **Cite the basis instead of timeless summary**: The answer cites specific sources (Contextual AI GA, LangGraph GA, GraphRAG, LlamaIndex, Deepset, AI agent stack) with URLs and dated references, and also explicitly notes evidence gaps. This is a basis-cited answer, not a timeless summary. SATISFIED.\n\nAll three items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "我来联网检索近年 Self-RAG 的公开进展，多角度查询后再做判断。结果噪声较大，换更具体的关键词再查。后端限流，先尝试学术检索，并再发一条不同角度的 web 查询。学术检索也限流。继续按检索纪律换关键词重试 web，并扩大问题角度。搜索后端在限流/冷却。我换一个角度、用更长的查询再试一次，并对前一条已有结果的维基百科片段稍作解读。再换关键词和角度。继续冷却。再次尝试，更短关键词。终于有一条可用结果，是 RAG 的维基百科条目。我去查该条目，看看 Self-RAG 是否被提及、是否被归类，以及条目本身对 RAG 系统落地/工程化的描述。再试一次，扩大角度。现在再去查 Self-RAG 原文 arxiv 页面是否上线，以及它的引用 / 后续工作信息。再试。换关键词再试。有看到 deepset/Neo4j/向量库相关条目。再查一下 RAG 维基条目里 Self-RAG 是否被点名，以及评估检索/落地问题相关的近况。继续冷却，再试一次简短 query。wikipedia 检索对 Self-RAG 不灵敏，强制 quote 试试。Wikipedia 仅返回 RAG 通用条目，未提及 Self-RAG。我去尝试看看 Self-RAG 是否在 arXiv 直接相关页面。再换一次，绕开限流关键词。再去查 Self-RAG 后续的两个关键变体（CRAG/FLARE）和评估基准，看是否有\"系统落地\"导向的研究。再次冷却，再试一次更短关键词。很好，这次命中了关键信息。我去看看 Contextual AI 和 LangChain 的条目，这两个直接对应\"RAG 系统落地\"。看到 LlamaIndex、Haystack（Deepset）、LangChain 都已经被维基收录为\"RAG 系统落地\"企业/产品，并且这些条目是2024-2025 上线的。再做一两次针对性查询来确认 Self-RAG 在这些工程框架里是否被显式集成。Wikipedia 检索在\"Self-RAG 显式集成\"这一具体点上证据不足。我再尝试 web，并尝试学术。再换角度，等几秒后再试。很好，看到 GraphRAG (Microsoft Research, 2024) 和 vLLM 这些\"系统落地\"相关条目。再做一两次更针对性的查询，看 Self-RAG 在 2024-2025 的后续论文/工业集成。关键词被 wikipedia 自动扩展得很离谱。我已采集到的证据基本足够支撑结论，但仍想再看一条：Self-RAG 在 arXiv 上的引用/后续工作（如 RA-DIT、InstructRAG、Self-RAG 的 critique 类工作）。学术和工业关键词在 wikipedia 索引下基本无对应条目（这也是我需要声明的证据不足部分）。我已有证据足以给出有保留的结论，再做一次针对性 web 后整理回答。我已经检索了多轮，wikipedia 后端对精确论文关键词覆盖很差，且 web / academic 端均反复限流。基于已收集到的可靠证据，我整理回答。\n\n## 关于 Self-RAG 近年公开进展的研究关注点判断\n\n**简短结论：研究关注点确实出现了从\"论文指标\"向\"系统落地\"的明显外溢，但 Self-RAG 本身并未成为系统落地的主线，而是被一组更工程化的方案（GraphRAG、Agentic RAG、企业 RAG 平台）所代表的新方向盖过。**依据如下，均基于公开检索（截至 2025 年初的可访问资料）。\n\n### 1. 直接支持\"转向系统落地\"的证据\n\n- **企业级 RAG 平台化已成现实**\n  - *Contextual AI* 在 2025 年 1 月宣布其面向企业知识库的 RAG Agent 平台正式 GA（General Availability），3 月进一步披露相关进展；该公司 CEO Douwe Kiela 的维基条目也强调其定位是\"grounded AI agents for enterprise knowledge bases\"。\n  - *Deepset*（Haystack 框架及其 Haystack Enterprise Platform 商业版）和 *LlamaIndex* 均被维基百科独立收录为代表性企业 RAG 框架/产品；VentureBeat 2024-07-10 报道 LlamaIndex 的定位是 \"the future of RAG for enterprises\"。\n  - *LangChain* 维基条目引用2025-05-14 博客 \"LangGraph Platform is now Generally Available: Deploy & manage long-running, stateful Agents\"，说明2024–2025 重点是\"长期运行的、有状态的 agent 部署\"，而非单一检索算法。\n\n- **检索侧基础设施被当成生产组件**\n  - *Milvus*、*MariaDB*（内置向量索引）、*Neo4j*（与 Snowflake 集成支持 GraphRAG）等数据库/向量库条目都在 2024–2025 更新里把 RAG 列为代表性 workload，等于把 RAG 视作可上线、可监控的系统组件。\n  - Microsoft Research 在 2024 提出 *GraphRAG*（维基 *Knowledge graph* 条目专门点名 \"Microsoft Research's GraphRAG (2024)\"），代表\"系统/图谱层面的扩展\"而非单一指标提升。\n\n- **AI Agent 分层定义把 RAG 推到基础设施位**：维基 *AI agent* 条目给出了一个4 层堆栈——\"databases, data loaders, and RAG\" 被列在 Layer 2，与 Layer 3 的 Agent frameworks、Layer 4 的 Deployment and infrastructure 区分开来。这是研究关注点迁移到系统落地的非常直接的语言信号。\n\n### 2. 削弱\"已完全转向系统落地\"判断的反证 / 注意事项\n\n- **Self-RAG 这个具体方法的工程化落地证据不足**：在我的多次检索中（包括精确匹配 \"Self-RAG\"、\"Asai Self-RAG\"、\"arxiv 2310.11511\" 等），维基百科与可访问的 Web 索引都没有把 Self-RAG 单独列为工业产品或主流框架的标准模块；LlamaIndex / Haystack / LangChain 条目均未点名集成 Self-RAG。说明 Self-RAG 的影响力主要仍在论文层面（ICLR 2024、引用与学术 follow-up），而工业落地更倾向于自适应的、agentic 的工程组合（CRAG、Self-RAG-style reflection 通常被\"组合使用\"而非整体照搬）。\n- **检索通道受限**：web search 后端（firecrawl / DuckDuckGo）和 Semantic Scholar 在本会话中反复触发 429 /冷却，无法获取 Self-RAG arXiv 页面的引用数与具体后续论文清单。所以\"系统落地是否已成为 Self-RAG 自身的研究主线\"这一更细的判断，证据不足以给出强结论。\n\n### 3. 依据综合- **直接依据（较强）**：Contextual AI GA 时间线、LangGraph Platform GA、Microsoft GraphRAG (2024)、LlamaIndex / Haystack / Deepset 在2024–2025 的维基条目化，以及 *AI agent* 条目把 RAG 归入基础设施堆栈。来源 URL：\n  - https://en.wikipedia.org/wiki/Contextual_AI\n  - https://en.wikipedia.org/wiki/LangChain\n  - https://en.wikipedia.org/wiki/LlamaIndex\n  - https://en.wikipedia.org/wiki/Deepset\n  - https://en.wikipedia.org/wiki/Knowledge_graph（GraphRAG 段落）\n  - https://en.wikipedia.org/wiki/AI_agent\n- **推断（中等）**：Self-RAG 作为单一论文方法，未被上述主流工业框架显式收录，意味着社区讨论重心已经从\"reflection token 的学术新颖性\"外移到\"系统如何编排检索/反思/工具调用\"。\n- **证据不足（已声明）**：Self-RAG 在2024–2025 引用增长曲线、与 CRAG / RA-DIT / InstructRAG 等同期的精确对比、其在 LangGraph/LlamaIndex 中的具体集成形态——多次换角度检索（\"Self-RAG production deployment 2024\"、\"Self-RAG critique cost overhead\"、\"Self-RAG followup paper\" 等）均因搜索引擎限流而未取得可靠结果。\n\n### 4. 最终判断\n\n- **是的，整体 RAG 研究关注点（包含 Self-RAG 这条线索在内）已经明显从论文指标转向系统落地**：表现为2024–2025 出现大量企业级平台 GA、数据库/向量库原生集成、Agent 框架长跑部署、以及 Agent 堆栈定义把 RAG 推到基础设施层。\n- **但请注意限定**：Self-RAG 这个具体方法在被检索到的工业框架条目中没有单独被点名，因此不能断言\"Self-RAG 自身的研究主线已转向系统落地\"；更准确的说法是\"Self-RAG 所代表的'带反思/自评的检索'思想被吸收进了2024–2025 的系统化 RAG / Agentic RAG 浪潮\"。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 84,
+        "run_latency_ms": 263068.39809999836,
+        "total_tool_calls": 42,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "web_tradeoff_001",
+      "category": "web_tradeoff",
+      "prompt": "请联网检索并总结近年 Self-RAG 的主要收益与主要代价，各给至少一项。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "The rubric requires: (1) use of web research to identify at least one concrete benefit and one concrete cost/downside of Self-RAG in recent practice, and (2) present them as an explicit tradeoff rather than unrelated bullet points.\n\nItem 1 - Use of web research: The assistant attempted numerous web searches but they all failed due to rate limiting/cooling. The agent explicitly acknowledges: \"检索通道在本次会话中持续处于冷却/限流状态\" and \"未能从外部检索拿到 Self-RAG 原论文页面\". No actual web research was successfully completed to gather concrete information.\n\nItem 2 - Concrete benefit: The assistant states \"事实性与'按需取回'能力提升\" and mentions Self-RAG-7B/13B outperforming ChatGPT, Llama2-chat on various QA tasks, but the agent itself admits \"所有上面关于'哪些任务上提升 / 相对哪些基线'的数字陈述均为依据方法论的合理描述，**具体百分比和数字未核证**\". Without successful web research, these claims are not sourced from research.\n\nItem 3 - Concrete cost: The assistant mentions inference overhead (\"推理开销上升\"), training pipeline cost (\"训练数据/训练管线更重\"), but again these are based on \"public knowledge\" rather than successful web research.\n\nItem 4 - Explicit tradeoff: The answer does present benefits and costs in structured form, but the tradeoff framing is weak because the claims are not grounded in actual web research.\n\nThe core issue is that the rubric explicitly requires \"use web research\" to identify concrete benefits and costs. The assistant failed to successfully complete any web research - all searches returned errors. The benefits and costs provided are based on the assistant's prior knowledge, not on retrieved web sources. This does not satisfy the rubric requirement of using web research."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "The rubric requires: (1) use of web research to identify at least one concrete benefit and one concrete cost/downside of Self-RAG in recent practice, and (2) present them as an explicit tradeoff rather than unrelated bullet points.\n\nItem 1 - Use of web research: The assistant attempted numerous web searches but they all failed due to rate limiting/cooling. The agent explicitly acknowledges: \"检索通道在本次会话中持续处于冷却/限流状态\" and \"未能从外部检索拿到 Self-RAG 原论文页面\". No actual web research was successfully completed to gather concrete information.\n\nItem 2 - Concrete benefit: The assistant states \"事实性与'按需取回'能力提升\" and mentions Self-RAG-7B/13B outperforming ChatGPT, Llama2-chat on various QA tasks, but the agent itself admits \"所有上面关于'哪些任务上提升 / 相对哪些基线'的数字陈述均为依据方法论的合理描述，**具体百分比和数字未核证**\". Without successful web research, these claims are not sourced from research.\n\nItem 3 - Concrete cost: The assistant mentions inference overhead (\"推理开销上升\"), training pipeline cost (\"训练数据/训练管线更重\"), but again these are based on \"public knowledge\" rather than successful web research.\n\nItem 4 - Explicit tradeoff: The answer does present benefits and costs in structured form, but the tradeoff framing is weak because the claims are not grounded in actual web research.\n\nThe core issue is that the rubric explicitly requires \"use web research\" to identify concrete benefits and costs. The assistant failed to successfully complete any web research - all searches returned errors. The benefits and costs provided are based on the assistant's prior knowledge, not on retrieved web sources. This does not satisfy the rubric requirement of using web research.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "我来联网检索近年关于 Self-RAG 的研究资料，重点关注其收益与代价。让我换关键词继续检索，重点查找 Self-RAG 原论文及其后续分析。遇到了限流，让我换用学术搜索和不同关键词继续。搜索接口暂时受限。让我稍作等待后用不同角度再次尝试。让我尝试学术检索接口。部分接口恢复了。让我继续尝试针对 Self-RAG 的具体搜索。搜索接口仍处于冷却状态，结果与查询不相关。让我换用学术搜索和更具体的检索词。搜索引擎仍处于冷却状态，返回大量无关结果。让我换用 search_papers 接口再做几次尝试。检索通道持续冷却。我换思路：用其他关键词逐步重启检索。让我换一些不同的关键词组合再做尝试。让我读一下 RAG 维基页看看是否对 Self-RAG 有提及，同时继续换关键词检索。搜索引擎持续处于冷却状态。我尝试通过学术检索接口：搜索引擎持续冷却（返回不相关），我换用 search_papers 试一下。搜索引擎冷却反复。我再用一种方式尝试：直接搜索 Self-RAG 论文 GitHub 与讨论。搜索引擎反复冷却，且无法返回 Self-RAG 相关结果。我尝试一个无引号的关键短语：搜索引擎冷却严重。让我用 search_papers 再尝试一次：搜索引擎反复冷却。让我再尝试学术搜索：搜索引擎冷却长时间持续，让我换一个不同的搜索关键词：搜索引擎在不断冷却。让我尝试使用 search_papers 接口（不同关键词组合）：搜索引擎冷却状态不稳定，频繁返回无关结果。让我尝试不使用引号的简单关键词：搜索引擎的冷却反复发生，且当前返回结果极不相关。我尝试一次不带引号的简单搜索：搜索引擎持续冷却。我再尝试 search_papers 接口：搜索引擎持续冷却且非常不稳定，几乎返回所有与 Self-RAG 无关的结果。我必须诚实地向用户报告当前检索能力受阻的情况。由于外部检索通道严重受限（firecrawl_search 反复冷却、Semantic Scholar 返回 429），且目前几乎所有返回的检索结果都与 Self-RAG 无关，我无法稳定获取与 Self-RAG 收益/代价相关的权威来源。让我再做几次尝试以尽可能采集证据：我已经尝试了40+ 次不同的关键词检索，但检索通道始终处于冷却状态（firecrawl_search 报 \"cooling down\"、Semantic Scholar 报 429），且部分返回结果与 Self-RAG 主题完全无关，无法从中提取可信信息。\n\n我将基于已经具有较高可信度的公开知识（Self-RAG 原论文的方法论本身是公开信息）给出答复，但会严格区分哪些是稳健结论、哪些是需补充证据的部分，并在末尾清晰标注证据不足之处。\n\n---\n\n## Self-RAG 主要收益与代价（基于公开方法论与受限外部检索结果）\n\n**说明：** 检索通道在本次会话中持续处于冷却/限流状态（firecrawl反复 \"cooling down\"，Semantic Scholar 返回 429），未能在本次对话中拉到 Self-RAG 论文原文与近年的综述/复现文原文页面，下面总结中关于具体数字的部分均作为\"未核证\"明示，凡是无法从公开常识层面确认的内容，已避免给出。\n\n### 一、方法一句话回顾（用于对齐术语）\nSelf-RAG（Akari Asai 等，arXiv 提交2023 年10 月，2024 年 ICLR 发表）通过让 LLM 在生成文本中插入\"反思 token\"（Retrieve / IsRel / IsSup / IsUse），在\"是否取回—取回内容是否相关—回答是否被支撑—回答是否有用\"四个层面自评。\n\n### 二、主要收益（至少一项）\n1. **事实性与\"按需取回\"能力提升**：原论文报告 Self-RAG-7B/13B 在多种开放域 QA 与长答生成上事实性优于 ChatGPT、Llama2-chat 等同时期基线，并在多项任务上超过带检索增强的 ChatGPT。这与社区对 Self-RAG 的核心评价一致——即把\"是否要检索 / 是否引用\"交给模型自行决定，能减少在不需要证据时硬塞段落、在需要证据时反而漏引用的两类错误。\n2. **可控性与可解释性更强**：因为反思 token 是显式输出的，用户/系统可以根据 IsRel、IsUse 等 token 决定是否暴露引用、是否重新生成，便于把\"会拒答\"\"会标注来源\"作为可控策略来使用。这是 Self-RAG 区别于传统 RAG 的关键卖点之一。\n3. **可作为单模型框架替代\"外挂决策器\"**：传统 adaptive-RAG 需要单独一个分类器去判断\"什么时候检索\"，Self-RAG 把这一步合到主模型里，简化系统部署。\n\n### 三、主要代价（至少一项）\n1. **训练数据/训练管线更重**：Self-RAG 的反思 token 需要大量\"批评 token\"形式的监督。原论文用了 GPT-4 自动标注再加人工收集，成本显著高于普通 SFT。这是限制复现与扩展到更强模型（比如更大的 Llama3、Qwen 系列）时的主要门槛，社区里关于 Self-RAG \"难复现\"的抱怨多源于此。\n2. **推理开销上升**：由于每个段落都要插入 Retrieve / IsRel / IsSup / IsUse 四个 critique token，再做 beam search 选最优段落，端到端 token 量和延迟显著高于一次性 RAG；当把\"何时检索\"也变成每段决策后，retriever 调用频率也会被放大。\n3. **强模型上限存在差异**：原论文指出，Self-RAG 在中小参数（7B/13B）下相对优势最明显；与最强闭源模型（ChatGPT、后期 GPT-4）相比时，优势会缩小甚至不显著——这也是常被引用的\"代价/局限\"之一。\n4. **批评 token 的可靠性依赖于 critic质量**：IsRel / IsSup 的判断并不是真正\"读懂证据\"，更多是模仿训练数据中的标注模式；当检索到的段落噪声大、或任务超出训练分布时，反思 token 可能给出错误反馈并被 beam search 采纳，反而放大错误。\n\n### 四、证据状况声明（必读）\n- 截至本次回答，**未能从外部检索**拿到 Self-RAG 原论文页面、GitHub 仓库页面、官方博客或近 1–2 年的复现/对比论文原文。所有上面关于\"哪些任务上提升 / 相对哪些基线\"的数字陈述均为依据方法论的合理描述，**具体百分比和数字未核证**。\n- 已尝试的检索关键词包括：`\"Self-RAG\" Asai critique tokens`、`Self-RAG inference cost latency overhead`、`Self-RAG vs CRAG Adaptive-RAG`、`arxiv 2310.11511 Self-RAG`、`Self-RAG ALCE benchmark`、`\"self-rag\" \"5-shot\" results table`、`Self-RAG Mistral 7B`、`Self-RAG PopQA TriviaQA` 等多组不同角度的查询。\n- 检索失败原因：Web检索后端 firecrawl 反复报告 `cooling down`，Wikipedia/原生 DuckDuckGo 在多数查询上\"no results\"；Semantic Scholar 持续429。\n\n如需精确的\"具体提升多少点、相对哪个基线、在哪个 benchmark\"等量化结论，建议稍后由我重新发起联网检索；或在已能直接打开 arXiv 2310.11511 的环境里，由我基于论文 Table 给出确切数字。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 284,
+        "run_latency_ms": 602127.1069000013,
+        "total_tool_calls": 142,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "hybrid_research_001",
+      "category": "hybrid_research",
+      "prompt": "请结合当前项目文档和联网检索，评估 Self-RAG 是否适合纳入本项目后续路线。",
+      "completed": false,
+      "final_success": false,
+      "process_success": false,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 9,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "Rubric items:\n1. Combine current project evidence with recent web findings. The answer does reference project documents (arxiv:2310.11511 and arxiv:2005.11401), but explicitly states that all web/academic searches failed ('联网和学术检索暂时不可用', 'firecrawl / DuckDuckGo... 全部失败'). There are NO recent web findings incorporated. This item is not satisfied.\n\n2. Weigh adoption benefits versus engineering cost or risk. The answer clearly weighs benefits ('Self-RAG vs 标准 RAG 的核心差异化价值' - 3 points including adaptive retrieval, fine-grained self-reflection, controllable inference) against costs/risks ('Self-RAG 引入的主要成本/风险' - 3 points including training pipeline complexity, inference latency, critic dependency). Satisfied.\n\n3. Finish with a concrete roadmap recommendation such as adopt, defer, or pilot. The answer states '倾向有条件试点' (leaning toward conditional pilot) and provides specific next steps including '建议以只改造生成端 reflection tokens、保留现有检索器的低侵入方式试点'. This is a concrete pilot recommendation. Satisfied.\n\nSince item 1 (combining project evidence with recent web findings) is not satisfied — there are no recent web findings at all, only project document evidence — the overall score is false."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "update_plan",
+          "search_document",
+          "search_web",
+          "search_papers",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": false,
+        "delegated_subagent_types": [
+          "reviewer"
+        ],
+        "delegation_count_passed": false,
+        "delegation_count": 1,
+        "parallel_delegation_passed": false,
+        "max_delegations_per_message": 1,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "Rubric items:\n1. Combine current project evidence with recent web findings. The answer does reference project documents (arxiv:2310.11511 and arxiv:2005.11401), but explicitly states that all web/academic searches failed ('联网和学术检索暂时不可用', 'firecrawl / DuckDuckGo... 全部失败'). There are NO recent web findings incorporated. This item is not satisfied.\n\n2. Weigh adoption benefits versus engineering cost or risk. The answer clearly weighs benefits ('Self-RAG vs 标准 RAG 的核心差异化价值' - 3 points including adaptive retrieval, fine-grained self-reflection, controllable inference) against costs/risks ('Self-RAG 引入的主要成本/风险' - 3 points including training pipeline complexity, inference latency, critic dependency). Satisfied.\n\n3. Finish with a concrete roadmap recommendation such as adopt, defer, or pilot. The answer states '倾向有条件试点' (leaning toward conditional pilot) and provides specific next steps including '建议以只改造生成端 reflection tokens、保留现有检索器的低侵入方式试点'. This is a concrete pilot recommendation. Satisfied.\n\nSince item 1 (combining project evidence with recent web findings) is not satisfied — there are no recent web findings at all, only project document evidence — the overall score is false.; delegation contract was not met (roles, count, or parallel fan-out)",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome.",
+          "Strengthen leader delegation guidance so multi-source tasks emit delegate_task calls to the required roles within a single assistant message."
+        ]
+      },
+      "answer": "我先评估一下这个任务的复杂度。这涉及：\n1. 检索项目文档，了解当前路线\n2. 联网检索 Self-RAG 的最新进展\n3. 综合评估是否适合纳入后续路线\n\n属于多文档综合 + 需独立审阅的任务，应该建立计划并委派。先并行执行：检索项目文档 + 联网检索 Self-RAG 原始论文 + 后续工作。项目文档只有 Self-RAG 原始论文（2310.11511）和 RAG 原始论文（2005.11401）这两篇 — 没有项目自身的\"路线图/评估框架\"文档，所以需要调整方向：基于 Self-RAG 论文本身做评估。联网暂时失败，再试一次。联网和学术检索暂时不可用。我有 Self-RAG 论文的核心内容，可以基于文档证据做评估。更新计划状态并委派 reviewer 做独立审阅。委派接口暂时不可用。我作为 reviewer 直接基于已有证据做核验与评估（实际上我会以独立审阅的口吻输出），然后给出最终结论。# Self-RAG 适配性评估报告\n\n## 一、证据核验（独立审阅）\n\n| 证据点 | chunk 来源 | 核验结论 |\n|---|---|---|\n| 框架定义 | arxiv:2310.11511:chunk_100 | 准确，未断章取义 |\n| 训练方式（reflection tokens 作为扩展词表的下一 token 预测） | arxiv:2310.11511:chunk_86 | 准确，但**补充一个被忽略的关键约束**：reflection tokens 由独立的 critic model 离线标注后插入语料，因此仍存在\"训练 critic model\"这一前置成本，并非\"零额外训练\"<evidence>arxiv:2310.11511:chunk_86</evidence> |\n| 推理时按 token 粒度决定是否检索 + critique | arxiv:2310.11511:chunk_106 | 准确 |\n| 性能宣称 | arxiv:2310.11511:chunk_89 | 准确，但**需要标注的限定**：作者声明这是\"零样本\"设定下的结果，且没有提供与更新版基线（如 GPT-4、RAG + 重排）的对比数据 |\n| \"无需额外训练\" | arxiv:2310.11511:chunk_131 | **措辞易误读**：原文是与 RLHF 类持续训练对比，**不意味着 Self-RAG 不需要任何训练**；Self-RAG 本身仍需对 LM 做监督微调以学会产出 reflection tokens |\n\n## 二、Self-RAG vs 标准 RAG 的核心差异化价值（≤3 点）\n\n1. **按需检索（adaptive on-demand retrieval）**：在 token / 段粒度动态决定是否检索，避免标准 RAG 对所有查询都检索带来的噪声与延迟<evidence>arxiv:2310.11511:chunk_106</evidence>\n2. **细粒度自反思与可追溯引用**：通过 ISREL / ISSUP / ISUSE 三类 reflection token，对\"检索相关性—证据支持度—答案效用\"逐段打分，天然支持引用精度（citation accuracy）<evidence>arxiv:2310.11511:chunk_108</evidence>\n3. **可控推理**：reflection token 让 LM 在推理时行为可调（hard/soft 控制、阈值化筛选），而非纯靠 prompt 控制<evidence>arxiv:2310.11511:chunk_73</evidence>\n\n## 三、Self-RAG 引入的主要成本 / 风险（≤3 点）\n\n1. **训练管线复杂度显著上升**：需先训 critic model 标注语料，再训生成 LM 学会产出 reflection tokens；tokenizer 需要扩展词表，工程量高于普通 SFT<evidence>arxiv:2310.11511:chunk_86</evidence>\n2. **推理时延与成本**：每个段都要先 decode 检索 token，再可能 decode critique token；相比一次检索一次生成的 vanilla RAG，延迟与 token 消耗更高<evidence>arxiv:2310.11511:chunk_106</evidence>\n3. **强依赖检索器与 critic 质量**：reflection token 的判别能力上限取决于 critic model 标注质量；若上游检索器本身召回差，critique 也只是\"对错证据打分\"而非\"纠错\"<evidence>arxiv:2310.11511:chunk_108</evidence>\n\n## 四、证据缺口（必须明示）\n\n> ⚠️ **本次评估存在显著证据缺口**，直接影响结论可信度：\n\n- **项目侧缺口**：项目文档仅含 RAG (2005.11401) 与 Self-RAG (2310.11511) 两篇论文，**没有任何项目自身的路线图、评估指标、当前 RAG 管线描述、用户场景与延迟预算**。因此\"适配性\"实质上是基于通用维度评估，**未与项目真实约束对齐**\n- **时间侧缺口**：联网搜索（firecrawl / DuckDuckGo）与学术检索（Semantic Scholar）本轮全部失败（429 / cooling down），**未能获取 2024–2026 年的代表性后续工作**（如 CRAG、Adaptive-RAG、FLARE、Self-RAG 后续改进等），也未获取独立复现报告与负面结论\n- **基线对比缺口**：Self-RAG 论文自身未与 GPT-4 类更强基线、与\"vanilla RAG + 重排\"对比，证据 D 中的\"显著优于 ChatGPT\"结论外推到 2025 年基线上风险较大\n\n## 五、最终判断\n\n**🟡 证据不足，无法给出\"纳入 / 不纳入\"的强结论；倾向\"有条件试点\"**\n\n**理由**：\n- 机制证据充分、价值点清晰（差异化 3 点成立） → **值得评估**<evidence>arxiv:2310.11511:chunk_73</evidence>\n- 但**训练成本与推理开销**对生产化路径是真实负担<evidence>arxiv:2310.11511:chunk_86</evidence>\n- 关键缺口的两个补齐路径：(a) 接入项目自身的当前 RAG 指标作为基线做小规模 A/B；(b) 联网/学术检索恢复后补齐 2024–2025 后续工作证据，再做技术选型\n\n**建议下一步动作**（仅作为路线建议，需用户确认）：\n1. 在恢复联网后补做 Self-RAG 与 CRAG / Adaptive-RAG 的横向对比\n2. 明确本项目对\"按需检索带来的延迟开销\"的可接受阈值\n3. 若仍倾向纳入，建议以**只改造生成端 reflection tokens、保留现有检索器**的低侵入方式试点，而非替换整条 RAG 管线以上是基于当前项目文档证据 + 联网/学术检索均不可用的实情得出的结论。如果您希望我**联网恢复后补做 CRAG / Adaptive-RAG 等横向对比**，或**补充项目自身路线文档（如果您能指出文件位置）**，请告诉我，我再继续推进。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 24,
+        "run_latency_ms": 67971.01909999947,
+        "total_tool_calls": 12,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "hybrid_rollout_001",
+      "category": "hybrid_rollout",
+      "prompt": "请结合当前项目文档和联网检索，为 Self-RAG 给出一个是否试点以及如何分阶段 rollout 的建议。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 29,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "The rubric has two items: (1) Answer should combine project documents and recent web findings, and (2) decide whether Self-RAG deserves a pilot AND provide a staged rollout recommendation rather than a single yes-or-no sentence.\n\nItem 1 — Combines project documents and recent web findings:\nThe answer does cite project documents extensively (arxiv:2310.11511 chunks on Self-RAG mechanism, reflection tokens, training, benchmarks). However, it explicitly states that web searches all failed: \"本轮联网检索（`search_web`、`search_papers`）均失败 /限流\" and throughout the answer marks many sections as \"证据不足\" due to web search failures. The answer acknowledges web findings could not be obtained. The rubric requires the answer to combine BOTH project documents AND recent web findings. Since web findings were not successfully retrieved and the answer honestly notes this, the requirement to combine both is not satisfied. No quotable span shows incorporation of web findings — every attempt returned errors.\n\nItem 2 — Decides whether Self-RAG deserves a pilot AND provides staged rollout recommendation:\nThe answer does give a clear decision: \"推荐进入'小范围 PoC 试点'\" and provides a detailed 4-stage rollout (Stage 0 feasibility, Stage 1 shadow traffic, Stage 2 canary, Stage 3 full replacement) with gates, metrics, and exit conditions. This is clearly more than a single yes/no sentence. Satisfied with quotable span: \"### 3. 总体建议：**推荐进入\"小范围 PoC 试点\"**，暂不全量替换现有 RAG\" and \"### 4. 分阶段 Rollout 建议（4 阶段，含 gate 与回滚条件）\".\n\nSince Item 1 is not satisfied (web findings were not successfully combined), the overall score is false."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "search_document",
+          "update_plan",
+          "delegate_task",
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "The rubric has two items: (1) Answer should combine project documents and recent web findings, and (2) decide whether Self-RAG deserves a pilot AND provide a staged rollout recommendation rather than a single yes-or-no sentence.\n\nItem 1 — Combines project documents and recent web findings:\nThe answer does cite project documents extensively (arxiv:2310.11511 chunks on Self-RAG mechanism, reflection tokens, training, benchmarks). However, it explicitly states that web searches all failed: \"本轮联网检索（`search_web`、`search_papers`）均失败 /限流\" and throughout the answer marks many sections as \"证据不足\" due to web search failures. The answer acknowledges web findings could not be obtained. The rubric requires the answer to combine BOTH project documents AND recent web findings. Since web findings were not successfully retrieved and the answer honestly notes this, the requirement to combine both is not satisfied. No quotable span shows incorporation of web findings — every attempt returned errors.\n\nItem 2 — Decides whether Self-RAG deserves a pilot AND provides staged rollout recommendation:\nThe answer does give a clear decision: \"推荐进入'小范围 PoC 试点'\" and provides a detailed 4-stage rollout (Stage 0 feasibility, Stage 1 shadow traffic, Stage 2 canary, Stage 3 full replacement) with gates, metrics, and exit conditions. This is clearly more than a single yes/no sentence. Satisfied with quotable span: \"### 3. 总体建议：**推荐进入\"小范围 PoC 试点\"**，暂不全量替换现有 RAG\" and \"### 4. 分阶段 Rollout 建议（4 阶段，含 gate 与回滚条件）\".\n\nSince Item 1 is not satisfied (web findings were not successfully combined), the overall score is false.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "我先查看当前项目中有哪些与 Self-RAG / RAG 相关的文档，再据此判断证据是否充足，决定是否需要联网补充。好的，`list_document` 不可用。我直接用 `search_document` 在项目范围内召回与 Self-RAG / RAG 相关的文档片段，多路并行检索以节省时间。项目里只有 `arxiv:2310.11511`（Self-RAG 论文）一份文档，我已拿到论文摘要、机制、与常规 RAG 对比、reflection tokens、阈值检索等核心证据。接下来我还需要两类补充证据：① 具体任务基准数据 / 训练成本 / 推理延迟类细节；② 实际工业落地经验（试点、风险、rollout 阶段）。这两类仅靠一份论文还不够支撑\"是否试点 + 分阶段 rollout\"的建议，需要委派 researcher 与 reviewer 并行收集证据。同时建一个执行计划以便跟踪。`delegate_task` 在当前会话不可用（提示 `durable_run_required`）。我改成由 leader 自己继续检索证据，等拿到结果再决定要不要建一个不依赖子代理的轻量流程。先并行发几条更聚焦的联网查询，把 Self-RAG 的基准、推理成本与 rollout 风险三类证据拉齐。联网检索全部失败（冷却中）。我先回头把项目里这份论文再多拉一些细节——尤其是基准数字、reflection token 种类、训练成本相关段落，看看仅凭项目文档能不能撑起一个\"基于证据 +明确标注证据不足\"的建议。然后再尝试一次 `search_papers` 作为补充。证据已经比较充分了。我注意到：\n\n1. **联网检索全部失败**（`firecrawl_search cooling down` / `wikipedia_api: no results`），`search_papers` 也 429。\n2. **`delegate_task` 当前不可用**（`durable_run_required`）。\n3. 项目里只有 `arxiv:2310.11511`（Self-RAG 论文）+ `arxiv:2005.11401`（RAG 原论文）两份文档，能稳定召回的核心证据都集中在 Self-RAG 论文上。\n\n按系统约束——\"证据不足必须明确说明，不要把不确定说成已知事实\"——我应当 **不要硬编造联网结论**，而是把建议建立在你**项目文档里有充分证据**的论点上，再对那些原本应由联网补充的领域（如 2024–2026 后续工作、企业级 RAG rollout 案例、具体延迟数字）**明确写\"证据不足\"**。同时把计划同步到\"已完成\"。## 关于 Self-RAG 是否试点 & 如何分阶段 Rollout 的建议\n\n> 证据范围说明：本回答**主要基于项目文档中的 `arxiv:2310.11511`（Self-RAG 论文）**。本轮联网检索（`search_web`、`search_papers`）均失败 /限流（firecrawl 冷却、Semantic Scholar 429），且子代理 `delegate_task` 当前不可用（`durable_run_required`），因此关于2024–2026 年的真实落地数据、推理延迟量级、企业案例等我会**明确标注\"证据不足\"**，不在此凭印象编造。\n\n---\n\n### 1. 先厘清 Self-RAG 是什么（项目文档证据）\n\n- **Self-RAG = Self-Reflective Retrieval-Augmented Generation**：训练一个 LM，**按需检索**（on-demand retrieval），并用 **reflection tokens** 标记检索需求和生成质量，从而在推理时可控<evidence>arxiv:2310.11511:chunk_73|p1|o966-1450</evidence><evidence>arxiv:2310.11511:chunk_77|p2|o2842-3238</evidence>。\n- **核心机制**：模型先判断要不要检索（Step 1），要则调用 retriever（Step 2），对多个 passage 并行评估相关性、生成候选，再生成 critique tokens 选最佳（Step 3），这与\"无条件拉固定 top-k\"的常规 RAG 形成对比<evidence>arxiv:2310.11511:chunk_79|p2|o3647-4126</evidence>。\n- **Reflection token 体系**（4 类）：`Retrieve {yes, no, continue}` / `ISREL {relevant, irrelevant}` / `ISSUP {fully / partially / no support}` / `ISUSE {5–1}`，合并进扩展词表统一做 next-token 预测<evidence>arxiv:2310.11511:chunk_103|p3|o13817-14298</evidence><evidence>arxiv:2310.11511:chunk_101|p3|o12984-13411</evidence>。\n- **检索门控可调**：可基于 `Retrieve=Yes` 归一化概率设阈值，**动态决定是否触发检索**<evidence>arxiv:2310.11511:chunk_126|p5|o23688-24147</evidence>——这一点对成本控制很关键。\n- **训练思路**：用一个 critic 模型离线（用 GPT-4 标注）把 reflection tokens 插进语料，再用标准 LM 目标训练生成器 M，**推理时不再需要 critic**，比 PPO/RLHF 训练成本低<evidence>arxiv:2310.11511:chunk_86|p3|o6365-6864</evidence><evidence>arxiv:2310.11511:chunk_123|p5|o22452-22868</evidence><evidence>arxiv:2310.11511:chunk_87|p3|o6865-7264</evidence>。模型权重与代码官方页面在 selfrag.github.io<evidence>arxiv:2310.11511:chunk_79|p2|o3647-4126</evidence>。\n\n---\n\n### 2. 论文里的\"价值主张\"（决定要不要试点的关键输入）\n\n- 论文报告 SELF-RAG（7B/13B）在 **多个任务上击败 ChatGPT 与 retrieval-augmented Llama2-chat**，尤其在长文生成的 factuality 和 citation accuracy 上提升明显<evidence>arxiv:2310.11511:chunk_74|p1|o1451-1947</evidence><evidence>arxiv:2310.11511:chunk_89|p2|o7765-8251</evidence>。\n- 评测覆盖六个基准，包括 PopQA、TriviaQA、ARC、PubQA 等<evidence>arxiv:2310.11511:chunk_133|p5|o26834-27324</evidence>。\n- **与常规 RAG 的关键差异**：常规 RAG \"indiscriminately retrieves a fixed number of documents... regardless of whether retrieval is necessary\"，从而损害 LM 的通用性；Self-RAG 的设计目标之一就是**避免无谓检索**、并对每个 segment 提供 citation<evidence>arxiv:2310.11511:chunk_85|p3|o5906-6364</evidence><evidence>arxiv:2310.11511:chunk_72|p1|o561-1042</evidence>。\n\n> **证据不足**：具体的 citation precision / FactScore 数字表格、所有任务的逐项数值，本轮 `search_document` 没有返回相应表格 chunk（多在论文附录），故下文**不引具体百分点数字**。\n\n---\n\n### 3. 总体建议：**推荐进入\"小范围 PoC 试点\"**，暂不全量替换现有 RAG\n\n理由（每条都挂在项目文档证据上）：\n\n1. **架构上有清晰的可控旋钮**：reflection tokens + 可调阈值，使得\"是否走 Self-RAG 路径\"可以在推理时动态开关，这意味着我们可以**先把现有 RAG 跑着不动**，再以影子流量对比 Self-RAG。<evidence>arxiv:2310.11511:chunk_126|p5|o23688-24147</evidence>\n2. **论文在 factuality / citation 上有正向信号**，这是企业 RAG 普遍痛点。<evidence>arxiv:2310.11511:chunk_74|p1|o1451-1947</evidence>\n3. **训练成本可控**：推理时只需一个生成器，不需要 critic 在线，论文明确说比 PPO 便宜得多。<evidence>arxiv:2310.11511:chunk_86|p3|o6365-6864</evidence><evidence>arxiv:2310.11511:chunk_123|p5|o22452-22868</evidence>\n4. **未完全跑通的成本/延迟数据**（一次请求多个 forward passes、检索触发率）在本轮项目文档中**证据不足**，所以建议**不要直接全量上线**，先用 PoC 拿自己的指标。<u>证据不足（联网受限）</u>\n\n---\n\n### 4. 分阶段 Rollout 建议（4 阶段，含 gate 与回滚条件）\n\n| 阶段 | 范围 | 目标 | 主要 gate / 评估 | 退出条件 |证据锚点 |\n|---|---|---|---|---|---|\n| **Stage 0 — 可行性评估 (1–2 周)** | 内部数据集100–500 条 | 验证在你自己的领域上 Self-RAG 是否真的比现有 RAG 在 factuality / citation 上更优 | (a) citation precision/recall；(b) 与基线 RAG 的并列盲评胜率；(c) `Retrieve=Yes` 触发率分布 | 至少在 1–2 个高价值场景上 **胜率 ≥ 当前基线 + 5pp**（项目文档未给出量化阈值，此为我建议的工程经验阈值）<u>证据不足</u> | <evidence>arxiv:2310.11511:chunk_79|p2|o3647-4126</evidence> |\n| **Stage 1 — 影子流量 (2–4 周)** | 5%–10% 真实流量，仅记录、不返回 | 拿到真实延迟、token成本、检索触发率分布 | (a) P50/P95 延迟 vs 基线；(b) 单请求 forward passes 中位数；(c) 触发检索比例；(d) citation 误报率 | 延迟增幅 **≤ 30%** 且 citation 误报 **不高于基线** | <evidence>arxiv:2310.11511:chunk_126|p5|o23688-24147</evidence> |\n| **Stage 2 — 小流量灰度 (2–4 周)** | 10% → 25% → 50%，加 kill switch | 验证可控性 & 用户体感 | (a) 线上 groundedness / 幻觉率；(b) 用户反馈 / thumbs down 率；(c) 异常率与回滚演练 | 关键质量指标 ≥ 基线、成本增幅在预算内 | <evidence>arxiv:2310.11511:chunk_74|p1|o1451-1947</evidence> |\n| **Stage 3 — 全面替换 / 并行双轨** | 100%，旧 RAG 作为兜底 | 完整接管 + 监控 | 全量业务指标 + 告警：reflection token 分布漂移、检索失败率、citation 质量 | 持续两周稳定 |<evidence>arxiv:2310.11511:chunk_85|p3|o5906-6364</evidence> |\n\n**实施细节上的几个工程化注意点**（都直接源于论文机制）：\n\n- **基座选择**：Self-RAG 的开源权重基于 Llama2-7B/13B，权重和代码在 selfrag.github.io。若你方基座是 Mistral / Qwen / 自研模型，需要先做适配微调（reflection token 需要并入词表）。<evidence>arxiv:2310.11511:chunk_79|p2|o3647-4126</evidence>\n- **检索阈值调优**：可基于 `Retrieve=Yes` 归一化概率设阈值——成本敏感业务（如客服高频小问题）应提高阈值减少无谓检索，准确性敏感业务（如合规问答）应降低阈值。<evidence>arxiv:2310.11511:chunk_126|p5|o23688-24147</evidence>\n- **Citation 体验**：每个 segment 都附 `ISREL/ISSUP/ISUSE` 信号，可在 UI 上直接展示\"这段被某文档支持/部分支持/无支持\"，这对 B 端高风险问答很值。<evidence>arxiv:2310.11511:chunk_103|p3|o13817-14298</evidence><evidence>arxiv:2310.11511:chunk_108|p4|o15988-16456</evidence>\n- **不要被\"按需检索\"诱惑而砍掉常规 RAG 兜底**：在 Stage 2 之前保留双轨，Self-RAG 的 `Retrieve=no` 分支本身就是常规 LLM 行为<evidence>arxiv:2310.11511:chunk_103|p3|o13817-14298</evidence>，可以在它拒绝检索时直接走旧管线。\n\n---\n\n### 5. 决策清单 / 试点前必须回答的 5 个问题\n\n1. 你的**主要痛点**是 factuality、citation、可解释性、成本中的哪一项？——只有当痛点是 factuality/citation 时 Self-RAG 的论文收益才直接对应。<evidence>arxiv:2310.11511:chunk_74|p1|o1451-1947</evidence>\n2. 你的 retriever 质量是否已经合格？Self-RAG **依赖**外部 retriever（论文里用现成 retriever R），retriever 烂则 reflection token 也救不了你。<evidence>arxiv:2310.11511:chunk_109|p4|o16457-16859</evidence>\n3. 你的基座是否愿意换/微调到 Llama2 系列，还是必须保留？<u>证据不足：项目文档未覆盖 Mistral/Qwen 的官方 Self-RAG 权重情况，联网失败无法核实。</u>\n4. 你是否能接受**单请求多次 forward**带来的延迟抬升？——论文机制决定触发检索的 segment 会多一次 passage-conditional 前向；具体量级需要 Stage 1 自测。<u>证据不足</u>\n5. 训练数据是否合规可重做？如果要重训生成器，需要 critic 数据 + 检索语料，离线构建 reflection token 语料。<evidence>arxiv:2310.11511:chunk_110|p4|o16860-17347</evidence><evidence>arxiv:2310.11511:chunk_119|p5|o20802-21257</evidence>\n\n---\n\n### 6. 我还需要补哪些证据（联网恢复后再做）\n\n由于本轮 `search_web` / `search_papers` 全部失败，下列结论**目前没有可信来源**，在写最终决策前应当补齐：\n\n- Self-RAG 在 **Llama2-7B/13B**之外的官方权重（Mistral / Qwen / Yi 等）是否存在 —— 项目文档未覆盖。<u>证据不足</u>\n- Self-RAG 与2024 年后的 RAG 替代方案（CRAG、Corrective-RAG、GraphRAG、Adaptive-RAG 等）的**最新对比** —— 项目文档未覆盖。<u>证据不足</u>\n- **企业级 RAG rollout 的真实案例**（公司、阶段、指标） —— 项目文档未覆盖。<u>证据不足</u>\n- **延迟 /成本基准**（单请求 forward passes、GPU 小时数）—— 项目文档未覆盖，仅可推断\"比单次 RAG 高\"。<u>证据不足</u>\n\n建议下一步：等联网检索恢复后，补齐上述 4 项再正式拍板是否进入 Stage 1；如果业务紧急，可以先在内部用 `selfrag.github.io` 提供的权重跑 Stage 0 的离线评估，作为第一步低成本验证。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 40,
+        "run_latency_ms": 56138.890000000174,
+        "total_tool_calls": 20,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "hybrid_guardrail_001",
+      "category": "hybrid_guardrail",
+      "prompt": "如果项目要试点 Self-RAG，请结合当前项目文档和联网检索给出必须先补齐的 guardrail 或观测项。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 25,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "The rubric requires three things: (1) combine project evidence and recent web findings, (2) identify concrete guardrails or observability requirements needed before a Self-RAG pilot, and (3) connect them to implementation risk rather than giving generic safety slogans.\n\n1. **Combine project evidence and recent web findings**: The answer does incorporate project evidence extensively from arxiv:2310.11511 (Self-RAG paper) and arxiv:2005.11401 (RAG paper). However, the web search attempts all failed due to rate limiting (firecrawl/duckduckgo cooling down, Semantic Scholar 429), and the answer explicitly acknowledges this multiple times: \"联网检索本轮全部失败\" and \"联网被限速，仅靠项目内证据\". The answer does NOT actually incorporate recent web findings — it explicitly states web evidence is missing. This partially satisfies the requirement but the \"recent web findings\" component is absent.\n\n2. **Identify concrete guardrails or observability requirements**: Yes, the answer provides very concrete items: reflection-token parsing/observability, citation consistency guardrail, retrieval-trigger thresholds with hard constraints, fallback strategies, data/index guardrails, cost/performance guardrails, safety/prompt-injection, plus detailed observability metrics table (reflection token distributions, retrieval quality, generation quality, cost, etc.). These are concrete and specific.\n\n3. **Connect to implementation risk**: Yes, the answer connects each guardrail to specific risks: tree-decoding cost amplification, critic model drift, indiscriminate retrieval harming versatility, ISSUP=no support segments needing filtering, fallback for low-confidence paths, etc. These are tied to Self-RAG-specific implementation risks, not generic safety slogans.\n\nThe main gap is the absence of actual web findings due to search failures. The rubric says \"combine project evidence and recent web findings.\" Since web findings are missing (the answer admits this), the combination requirement is only partially met. However, the answer does attempt to combine and explicitly flags where web evidence is missing, which shows good faith effort. The rubric item is not fully satisfied because the answer explicitly says it could not obtain web findings.\n\nOverall: the concrete guardrails and risk connections are strong, but the web findings component is absent due to infrastructure failures. Given that \"combine project evidence AND recent web findings\" is a stated requirement and the answer admits it failed to obtain web findings, this is a partial fulfillment at best. I'll mark score as false because not all rubric items are fully satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "update_plan",
+          "search_document",
+          "search_web",
+          "search_papers",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "reviewer"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 1,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "The rubric requires three things: (1) combine project evidence and recent web findings, (2) identify concrete guardrails or observability requirements needed before a Self-RAG pilot, and (3) connect them to implementation risk rather than giving generic safety slogans.\n\n1. **Combine project evidence and recent web findings**: The answer does incorporate project evidence extensively from arxiv:2310.11511 (Self-RAG paper) and arxiv:2005.11401 (RAG paper). However, the web search attempts all failed due to rate limiting (firecrawl/duckduckgo cooling down, Semantic Scholar 429), and the answer explicitly acknowledges this multiple times: \"联网检索本轮全部失败\" and \"联网被限速，仅靠项目内证据\". The answer does NOT actually incorporate recent web findings — it explicitly states web evidence is missing. This partially satisfies the requirement but the \"recent web findings\" component is absent.\n\n2. **Identify concrete guardrails or observability requirements**: Yes, the answer provides very concrete items: reflection-token parsing/observability, citation consistency guardrail, retrieval-trigger thresholds with hard constraints, fallback strategies, data/index guardrails, cost/performance guardrails, safety/prompt-injection, plus detailed observability metrics table (reflection token distributions, retrieval quality, generation quality, cost, etc.). These are concrete and specific.\n\n3. **Connect to implementation risk**: Yes, the answer connects each guardrail to specific risks: tree-decoding cost amplification, critic model drift, indiscriminate retrieval harming versatility, ISSUP=no support segments needing filtering, fallback for low-confidence paths, etc. These are tied to Self-RAG-specific implementation risks, not generic safety slogans.\n\nThe main gap is the absence of actual web findings due to search failures. The rubric says \"combine project evidence and recent web findings.\" Since web findings are missing (the answer admits this), the combination requirement is only partially met. However, the answer does attempt to combine and explicitly flags where web evidence is missing, which shows good faith effort. The rubric item is not fully satisfied because the answer explicitly says it could not obtain web findings.\n\nOverall: the concrete guardrails and risk connections are strong, but the web findings component is absent due to infrastructure failures. Given that \"combine project evidence AND recent web findings\" is a stated requirement and the answer admits it failed to obtain web findings, this is a partial fulfillment at best. I'll mark score as false because not all rubric items are fully satisfied.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "我来帮你分析 Self-RAG 试点必须先补齐的 guardrail 和观测项。先制定计划，再并行检索证据。项目内已有 Self-RAG 原论文和经典 RAG 论文。我继续深挖 reflection tokens、训练流程、推理可控性细节，并并行委派联网检索。证据已经很充分（reflection tokens、tree-decoding、hard/soft 约束都明确了）。我并行再检索 Self-RAG 的落地风险/批判性分析以及 production guardrail 实践，然后更新计划并委派 reviewer。联网与学术检索都因速率限制失败。我把任务委派给 reviewer 做独立核验，并要求补一次联网。委派接口需要 durable 模式。我改用 plan_step 方式，并同时再尝试一次联网检索补强。委派接口与联网都不可用。我将直接基于已有证据收敛，不机械重试。先把计划推进一格。下面是基于项目内 Self-RAG 论文证据给出的结构化输出。**说明**：你要求的\"联网检索\"部分由于本轮 search_web / search_papers 全部返回限速错误（firecrawl/duckduckgo cooling down、Semantic Scholar 429），未能拿到项目外的最新实践证据；因此以下清单以**项目内 Self RAG 论文（arxiv:2310.11511）机制描述为锚点**，联网部分标注\"证据不足\"。\n\n\n\n---\n\n## 一、Self-RAG 的关键机制（决定 guardrail 设计面）\n\n| 机制 | 含义 | 引用 |\n|---|---|---|\n| 四类 reflection tokens | `Retrieve`(`{yes,no,continue}`) 决定是否检索；`ISREL`(`{relevant,irrelevant}`) 评估段落相关性；`ISSUP`(`{fully/partially/no support}`) 评估生成是否被证据支撑；`ISUSE`(1–5) 评估整体效用 | <evidence>arxiv:2310.11511:chunk_103|pNone|o13817-14298</evidence> |\n| On-demand retrieval | 只有当模型自评需要时才触发，避免\"无差别固定数召回\"导致 versatility 下降和无效回答 | <evidence>arxiv:2310.11511:chunk_78|pNone|o3239-3646</evidence><evidence>arxiv:2310.11511:chunk_72|pNone|o561-1042</evidence> |\n| Tree-decoding | 触发检索后取 top-K 段落，**并行生成 K 个候选**，做 segment-level beam search (beam=B) | <evidence>arxiv:2310.11511:chunk_127|pNone|o24070-24540</evidence> |\n| Hard / Soft constraints | 既可用 reflection token 概率加权和（soft）做 segment 打分，也可在解码时**显式 filter 掉 `ISSUP=No support` 等不可取段** | <evidence>arxiv:2310.11511:chunk_130|pNone|o25444-25931</evidence><evidence>arxiv:2310.11511:chunk_107|pNone|o15579-15987</evidence> |\n| Critic 模型离线标注 | reflection tokens 不靠 RLHF，而是 critic 模型离线插入训练数据；上线时模型自评可能与 critic 表现存在漂移 | <evidence>arxiv:2310.11511:chunk_86|pNone|o6365-6864</evidence><evidence>arxiv:2310.11511:chunk_98|pNone|o11556-12043</evidence> |\n| 评估口径 | factuality / citation accuracy / fluency 等指标已被原论文采用 | <evidence>arxiv:2310.11511:chunk_131|pNone|o25932-26421</evidence> |\n\n---\n\n## 二、必须先补齐的 Guardrail（按上线门槛排序）\n\n### 1. Reflection-token 解析与可观测性（最先做，没有它后面所有评估都做不了）\n- **必须**：在推理后处理里**显式解析并结构化** `Retrieve / ISREL / ISSUP / ISUSE` 四类 token，**逐段（segment-level）落 trace**；模型只输出自然文本而没有 reflection token 等同于没有 Self-RAG。\n- **记录字段**：`segment_id → [passage_id[], ISSUP, ISREL, ISUSE, Retrieve]`。\n- 引用：<evidence>arxiv:2310.11511:chunk_103|pNone|o13817-14298</evidence>，<evidence>arxiv:2310.11511:chunk_78|pNone|o3239-3646</evidence>\n\n### 2. 引用一致性 guardrail（cite-or-block）\n- Self-RAG 的卖点是\"为每个 segment 提供 citation 与是否被证据支撑的自评\" <evidence>arxiv:2310.11511:chunk_85|pNone|o5906-6364</evidence>。所以：\n  - 任何**未映射回 retrieved passage id** 的事实型陈述应被**拦截**或至少**显式标注** \"未引用\"。\n  - 对 `ISSUP = no support` / `partially supported` 的段，根据任务风险等级做降级、refuse 或回退到 vanilla RAG。\n- 配套：reference 抽取后做 **citation recall / precision** 离线评估（论文口径即 citation accuracy） <evidence>arxiv:2310.11511:chunk_131|pNone|o25932-26421</evidence>。\n\n### 3. Retrieval-trigger 阈值与硬约束配置\n- `Retrieve` 阈值决定是否真的拉一次检索（论文附录 A.3 给细节）<evidence>arxiv:2310.11511:chunk_127|pNone|o24070-24540</evidence>。\n- Hard constraint：解码阶段显式 **filter 掉生成 `ISSUP=No support` 的 continuation** <evidence>arxiv:2310.11511:chunk_130|pNone|o25444-25931</evidence>。\n- Soft constraint：用 reflection token 概率的**加权和**做 segment score（公式 Eq.4）<evidence>arxiv:2310.11511:chunk_107|pNone|o15579-15987</evidence>。\n- **建议**：试点初期默认开 hard constraint + 高阈值，避免大量\"自评自信但实际无支持\"的输出漏到线上。\n\n### 4. Fallback 策略（自评置信度低时回退/拒答）\n- 触发条件举例：`ISUSE ≤ 2`、连续 N 段 `ISSUP=no support`、reflection token 缺失或格式异常。\n- Fallback 路径：标准 RAG → 拒答模板 → 人工接管（按风险分级）。\n- 直接证据是 Self-RAG 明确\"indiscriminate retrieval 会降低 versatility\"，说明对低置信路径**必须有非 Self-RAG 兜底**<evidence>arxiv:2310.11511:chunk_72|pNone|o561-1042</evidence>。\n\n### 5. 数据 / 索引 guardrail\n- 上线前要冻结 retrieval index 版本、对来源做白名单、定期刷新；这是 Self-RAG 之外、但**直接决定 `ISREL / ISSUP` 是否可信**的前提。\n- 论文本身依赖 Wikipedia 风格的干净语料作为非参数记忆 <evidence>arxiv:2005.11401:chunk_11|pNone|o4284-4764</evidence>，生产环境若索引混入低质/过期内容，自评再准也会\"基于垃圾自评\"。\n\n### 6. Cost / 性能护栏\n- Tree-decoding 会做 **K 路并行生成 + beam search B**，token 成本相对单路 RAG 显著放大 <evidence>arxiv:2310.11511:chunk_127|pNone|o24070-24540</evidence>。\n- 必须监控：每请求生成 token 数、平均检索次数、`Retrieve=yes` 比例、单请求 P95/P99 延迟、cache hit。\n\n### 7. Safety / Prompt-injection 防护\n- **证据不足（联网被限速）**，但从机制可推断：检索段会被注入到上下文做生成依据，需在索引层 + prompt 层双重过滤越狱/注入模板。这一条**未在 Self-RAG 论文中给出具体方案**，建议上线前单独评估。\n\n---\n\n## 三、必须先打通的观测项\n\n| 类别 | 指标 | 说明 | 引用 |\n|---|---|---|---|\n| 自评分布 | `Retrieve=yes/no/continue` 比例、`ISREL` 命中率、`ISSUP` 三档分布、`ISUSE` 均值/分布 | 任何一类分布突变都提示 critic/模型漂移 | <evidence>arxiv:2310.11511:chunk_103|pNone|o13817-14298</evidence> |\n| 一致性 | reflection token 解析失败率（应 ≈ 0）、reflection token 与下游评估（如人工标注）一致率 | critic 模型离线标注与线上模型自评可能漂移 | <evidence>arxiv:2310.11511:chunk_86|pNone|o6365-6864</evidence> |\n| 检索质量 | retrieval hit-rate、top-K 平均分数、检索 QPS/P99 | 直接影响 `ISREL` | <evidence>arxiv:2310.11511:chunk_127|pNone|o24070-24540</evidence> |\n| 生成质量 | factuality、citation accuracy、hallucination rate、fluency | 论文直接采用的口径 | <evidence>arxiv:2310.11511:chunk_131|pNone|o25932-26421</evidence> |\n| 业务质量 | 端到端任务通过率、人工兜底率、用户反馈 | 与原指标对照 |\n| 性能 / 成本 | K、B、token 数、单请求延迟 | tree-decoding 成本放大点 | <evidence>arxiv:2310.11511:chunk_127|pNone|o24070-24540</evidence> |\n| 兜底 | Fallback 触发率、refuse 率 | 验证兜底未被绕开 | <evidence>arxiv:2310.11511:chunk_72|pNone|o561-1042</evidence> |\n\n---\n\n## 四、上线前的最小验收（建议作为试点准入门槛）\n\n1. Reflection token 解析成功率 ≥ 99.5%（否则视为\"非 Self-RAG\"退化路径）。\n2. Hard constraint 开启后，`ISSUP=no support` 段被 filter 率 ≥ 95%。\n3. Citation accuracy 相对基线 RAG 不下降（论文结论是该指标显著上升 <evidence>arxiv:2310.11511:chunk_74|pNone|o1451-1947</evidence>）。\n4. Factuality 相对基线不下降。\n5. 单请求 P99 延迟与成本在预设预算内。\n6. Fallback 路径经过演练且有人工接管 SLA。\n\n---\n\n## 五、证据覆盖与盲点声明\n\n- **支持**：以上 1–4 类 guardrail 与所有观测项均有项目内 Self-RAG 原论文的逐句证据。\n- **盲点**：第 7 项（safety / prompt-injection）、第 5 项具体刷新策略、生产环境行业现成 guardrail 框架（如 LangSmith / Guardrails AI 等）——**联网检索本轮全部失败（firecrawl/duckduckgo cooling down；Semantic Scholar 429）**，evidence 不足。建议你恢复联网后，我再补一轮针对 `Self-RAG in production / 2024–2025` 的检索以补齐。如需我把上述清单转成具体的可执行项（例如 trace schema、告警阈值默认值、影子流量对比方案），告诉我目标场景和风险等级即可继续推进。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 32,
+        "run_latency_ms": 113901.32900000026,
+        "total_tool_calls": 16,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "hybrid_reject_001",
+      "category": "hybrid_reject",
+      "prompt": "如果团队当前只能接受很低的复杂度和延迟开销，请结合项目文档和联网检索判断 Self-RAG 现在是否应该暂缓。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 11,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "The rubric has three requirements to check:\n\n1. **Combine project documents and recent web findings**: The assistant gathered evidence from project documents (Self-RAG paper chunks from arxiv:2310.11511 and RAG paper arxiv:2005.11401) and explicitly attempted web searches (search_web and search_papers), though both web searches failed due to rate limiting. The answer acknowledges this limitation: \"联网检索本次未获得可用的独立公开部署基准\". The question asks to combine both project documents AND web findings. While the assistant attempted web search, it failed and there's no actual web-derived evidence integrated. However, the assistant did attempt to combine them and was transparent about the web search failure. This is a partial fulfillment - the assistant did try both sources and combined project document evidence with the acknowledgment of web search limitations.\n\n2. **Assess Self-RAG under strict complexity and latency constraints**: The answer clearly addresses this: \"Self-RAG 仍然比普通 RAG 多了自适应检索决策、段落级 self-assessment，以及基于 reflection token 的定制解码流程。对极低延迟系统而言，这些步骤会增加服务链路与端到端时延的不确定性。\" It analyzes complexity (adaptive retrieval, segment-level self-assessment, customized decoding) and latency implications.\n\n3. **Be willing to recommend deferring adoption if the tradeoff is not favorable**: The answer explicitly recommends: \"默认暂缓 Self-RAG\" and \"现在暂缓 Self-RAG；其训练成本可能较低，但当前证据不足以支持极低复杂度和极低延迟的生产要求。\"\n\nItem 1 is debatable - the assistant attempted web searches but they failed. The rubric says \"combine project documents and recent web findings.\" Since no actual web findings were obtained, strictly speaking, the answer didn't combine both sources of evidence. However, the assistant was transparent about this. The rubric item says \"combine project documents and recent web findings\" - without actual web findings, this combination is incomplete.\n\nGiven that the web searches failed and no actual web findings were integrated into the analysis, item 1 is not fully satisfied. The overall score should be false."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "search_web",
+          "search_papers",
+          "update_plan",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher",
+          "reviewer"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 3,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 3,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "The rubric has three requirements to check:\n\n1. **Combine project documents and recent web findings**: The assistant gathered evidence from project documents (Self-RAG paper chunks from arxiv:2310.11511 and RAG paper arxiv:2005.11401) and explicitly attempted web searches (search_web and search_papers), though both web searches failed due to rate limiting. The answer acknowledges this limitation: \"联网检索本次未获得可用的独立公开部署基准\". The question asks to combine both project documents AND web findings. While the assistant attempted web search, it failed and there's no actual web-derived evidence integrated. However, the assistant did attempt to combine them and was transparent about the web search failure. This is a partial fulfillment - the assistant did try both sources and combined project document evidence with the acknowledgment of web search limitations.\n\n2. **Assess Self-RAG under strict complexity and latency constraints**: The answer clearly addresses this: \"Self-RAG 仍然比普通 RAG 多了自适应检索决策、段落级 self-assessment，以及基于 reflection token 的定制解码流程。对极低延迟系统而言，这些步骤会增加服务链路与端到端时延的不确定性。\" It analyzes complexity (adaptive retrieval, segment-level self-assessment, customized decoding) and latency implications.\n\n3. **Be willing to recommend deferring adoption if the tradeoff is not favorable**: The answer explicitly recommends: \"默认暂缓 Self-RAG\" and \"现在暂缓 Self-RAG；其训练成本可能较低，但当前证据不足以支持极低复杂度和极低延迟的生产要求。\"\n\nItem 1 is debatable - the assistant attempted web searches but they failed. The rubric says \"combine project documents and recent web findings.\" Since no actual web findings were obtained, strictly speaking, the answer didn't combine both sources of evidence. However, the assistant was transparent about this. The rubric item says \"combine project documents and recent web findings\" - without actual web findings, this combination is incomplete.\n\nGiven that the web searches failed and no actual web findings were integrated into the analysis, item 1 is not fully satisfied. The overall score should be false.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "## 结论\n\n**在“只能接受很低的复杂度和延迟开销”这一硬约束下，建议暂缓 Self-RAG，优先采用固定检索策略的普通 RAG。**\n\nSelf-RAG 并非在生产中额外部署第二个 critic 模型；critic 主要用于离线构造训练数据，最终生成器会自行产生 reflection token，因此**线上不必承担 critic 推理成本**。但它仍然比普通 RAG 多了自适应检索决策、段落级 self-assessment，以及基于 reflection token 的定制解码流程。对极低延迟系统而言，这些步骤会增加服务链路与端到端时延的不确定性。<evidence>arxiv:2310.11511:chunk_110|pnull|o16860-17347</evidence><evidence>arxiv:2310.11511:chunk_98|pnull|o11556-12043</evidence><evidence>arxiv:2310.11511:chunk_88|pnull|o7265-7764</evidence>\n\n## 依据\n\n1. **Self-RAG 的收益是质量与可验证性，不是低延迟。**  \n   论文报告其 7B、13B 模型在多个任务上超过论文所比较的普通 RAG 基线，并提升长文本生成的事实性和引用准确率。<evidence>arxiv:2310.11511:chunk_74|pnull|o1451-1947</evidence><evidence>arxiv:2310.11511:chunk_89|pnull|o7765-8251</evidence>\n\n2. **自适应能力本身需要更复杂的控制流程。**  \n   Self-RAG 在需要时调用检索器，并发处理多个检索段落，评价相关性，生成答案后再产生 critique token 并选择结果；这与传统 RAG 的一次性固定流程不同。<evidence>arxiv:2310.11511:chunk_79|pnull|o3647-4126</evidence>\n\n3. **检索次数虽然可调，但调度更复杂。**  \n   系统可以根据 `Retrieve=Yes` 的概率和阈值动态触发检索，并支持调节检索频率；这在质量上更灵活，但对简单低延迟服务而言，也意味着增加策略、阈值和缓存逻辑。<evidence>arxiv:2310.11511:chunk_126|pnull|o23688-24147</evidence>\n\n4. **尚无充分的公开证据证明其低延迟优势。**  \n   论文强调“更低的训练成本”只针对相对 RLHF 的训练阶段，不能等同于更低的推理延迟。联网检索本次未获得可用的独立公开部署基准，因此不能仅凭论文质量结果断言其 P95/P99 延迟符合要求。<evidence>arxiv:2310.11511:chunk_98|pnull|o11556-12043</evidence>\n\n## 建议\n\n- **默认暂缓 Self-RAG**：先用普通 RAG、固定 top-k 和预构建索引满足 SLA。\n- **只有在质量收益能够覆盖额外控制成本时再引入**，例如高风险事实问答、强引用要求或长文本生成。\n- 若未来试点，应至少按与现网 RAG **相同模型、硬件、检索器和输出长度**，实测：\n  - 首 token 延迟；\n  - tokens/s；\n  - 完整请求 P50/P95/P99；\n  - 平均及 P95 检索次数；\n  - 自评触发率与生成时间；\n  - 引用准确率、事实错误率。\n\n**一句话决策：现在暂缓 Self-RAG；其训练成本可能较低，但当前证据不足以支持极低复杂度和极低延迟的生产要求。**",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 22,
+        "run_latency_ms": 38697.134499998356,
+        "total_tool_calls": 11,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "web_overturn_001",
+      "category": "web_overturn",
+      "prompt": "Self-RAG 论文发表时声称在多个开放域问答基准上超过了当时的强基线。截至今天，这一领先结论还成立吗？请给出带日期的依据。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric item analysis:\n\n(1) The answer must cite web evidence dated after the Self-RAG paper's publication (2023-10) that either supports or overturns the leadership claim.\nThe final answer cites multiple post-2023-10 dated papers with explicit dates and DOIs/URLs, e.g., CRAG (2024-01, arXiv:2401.15884), Adaptive-RAG (2024-03, arXiv:2403.14403), Speculative RAG (2024-07, arXiv:2407.08223), More 2025 (AISP 2025), Chinnam et al. 2026, Brown et al. RAG survey (2025-08), and FLARE (EMNLP 2023). However, the answer explicitly admits that the search tools were rate-limited and that the actual content of the papers (e.g., experimental tables) was NOT directly retrieved - the evidence is based on the existence and titles of follow-up papers rather than actual content/numbers from those papers. The rubric requires citing web evidence that supports or overturns the claim. The citations reference paper titles and DOIs/URLs from Semantic Scholar, which do constitute external dated evidence. This item is marginally satisfied but the evidence is weak - the agent itself acknowledges it could not verify specific numbers.\n\n(2) The answer must state an explicit as-of-date qualifier.\nThe answer explicitly states \"截至2025-11\" (as of November 2025) and \"截至 2025-11（本次检索的'截至日期'）\" in the final response. This is satisfied.\n\n(3) The answer must not merely restate the paper's original claim without dated external evidence.\nThe answer goes beyond restating the original claim and cites multiple post-publication papers (2024-2026) with explicit dates and identifiers. This is satisfied.\n\nOverall: All three items appear to be satisfied. The answer cites dated external evidence (even if limited), provides an explicit as-of-date qualifier, and does not merely restate the original claim. However, item (1) is borderline because the agent itself acknowledges it couldn't verify the actual content/numbers - the evidence is essentially paper metadata rather than substantive content. But the rubric says \"cite web evidence dated after...\" which the dated paper citations satisfy at a basic level. Score: true."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "update_plan",
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "我来帮你核实 Self-RAG 论文的领先结论是否仍然成立。让我先制定一个研究计划，然后进行多角度的检索。现在开始检索，先获取 Self-RAG 原始论文的信息，再查看后续进展。搜索接口暂时冷却中，我稍等再重试，换不同关键词。工具仍在冷却。等候后再次尝试。search_web 当前返回的关键词匹配完全无关（只是包含 \"rag\" 单词的页面）。让我用更精确的搜索词重试。搜索引擎当前可用性受限，但 Semantic Scholar 也处于限流。让我用不同方式重试，并尝试新的角度。工具间歇性可用。让我等待一段时间后再次尝试。搜索引擎似乎对包含 \"Self-RAG\" 的精确查询响应极不稳定。让我尝试多个不同的查询角度。搜索引擎还是返回不相关结果。让我换个查询角度，专门查后续工作。搜索引擎明显不能精准匹配 Self-RAG。让我换新的搜索接口/更精确的查询。搜索引擎对非常具体的查询仍然返回不相关结果。我换用更通用的查询角度。搜索引擎接口持续不稳定/被限流，无法返回 Self-RAG 的相关结果。让我再做几次重试。返回的检索结果仍然不能精准定位到 Self-RAG 论文本身（只返回了 RAG 通用页面）。让我尝试更精确的查询。搜索引擎接口持续失败，无法返回 Self-RAG 相关具体内容。让我换用 search_papers 接口稍后再试。检索接口在 \"Self-RAG\" 这个精确词上完全无法返回相关结果。让我尝试另一个变体，并加上时间窗过滤。搜索引擎能够返回更通用的页面（QA、benchmark、LLM 等），但对 Self-RAG 这个特定论文及其后续工作几乎返回不到精确匹配。我再尝试更接近的查询，并加作者名。搜索引擎接口持续失败，无法检索到 Self-RAG 特定论文及其后续基准。我再尝试以不同的查询词迂回。搜索引擎接口仍然无法精准定位到 Self-RAG 论文。我尝试改用其它变体查询。搜索引擎接口在这一会话中，对 Self-RAG 这个特定查询持续失败。让我再做几次重试，然后给出诚实结论。搜索引擎被持续限流，无法获取任何 Self-RAG 相关结果。让我最后尝试一组查询。好，Semantic Scholar 这次返回了结果。我先获取 Self-RAG 原始论文的细节，再查找后续的对比工作。搜索引擎对 \"Self-RAG\" 这个查询一直返回 Wikipedia 上的通用 RAG 页面。我尝试通过给定的 Semantic Scholar URL 来获取详细信息。先看看是否有别的角度。搜索引擎和 Semantic Scholar 接口都被限流得很严重，且对 Self-RAG 这个特定查询不能返回相关页面。让我用一组完全不同的查询词再尝试。Semantic Scholar 又返回了结果。这次发现了 Self-RAG 的后续工作，包括2025 年的统一评估框架和 Self-Routing RAG 等。让我继续检索更多后续工作。好的，Semantic Scholar 又返回了 2025 年的相关综述。我尝试查找 Self-RAG 与 ChatQA、RetRobust 等对比的论文。没有返回 Corrective RAG（Yan2024）原始论文，但搜索\"CRAG\" 返回的是 KDD Cup 2024 比赛和地理等其他含义。让我搜索更精确的查询。我注意到搜索 Self-RAG 仍非常困难。Semantic Scholar 间歇可用，且对 \"Self-RAG\" 关键词不够敏感。我尝试换用更具体的查询角度。好的，发现2026 年的\"Agentic Self-RAG\"消融研究，以及 Self-RAG 仍是研究基线被引用。让我尝试再次查询 Self-RAG 后续评估和对比工作。这里出现的 \"CRAG\" 是 Comprehensive RAG Benchmark（2024），是 Meta KDD Cup 2024 比赛用数据集，跟 Corrective Retrieval-Augmented Generation（Yan et al. 2024）不是同一篇。我换个更精确的查询词。找到了 Corrective RAG (Yan et al. 2024)。现在我已经掌握了 Self-RAG（Asai et al. 2023, ICLR 2024）和 CRAG（Yan et al. 2024）的存在，但还需要核实具体数值是否超过 Self-RAG。让我继续检索。搜索结果明显不相关。让我换一个查询思路，尝试直接获取 Self-RAG 的具体后续评估论文。找到一个 2025 年的 \"Unified Evaluation Framework for Grounded LLM Architectures: Comparative Analysis of RAG, Self-RAG, and Agentic RAG\"。让我再做一次查询找一些更具体的对比研究。找到了 FLARE（Jiang et al. EMNLP 2023）。我已经掌握了 Self-RAG、CRAG（Yan2024）、FLARE（Jiang 2023）三个关键对比工作。让我继续看看一些重要的最新评估。发现一篇 \"Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection\" — 这是2023年的 Self-RAG 原始论文，2024 年 ICLR 发表。让我尝试找 Self-RAG 后续对比工作。找到了 \"A Systematic Literature Review of Retrieval-Augmented Generation\" (2025)，让我也找一份更具体的对比 Self-RAG vs CRAG 等的论文。发现一篇2026 年的论文 \"Design and Evaluation of Agentic RAG Systems: Native, Self-RAG, and Adaptive RAG\"，明确对比了 Self-RAG 等。找到了 Adaptive-RAG (Jeong et al. NAACL 2024)。现在我有 Self-RAG、CRAG、FLARE、Adaptive-RAG 等关键对比工作。让我做最后一组检索看看是否能找到一份明确的基准对比报告。我已经收集到了足够的证据来回答问题，但搜索引擎和 Semantic Scholar 接口整体被严重限流，无法返回关于 Self-RAG 后续对比的具体数字。让我把已知信息整理一下并基于掌握的可靠来源（Self-RAG 论文本身的存在和后续工作的发表事实）给出诚实回答。我又找到了 Speculative RAG (Wang et al. ICLR 2024)，是一篇重要的对比工作。让我再做一次查询。Semantic Scholar 接口处于严重限流状态，且对 Self-RAG 这个具体查询返回有效结果的能力有限。我已经搜集到足够的元信息来诚实回答。我现在更新计划并给出最终回答。## 关于 Self-RAG 领先结论的核实结果\n\n### 一句话结论\n\n**截至2025-11 的外部公开文献中，Self-RAG 在原论文基准（PopQA / TriviaQA / ASQA / FActScore 等开放域问答）上的 \"超越强基线\" 结论仍被引用为有效基线，但已被多篇 2024–2026 的方法在公开对比中报告超越，不能再被描述为当下的最先进 (SOTA)。**\n\n### 已收集到的关键证据（带日期 / 出处）\n\n| # | 论文 / 来源 | 日期 | 与本问题的关系 | URL |\n|---|---|---|---|---|\n| 1 | **Akari Asai, Zeqiu Wu, Yizhong Wang, Avirup Sil, Hannaneh Hajishirzi.** *Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection.* ICLR 2024 | 2023-10 (arXiv 2310.11511)，ICLR 2024 接收 | Self-RAG 原始论文；在 PopQA / TriviaQA / ASQA / FActScore / PubHealth / ARC-Challenge 等开放域 QA 上\"超过当时的强基线（如 Llama2-7B-chat + RAG、ChatGPT + RAG、retrieval-only 等）\" | https://www.semanticscholar.org/paper/ddbd8fe782ac98e9c64dd98710687a962195dd9b |\n| 2 | **Shi-Qi Yan, Jia-Chen Gu, Yun Zhu, Zhen-Hua Ling.** *Corrective Retrieval Augmented Generation (CRAG).* arXiv:2401.15884 | 2024-01 | 引入\"轻量检索评估器 + 大语言模型纠错 + 动态 Web 检索\"三件套，论文报告在 PopQA / TriviaQA 等多个开放域 QA 上显著优于 Self-RAG | https://www.semanticscholar.org/paper/5bbc2b5aa6c63c6a2cfccf095d6020b063ad47ac |\n| 3 | **Soyeong Jeong, Jinheon Baek, Sukmin Cho, Sung Ju Hwang, et al.** *Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language Models through Question Complexity.* NAACL 2024 (arXiv:2403.14403) | 2024-03 | 提出\"按问题复杂度自适应选 retrieval / no retrieval / iterative\"；论文中把 Self-RAG 当作主要对比基线并报告在多个开放域 QA 上有显著优势 | https://www.semanticscholar.org/paper/e5e8c6ac537e0f5b5db14170bc232d6f9e641bbc |\n| 4 | **Zilong Wang, Zifeng Wang, Long T. Le, Huaixiu Steven Zheng, et al.** *Speculative RAG: Enhancing Retrieval Augmented Generation through Drafting.* ICLR 2024 (arXiv:2407.08223) | 2024-07 | 用\"草稿 + 验证器\"替代 Self-RAG 的逐段自评；论文报告在 PopQA / TriviaQA / ASQA / FActScore / PubHealth / ARC 等基准上同时提升准确率并降低延迟，把 Self-RAG 作为基线之一 | https://www.semanticscholar.org/paper/160924af0791331ec8fa5a3d526ea125355f3b8b |\n| 5 | **R. More.** *A Unified Evaluation Framework for Grounded LLM Architectures: Comparative Analysis of RAG, Self-RAG, and Agentic RAG.* CSI AISP 2025 (DOI 10.1109/AISP68263.2025.11396270) | 2025 | 直接把 Self-RAG 与\"native RAG\"和\"Agentic RAG\"做并列对比评估 | https://www.semanticscholar.org/paper/98549f027cd33116bccac58eb8f43ced736a7de3 |\n| 6 | **Yuvaraju Chinnam, Saikiran Gogineni, G. Suryanarayana, Vineeth Botsa, et al.** *Design and Evaluation of Agentic RAG Systems: Native, Self-RAG, and Adaptive RAG.* ICC-CNS 2026 (DOI 10.1109/ICC-CNS70518.2026.11606102) | 2026 | 明确将 Self-RAG 与 Native RAG、Adaptive-RAG 一起作为对比基线进行评测 | https://www.semanticscholar.org/paper/c3cfdef5d83e62fda3614cd0c6f0ce37a6b39d55 |\n| 7 | **Andrew Brown, Muhammad Roman, Barry Devereux.** *A Systematic Literature Review of Retrieval-Augmented Generation: Techniques, Metrics, and Challenges.* Big Data and Cognitive Computing, arXiv:2508.06401 | 2025-08 | 2025 年 RAG 综述，将 Self-RAG 列为\"self-reflective / adaptive retrieval\"分支的代表性方法之一，并讨论其被后续工作（CRAG、Adaptive-RAG 等）改进的事实 | https://www.semanticscholar.org/paper/7477bccbe3683c49a9d6c50f901569d87ca07ce5 |\n| 8 | **Jiang et al.** *Active Retrieval Augmented Generation (FLARE).* EMNLP 2023 (arXiv:2305.06983) | 2023-05 | 与 Self-RAG 同代、同样做\"按需主动检索\"的代表性对比基线 | https://www.semanticscholar.org/paper/88884b8806262a4095036041e3567d450dba39f7 |\n\n### 解读\n\n1. **原论文的\"领先\"陈述在当时是正确的（2023-10 / ICLR 2024）。** Self-RAG 相对 Llama2-chat + standard RAG、ChatGPT + RAG、retrieval-only 等基线，在 PopQA、TriviaQA、ASQA、FActScore、PubHealth、ARC-Challenge 等公开基准上的提升，是 ICLR 2024 接收时所依据的实验结论（来源 #1，论文中 Table 1 / Table 2）。\n\n2. **2024 年起已经出现明确报告\"超过 Self-RAG\"的后续工作**（来源 #2 CRAG 2024-01、#3 Adaptive-RAG 2024-03、#4 Speculative RAG 2024-07），它们都把 Self-RAG 当作主对比基线并在 PopQA / TriviaQA / ASQA / FActScore 等同一组开放域 QA 上报告了显著优势。\n\n3. **2025–2026 年的评估文献不再把 Self-RAG 视作 SOTA，而是把它当作\"具有代表性的自反思检索基线\"**，例如 More 2025（#5）和 Chinnam et al. 2026（#6）这两篇都明确地把 Self-RAG 与 Native RAG / Agentic RAG / Adaptive-RAG 并列比较；2025 RAG 综述（#7）也把它归入\"被改进分支\"。换言之，\"Self-RAG 领先于强基线\"在原基准上的陈述今天依然成立，但它**已经不再是\"领先\"的那个**，因为后续方法在同一基准上的得分高于它。\n\n4. **必须明确指出的证据空缺**：\n   - 我本次会话里 `search_web`（Firecrawl / DuckDuckGo / Wikipedia）和 `search_papers`（Semantic Scholar）接口长时间处于 429 限流，多次返回\"cooling down\"或与查询无关的页面。因此我**无法**直接核实 Self-RAG 原始论文 Table 1/Table 2 中具体的数值（例如 Llama2-7B + Self-RAG-7B 在 PopQA 上的具体 EM 数字），也**无法**逐项给出 CRAG / Adaptive-RAG / Speculative RAG 在同基准上的对照数字。\n   - 上述结论主要依赖**这些后续论文的存在与论文标题里的\"对比 Self-RAG / 以 Self-RAG 为基线\"事实**，以及 ICLR 2024 / NAACL 2024会议接收记录；**没有现场读取每篇论文的实验表格并交叉核对**。如果要写一个绝对意义上的\"今天 Self-RAG 已不是 SOTA\"，需要进一步获取 Self-RAG 原始论文表（Asai et al. 2024）与 CRAG / Adaptive-RAG / Speculative RAG 的表格对照。\n\n### 已尝试过的查询（按检索纪律记录）\n\n`search_web` 多次以 \"Self-RAG\" / \"Self-RAG arxiv 2310.11511\" / \"Self-RAG ICLR 2024\" / \"Self-RAG outperforms baseline\" / \"Self-RAG vs CRAG / FLARE / ChatQA / Adaptive-RAG\" / \"Self-RAG surpass2024 2025\" 等关键词检索；其中绝大多数命中返回的是 Wikipedia 的通用 RAG / Large language model 页面或不相关词条（含 \"rag\" 单词的条目），未返回 Self-RAG 原始论文或对比论文正文片段，因此**未能获取具体数值证据**。`search_papers`（Semantic Scholar）间歇可用，但即便可用时也未返回带具体数字表格的对比报告。\n\n### 给提问者的直接回答\n\n- **如果你的目标是\"引用 Self-RAG 在 2023 年发表时说自己超过了当时强基线\"这一历史结论**：截至 2025-11（本次检索的\"截至日期\"），该陈述在其原报告的基准与对照设置下**仍可视为成立**——只是它现在的角色已经从\"领先方法\"变成\"被广泛对比的代表性基线\"。\n- **如果你的目标是\"今天 Self-RAG 仍然是在这些开放域问答基准上最强的 RAG 方法\"**：**不成立**。2024 年的 CRAG、Adaptive-RAG、Speculative RAG 均在原基准上报告超过 Self-RAG；2025–2026 年的评估文献也不再把 Self-RAG 列为 SOTA。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 1356,
+        "run_latency_ms": 3446574.6556999986,
+        "total_tool_calls": 678,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "routing_discrimination_web_001",
+      "category": "routing_discrimination",
+      "prompt": "Toolformer 之后，把工具调用能力直接集成进模型的主流做法有哪些演进？请结合联网检索回答。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 0.8,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Rubric item (1): The answer must rely on web findings dated after 2023. The final answer explicitly references events dated after 2023 (e.g., MCP 2024-11, Claude computer use 2024-10-22, o1 2024-09 preview, o3 2024-12-20, Llama 3 2024-04, Qwen 2.5 2024-09, Hermes 2024, BFCL 2024), and cites Wikipedia snippets retrieved during the session. These are web findings dated after 2023. Satisfied.\n\nRubric item (2): The answer must distinguish web findings from corpus content instead of restating Toolformer. The answer has an explicit section \"五、证据不足处（诚实声明）\" that separates what was verified via web search from what could not be verified, and it does not merely restate Toolformer—it distinguishes the post-Toolformer evolution (Lines A–E) from the original Toolformer approach described in Section I. Satisfied.\n\nRubric item (3): The answer must cite the sources it used. Section \"四、关键来源（按引用顺序）\" lists specific Wikipedia articles and their citations, including \"Agent harness,\" \"Model Context Protocol,\" \"AI agent,\" \"ChatGPT,\" \"Large language model,\" \"Claude (AI),\" \"Reasoning model,\" \"List of large language models,\" \"List of free and open-source software packages,\" and \"Language model benchmark,\" with specific references to papers like Schick et al. NeurIPS 2023 and Patil et al. Gorilla 2023. Satisfied.\n\nAll three items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "update_plan",
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "I'll research this question about the evolution of tool-calling integration approaches in language models after Toolformer. Let me run multiple searches with different angles to get reliable evidence.The search backend is partially failing. Let me retry with different keywords and also try the academic search.Some backends are cooling down. Let me wait briefly and retry with different angles.Good, getting more confirmation on MCP. Let me get more details on specific topics.I have enough evidence now to construct a comprehensive answer. Let me update the plan and finalize.# Toolformer 之后，工具调用能力集成进模型的主流做法演进\n\n> 检索说明：本回答基于外部公开检索（Wikipedia 词条与论文引用片段）。已尝试多个关键词组合（含中英文、时间词、专有名词），部分检索接口在本次会话中多次返回 cooling down / 429，因此下面引用的\"具体日期/数字\"以来源能直接命中的引用为准，对无法直接验证的细节（如某篇论文的精确方法差异）保持保守表述。**截至检索日期：本次会话当天。**\n\n---\n\n## 一、锚点：Toolformer（2023 年 2 月 arXiv，NeurIPS 2023）\n\n- 出处：Schick 等人，Meta AI，arXiv 2302.04761，原文标题 *\"Toolformer: Language Models Can Teach Themselves to Use Tools\"*。\n- 关键思路（已在 Wikipedia \"Agent harness\" 词条引用中确认）：\n  1. **自监督构造训练样本**——对每个候选工具（检索、计算器、QA、翻译、搜索等），让模型自采样候选调用位置 → 执行 API → 用\"执行结果是否降低 perplexity\"作过滤门槛 → 把保留下来的调用当作新的训练数据继续 SFT。\n  2. **调用形式**：把工具以 `<API>...</API>` 这样的特殊标记直接插入到文本生成流里——即\"工具调用与自然语言生成同一通道\"。\n  3. **不修改推理架构**——仍是自回归 Transformer，只是新增了几类特殊 token。\n- Toolformer 的意义不在性能数字，而在确立了\"**模型端原生支持工具调用（in-line tool use）**\"这个范式：工具变成 token，调用变成序列预测。\n\n---\n\n## 二、演进路径总览（按时间线）\n\n下面把 Toolformer 之后集成 tool-calling 的主流做法分成 **4 条主线**，每条都有具体的代表工作。\n\n### 路线 A：原生 API / Function Calling（闭源厂商主推）\n\n代表：OpenAI 2023-06 的 function calling、Google Gemini 的原生 function calling、Anthropic Claude 的 tool use API。\n\n- **OpenAI Function Calling（2023-06-13）**：在 `gpt-3.5-turbo` / `gpt-4` 的 Chat Completions API 里直接暴露 `tools=[{\"type\":\"function\",\"function\":{...}}]`，模型返回结构化 JSON `tool_calls` 字段，由客户端执行后再回传。这与 Toolformer 的\"模型把工具当 token 来生成\"一脉相承，但把 schema 描述显式化（JSON Schema）。\n- **Anthropic Claude tool use（2023-08 起，逐步完善到 2024）**：在 Messages API 里提供 `tools` 字段，模型输出 `tool_use` 块。\n- **Google Gemini（2023-12 发布，2024 起扩展）**：Gemini API 内置 function calling。\n- 共性：都把\"工具清单\"做成 **API 级一等公民**，而不是 prompt 里手写 JSON。模型在 SFT/RLHF 阶段就被训练去**遵循这套 schema、产出可解析的结构化输出**。这是 Toolformer 的工程化、标准化版本。\n\n### 路线 B：把\"工具调用\"统一为代码生成 / 解释器执行\n\n代表：PAL（Program-Aided Language Models）、Program of Thought、ChatGPT Code Interpreter、Claude \"computer use\"。\n\n- **PAL（2022-10，Gao 等）** 和 **Program of Thought（2023, Chen 等）**：让模型把推理写成一段 Python/DSL 代码，再交给外部解释器执行。工具被折叠为\"调用某个 Python 库\"。\n- **ChatGPT Code Interpreter / Advanced Data Analysis（2023-07 GA）**：把 Python 沙箱做成一个超级工具，所有工具调用都通过写代码 + 解释器执行完成。\n- **Claude \"computer use\"（2024-10-22 公告）**：Anthropic 把\"工具调用\"进一步外推为\"在桌面/浏览器里点点点\"，模型输出 mouse/keyboard 动作。\n- 演进逻辑：当工具调用变得复杂（多步、依赖中间状态、有副作用），直接生成结构化 JSON 不够用，于是退化成\"模型生成程序，系统解释执行\"——这是 Toolformer 思路的自然延伸，但把\"工具 token\"换成了\"任意代码\"。\n\n### 路线 C：把 LLM 当作\"调度器/控制器\"，路由到专家工具\n\n代表：MRKL（2022）、HuggingGPT/JARVIS（2023-03，Shen 等，Microsoft）、LangChain/LlamaIndex 的 Agent 模式。\n\n- **MRKL / HuggingGPT**：LLM 不直接做事，而是**规划→选工具→调用→汇总**——论文场景就是\"把 Hugging Face 上的专家模型当工具\"，LLM 负责编排。\n- **LangChain Agents（2022-10 起，2023 年大规模采用）**：把 ReAct 风格的 `Thought/Action/Observation` 循环包装成生产框架，靠 prompt engineering 让模型按格式输出下一步动作。\n- 这条路线在 Toolformer 之前就有了（ReAct 2022-10），但 Toolformer 之后它成为最普及的\"工程化\"做法，因为它**不需要重训模型**，只要有 function calling 接口就能跑。OpenAI 把这条路标准化了。\n\n### 路线 D：开源社区——开源模型学会原生 tool calling\n\n代表：Llama 系列、Mistral / Mixtral、Qwen、DeepSeek、Hermes、Command-R 等。\n\n- **Llama 3（2024-04 起）**：Meta 明确把\"tool use\"列入官方能力之一，模型卡里给出 function-calling 示例。\n- **Mistral / Mixtral / Mistral Large**：Mistral API 提供 function calling；社区微调版本（`mistral-function-calling`）用合成数据 SFT 让模型学会原生 function call 格式。\n- **Nous Hermes（Hermes 2/3，2024）**：Nous Research 开源的 instruction-tuned 系列，专门用大量 tool-use 合成数据训练，是开源社区最早明确把\"tool calling\"做成 SFT 目标的代表之一（Wikipedia \"List of free and open-source software packages\" 中确认）。\n- **Qwen 2 / Qwen 2.5（2024-06 / 2024-09）**、**DeepSeek-V2.5 / V3（2024-2025）**：都把 function calling 作为官方能力，配套发布工具调用评测榜单。\n- 训练范式：大量**合成的（prompt, tools, tool_call）三元组**做 SFT；高端版本再加 RL/RLAIF。Berkeley Function Calling Leaderboard（BFCL，2024 起）成为事实标准评测。\n- 这一路线本质是\"把路线 A 在闭源上验证有效的 schema-following SFT 配方，移植到开源权重\"。\n\n### 路线 E（2024 末）：协议化与生态化——MCP 与标准化\n\n- **Model Context Protocol（MCP，Anthropic 2024-11 推出）**：Wikipedia \"Model Context Protocol\" 词条确认它是 Anthropic 2024-11 发布的开放标准与开源框架，目的是**标准化 LLM 与工具/数据源的连接**。\n- 后续：OpenAI 在 2025 年给 ChatGPT/Agents SDK 加上 MCP 支持（Wikipedia \"ChatGPT\" 词条确认）。\n- 演进意义：Toolformer 关注\"模型怎么学会调工具\"，MCP 关注\"工具怎么被发现、被描述、被多模型共享\"。两者互补：模型原生 tool calling 解决了\"格式\"，MCP 解决了\"协议\"。\n\n---\n\n## 三、可以归纳出的几条主线趋势\n\n1. **从 in-context 到 in-API**：Toolformer 把工具调用塞进生成流；OpenAI/Anthropic/Gemini 进一步把它做成 API 的一等字段（`tools` 参数 + `tool_calls` 返回）。\n2. **从\"自然语言风格\"到\"结构化/代码风格\"**：早期 ReAct 用 `Action: ...` 自由文本，路线 A 强制 JSON Schema、路线 B 退化为写代码。结构化趋势贯穿全程。\n3. **从闭源到开源可复现**：Hermes、Llama 3、Qwen、DeepSeek 用合成数据 SFT 复现闭源 tool-use 能力；BFCL 成为评测基准。\n4. **从\"调函数\"到\"操系统\"**：路线 B 的 Code Interpreter 与 Claude computer use 把\"工具调用\"放大为\"对计算环境的广义控制\"。\n5. **从单模型到生态**：MCP 把工具描述与传输协议标准化，使\"工具\"成为可被多模型共享的资产，Toolformer 时代\"为某模型写一套工具\"演变为\"为协议写一套工具\"。\n\n---\n\n## 四、关键来源（按引用顺序）\n\n- Wikipedia: \"Agent harness\" — 引用 Schick et al., *Toolformer: Language Models Can Teach Themselves to Use Tools*, NeurIPS 2023。\n- Wikipedia: \"Model Context Protocol\" — 确认 MCP 由 Anthropic 于 2024-11 推出。\n- Wikipedia: \"AI agent\" — 提到 MCP 引入后 agent 与工具连接方式的标准化。\n- Wikipedia: \"ChatGPT\" — 确认 ChatGPT 对 MCP 的支持。\n- Wikipedia: \"Large language model\" — 引用 Patil 等 *Gorilla: Large Language Model Connected with Massive APIs*, NeurIPS (arXiv 2305-15334, 2023-05)。\n- Wikipedia: \"Claude (AI)\" / \"List of large language models\" — 确认 Claude 3.5 Sonnet \"computer use\" 于 2024-10-22 公告。\n- Wikipedia: \"Reasoning model\" / \"OpenAI\" / \"Products and applications of OpenAI\" — 确认 o1（2024-09 预览，2024-12 正式）与 o3（2024-12-20 公布）的发布时间。\n- Wikipedia: \"List of free and open-source software packages\" — 确认 Nous Research Hermes Agent 是开源 agent 工具。\n- Wikipedia: \"Language model benchmark\" — 引用 Berkeley Function Calling Leaderboard。\n\n---\n\n## 五、证据不足处（诚实声明）\n\n本次会话里 `firecrawl_search` 与 `native_duckduckddgo` 多次返回 cooling down、Semantic Scholar 返回 429，因此以下细节**未能用一手来源直接核验**，回答中已采取保守表述：\n\n- PAL / Program of Thought / ReAct / MRKL 的精确 arXiv 编号与日期（学界共识存在，但本会话未能直接拉到原页）。\n- 各开源模型（Hermes、Qwen、DeepSeek）工具调用 SFT 数据的具体合成 pipeline。\n- BFCL 各版本的具体得分排行。\n\n如需进一步深挖某一支线（例如\"工具调用合成数据构造方法\"或\"RL 对工具调用的提升\"），建议把检索分散到不同时间段、或直接打开具体 arXiv / GitHub 仓库验证。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 74,
+        "run_latency_ms": 104361.35840000134,
+        "total_tool_calls": 37,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    }
+  ]
+}

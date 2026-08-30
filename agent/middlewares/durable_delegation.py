@@ -1,8 +1,13 @@
-"""Leader delegation tool backed by generic durable AgentTask persistence."""
+"""Leader delegation tool backed by generic durable AgentTask persistence.
 
-from __future__ import annotations
+NOTE: Do NOT add ``from __future__ import annotations`` here. Stringified
+annotations break langchain_core's injected-arg detection for the ``runtime:
+ToolRuntime`` parameter, so the runtime value would never reach the function.
+"""
 
 import json
+import os
+from typing import Any
 
 from langchain.agents.middleware import AgentMiddleware
 from langchain_core.tools import StructuredTool
@@ -11,6 +16,17 @@ from pydantic import BaseModel, Field
 
 from ..application.delegation_service import submit_delegated_agent_task
 from ..subagent.loader import SubAgentDefinition
+from .system_message import append_system_instruction
+
+# Progressive hint: once same-turn delegation fan-out reaches the threshold
+# without a reviewer, later model calls carry the suggestion in the system
+# message. Env: AGENT_DELEGATION_NUDGE_ENABLED=0 to disable.
+REVIEWER_NUDGE_THRESHOLD = 2
+REVIEWER_NUDGE_MARKER = "[reviewer-nudge]"
+REVIEWER_NUDGE_INSTRUCTION = (
+    f"{REVIEWER_NUDGE_MARKER} [委派提示] 多路委派已展开但尚无 reviewer:对比/评估/选型类"
+    "任务在给出结论前,应加派一个 reviewer 在同一轮并行核验证据引用;非核验类任务可忽略本提示。"
+)
 
 
 class DelegateTaskInput(BaseModel):
@@ -50,6 +66,34 @@ class DurableDelegationMiddleware(AgentMiddleware):
             "restate them.\n\nAvailable roles:\n" + available
         )
         self.tools = [self._build_tool()]
+
+    def wrap_model_call(self, request: Any, handler: Any) -> Any:
+        """Suggest a reviewer via the system message once fan-out grows without one.
+
+        Deterministic rule (no task-type guessing): once this turn already holds
+        REVIEWER_NUDGE_THRESHOLD-1 delegations with no reviewer among them, later
+        model calls carry the suggestion in the single system message - never by
+        mutating tool results, which carry JSON payloads.
+        """
+        enabled = os.getenv("AGENT_DELEGATION_NUDGE_ENABLED", "0").strip().lower()
+        if enabled not in {"1", "true", "on"}:
+            return handler(request)
+        state = request.state if isinstance(request.state, dict) else {}
+        messages = state.get("messages") or []
+        roles: list[str] = []
+        for message in messages:
+            for call in getattr(message, "tool_calls", None) or []:
+                if str(call.get("name") or "") == "delegate_task":
+                    args = call.get("args") if isinstance(call.get("args"), dict) else {}
+                    role = str(args.get("role") or "").strip()
+                    if role:
+                        roles.append(role)
+        if "reviewer" in roles or len(roles) < REVIEWER_NUDGE_THRESHOLD - 1:
+            return handler(request)
+        system_message = append_system_instruction(
+            request.system_message, REVIEWER_NUDGE_INSTRUCTION
+        )
+        return handler(request.override(system_message=system_message))
 
     def _build_tool(self) -> StructuredTool:
         roles = self._roles

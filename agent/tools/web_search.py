@@ -2,6 +2,7 @@
 import logging
 import os
 import re
+import time
 from typing import Any
 from urllib.parse import quote
 
@@ -23,6 +24,16 @@ from .utils import (
     _sanitize_query,
 )
 
+# Circuit breaker lives in web_search_circuit; re-imported here so the
+# chain and tests keep a single module surface.
+from .web_search_circuit import (  # noqa: F401
+    PROVIDER_CIRCUIT_COOLDOWN_SECONDS,
+    PROVIDER_CIRCUIT_FAILURE_THRESHOLD,
+    PROVIDER_CIRCUIT_MAX_COOLDOWN_SECONDS,
+    _CircuitBreakerProvider,
+    _ProviderCoolingDownError,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +45,10 @@ class SearchWebInput(BaseModel):
 
 def _parse_searxng_instances() -> list[str]:
     configured = str(os.getenv("AGENT_SEARXNG_BASE_URLS", "") or "").strip()
+    if configured.lower() in {"none", "off", "disabled", "false"}:
+        # Explicit opt-out: skip SearXNG entirely instead of falling back to
+        # the slow public instance pool.
+        return []
     if configured:
         items = [item.strip().rstrip("/") for item in configured.split(",")]
         return [item for item in items if item]
@@ -61,7 +76,7 @@ def _build_brave_web_search_client():
                 headers={
                     "X-Subscription-Token": self.api_key,
                     "Accept": "application/json",
-                    "User-Agent": "llm-app/1.0 (+search_web)",
+                    "User-Agent": WIKIPEDIA_COMPLIANT_USER_AGENT,
                 },
                 timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
             )
@@ -102,7 +117,7 @@ def _build_searxng_web_search_client():
                             "format": "json",
                             "safesearch": "1",
                         },
-                        headers={"User-Agent": "llm-app/1.0 (+search_web)"},
+                        headers={"User-Agent": WIKIPEDIA_COMPLIANT_USER_AGENT},
                         timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
                     )
                     if response.status_code >= 400:
@@ -142,7 +157,7 @@ def _build_wikipedia_web_search_client():
                     "format": "json",
                     "srlimit": DEFAULT_WEB_MAX_RESULTS,
                 },
-                headers={"User-Agent": "llm-app/1.0 (+search_web)"},
+                headers={"User-Agent": WIKIPEDIA_COMPLIANT_USER_AGENT},
                 timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
             )
             if response.status_code >= 400:
@@ -200,6 +215,102 @@ def _build_native_web_search_client():
     return _NativeDuckDuckGoSearch()
 
 
+# Firecrawl 429 retry: exponential backoff capped at a short per-wait
+# maximum (keyless limits are per time-window; frequent short waits beat
+# rare long ones), env-tunable, honoring a server Retry-After within the cap.
+FIRECRAWL_RETRY_MAX_ATTEMPTS = 15
+FIRECRAWL_RETRY_INITIAL_DELAY_SECONDS = 2.0
+FIRECRAWL_RETRY_MAX_DELAY_SECONDS = 10.0
+FIRECRAWL_RETRY_MIN_DELAY_SECONDS = 1.0
+
+# Wikimedia's UA policy rejects generic clients with 403; every outbound
+# search request carries this descriptive product UA instead.
+WIKIPEDIA_COMPLIANT_USER_AGENT = (
+    "PaperSage/1.8 (+search_web; local-first research assistant; "
+    "https://github.com/0verL1nk/PaperSage)"
+)
+
+def _build_firecrawl_web_search_client():
+    """Firecrawl /v2/search provider.
+
+    Works keyless on the free tier (rate-limited); set FIRECRAWL_API_KEY to
+    use an authenticated account. Disable with AGENT_WEB_FIRECRAWL_ENABLED=0.
+    """
+    if not _env_flag("AGENT_WEB_FIRECRAWL_ENABLED", default=True):
+        return None
+    api_key = _load_secret("FIRECRAWL_API_KEY")
+    search_url = _env_value(
+        "AGENT_FIRECRAWL_SEARCH_URL", default="https://api.firecrawl.dev/v2/search"
+    )
+
+    class _FirecrawlWebSearch:
+        def __init__(self, key: str, url: str):
+            self.api_key = key
+            self.search_url = url
+            self._max_attempts = int(
+                os.getenv("AGENT_WEB_FIRECRAWL_RETRIES", str(FIRECRAWL_RETRY_MAX_ATTEMPTS))
+            )
+            self._max_delay = float(
+                os.getenv(
+                    "AGENT_WEB_FIRECRAWL_RETRY_MAX_DELAY",
+                    str(FIRECRAWL_RETRY_MAX_DELAY_SECONDS),
+                )
+            )
+
+        def run(self, query: str) -> str:
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": WIKIPEDIA_COMPLIANT_USER_AGENT,
+            }
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+            body = {"query": query, "limit": DEFAULT_WEB_MAX_RESULTS}
+            response = httpx.post(
+                self.search_url,
+                json=body,
+                headers=headers,
+                timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
+            )
+            for attempt in range(1, self._max_attempts + 1):
+                if response.status_code < 400:
+                    break
+                if response.status_code != 429:
+                    raise RuntimeError(f"firecrawl status={response.status_code}")
+                if attempt == self._max_attempts:
+                    raise RuntimeError(f"firecrawl status={response.status_code}")
+                time.sleep(self._retry_delay(attempt, response, self._max_delay))
+                response = httpx.post(
+                    self.search_url,
+                    json=body,
+                    headers=headers,
+                    timeout=DEFAULT_WEB_TIMEOUT_SECONDS,
+                )
+            payload = response.json()
+            data_block = payload.get("data") if isinstance(payload, dict) else None
+            results = data_block.get("web") if isinstance(data_block, dict) else None
+            return _format_web_results(
+                results,
+                title_key="title",
+                url_key="url",
+                snippet_key="description",
+            )
+
+        @staticmethod
+        def _retry_delay(attempt: int, response: Any, max_delay: float) -> float:
+            retry_after = response.headers.get("Retry-After")
+            if retry_after:
+                try:
+                    return max(FIRECRAWL_RETRY_MIN_DELAY_SECONDS, min(float(retry_after), max_delay))
+                except ValueError:
+                    pass
+            return min(
+                FIRECRAWL_RETRY_INITIAL_DELAY_SECONDS * (2 ** (attempt - 1)),
+                max_delay,
+            )
+
+    return _FirecrawlWebSearch(api_key, search_url)
+
+
 # Module-level cache for web search clients
 _web_search_clients: list[tuple[str, Any]] | None = None
 
@@ -221,6 +332,11 @@ def _ensure_web_search_clients() -> list[tuple[str, Any]]:
         clients.append(("searxng_public_pool", searxng_client))
         logger.info("tool.search_web provider initialized: searxng_public_pool")
 
+    firecrawl_client = _build_firecrawl_web_search_client()
+    if firecrawl_client is not None:
+        clients.append(("firecrawl_search", firecrawl_client))
+        logger.info("tool.search_web provider initialized: firecrawl_search")
+
     wikipedia_client = _build_wikipedia_web_search_client()
     if wikipedia_client is not None:
         clients.append(("wikipedia_api", wikipedia_client))
@@ -229,25 +345,25 @@ def _ensure_web_search_clients() -> list[tuple[str, Any]]:
     if not clients:
         logger.warning("tool.search_web no primary provider initialized")
 
-    if not clients:
-        allow_ddg_fallback = _env_flag("AGENT_WEB_ENABLE_DDG_FALLBACK", default=False)
-        if allow_ddg_fallback:
-            fallback_client = _build_native_web_search_client()
-            if fallback_client is not None:
-                clients.append(("native_duckduckgo_search", fallback_client))
-                logger.info("tool.search_web provider fallback initialized: native_duckduckgo_search")
-            else:
-                try:
-                    # langchain_community import costs seconds; pay it on use only.
-                    from langchain_community.tools import DuckDuckGoSearchRun
+    allow_ddg_fallback = _env_flag("AGENT_WEB_ENABLE_DDG_FALLBACK", default=False)
+    if allow_ddg_fallback:
+        fallback_client = _build_native_web_search_client()
+        if fallback_client is not None:
+            clients.append(("native_duckduckgo_search", fallback_client))
+            logger.info("tool.search_web provider fallback initialized: native_duckduckgo_search")
+        else:
+            try:
+                from langchain_community.tools import DuckDuckGoSearchRun
 
-                    native_client = DuckDuckGoSearchRun()
-                    clients.append(("langchain_duckduckgo_search", native_client))
-                    logger.info("tool.search_web provider fallback initialized: langchain_duckduckgo_search")
-                except Exception:
-                    logger.warning("tool.search_web no fallback provider available")
+                native_client = DuckDuckGoSearchRun()
+                clients.append(("langchain_duckduckgo_search", native_client))
+                logger.info("tool.search_web provider fallback initialized: langchain_duckduckgo_search")
+            except Exception:
+                logger.warning("tool.search_web no fallback provider available")
 
-    _web_search_clients = clients
+    _web_search_clients = [
+        (name, _CircuitBreakerProvider(name, client)) for name, client in clients
+    ]
     return _web_search_clients
 
 
@@ -259,8 +375,8 @@ def _run_web_search_internal(query: str) -> tuple[str | None, str | None, str | 
             None,
             (
                 "Web search is unavailable in current environment. "
-                "Set BRAVE_SEARCH_API_KEY in .env, or configure AGENT_SEARXNG_BASE_URLS, "
-                "or enable AGENT_WEB_ENABLE_DDG_FALLBACK=1."
+                "Set FIRECRAWL_API_KEY or BRAVE_SEARCH_API_KEY in .env, or configure "
+                "AGENT_SEARXNG_BASE_URLS, or enable AGENT_WEB_ENABLE_DDG_FALLBACK=1."
             ),
         )
     errors: list[str] = []
@@ -272,17 +388,40 @@ def _run_web_search_internal(query: str) -> tuple[str | None, str | None, str | 
                 errors.append(f"{provider_name}: no results")
                 continue
             return provider_name, response_text, None
+        except _ProviderCoolingDownError as exc:
+            # Circuit open: skip quietly - the open/recover transitions are
+            # already logged once by the breaker.
+            errors.append(str(exc))
         except Exception as exc:
             errors.append(f"{provider_name}: {exc}")
             logger.info("tool.search_web provider failed: %s (%s)", provider_name, exc)
     return None, None, f"Web search failed: {' | '.join(errors)}"
 
 
+# Redirect hook for eval fixtures and tests: when set, search_web routes
+# through this callable instead of the live provider chain.
+_web_search_override: Any = None
+
+
+def set_web_search_override(fn: Any) -> None:
+    """Redirect search_web (frozen eval fixtures, tests); None restores live."""
+    global _web_search_override
+    _web_search_override = fn
+
+
 @tool(
     "search_web",
-    description="Search public web content for supplemental context.",
+    description=(
+        "Search public web content. For time-sensitive questions run 2-3 queries with "
+        "different keywords before answering; prefer results that carry a publication "
+        "date, cite the source URL in the answer, and state an explicit as-of date. "
+        "If repeated queries still yield no reliable external evidence, say the evidence "
+        "is insufficient instead of falling back to generic knowledge."
+    ),
     args_schema=SearchWebInput,
 )
+
+
 def search_web(query: str) -> str:
     safe_query = _sanitize_query(query)
     logger.info(
@@ -296,6 +435,8 @@ def search_web(query: str) -> str:
     if _is_dangerous_query(safe_query):
         logger.warning("tool.search_web blocked by policy")
         return "Blocked by tool policy: query appears unsafe for web search."
+    if _web_search_override is not None:
+        return str(_web_search_override(safe_query))
     provider_name, response_text, error_text = _run_web_search_internal(safe_query)
     if response_text is None:
         logger.warning("tool.search_web unavailable: %s", error_text)

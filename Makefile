@@ -11,6 +11,7 @@ EVAL_ENV_FILE ?= .env
 EVAL_CASE_ID ?=
 EVAL_LIMIT ?= 1
 EVAL_OUTPUT ?=
+EVAL_TRAJ ?=
 AGENT_LLM_REQUEST_TIMEOUT ?=
 JUDGE_MODEL ?=
 JUDGE_BASE_URL ?=
@@ -31,7 +32,7 @@ BASELINE_OUTPUT_ARG := $(if $(strip $(EVAL_OUTPUT)),--output $(EVAL_OUTPUT),)
 	lint lint-core format format-check typecheck typecheck-core \
 	quality-core quality-full quality-unused check ci spec-validate spec-validate-all \
 	cleanup-check cleanup-fix cleanup-deadcode cleanup-whitelist \
-	eval-baseline eval-baseline-judge eval-live-smoke
+	eval-baseline eval-baseline-judge eval-live-smoke eval-report eval-offline-judge eval-judge-agreement db-schema
 
 help: ## Show available development commands.
 	@$(UV) run python -c "from pathlib import Path; rows=[(line.split(':', 1)[0], line.split('##', 1)[1].strip()) for line in Path('Makefile').read_text(encoding='utf-8').splitlines() if ':' in line and '##' in line and not line[0].isspace()]; print('PaperSage development commands:\n'); print('\n'.join(f'  {name:<22} {description}' for name, description in rows))"
@@ -163,10 +164,22 @@ cleanup-deadcode: ## Report suspected dead code for manual review.
 cleanup-whitelist: ## Regenerate the dead-code review whitelist.
 	$(PYTHON) scripts/python_cleanup.py deadcode --make-whitelist
 
-eval-baseline: ## Run task-completion evals; configure with EVAL_* and JUDGE_* variables.
+eval-baseline: ## Run task-completion evals (scenario calibration); configure with EVAL_* and JUDGE_* variables.
 	$(PYTHON) tests/evals/run_agent_task_completion_baseline.py --fixture $(EVAL_FIXTURE) --env-file $(EVAL_ENV_FILE) $(BASELINE_JUDGE_MODEL_ARG) $(BASELINE_JUDGE_BASE_URL_ARG) $(BASELINE_CASE_ARG) $(BASELINE_LIMIT_ARG) $(BASELINE_OUTPUT_ARG)
 
 eval-baseline-judge: eval-baseline ## Alias for baseline eval with optional judge overrides.
 
-eval-live-smoke: ## Run a small live-model smoke eval; requires API credentials.
+eval-live-smoke: ## Run live-model task-completion evals; requires API credentials. EVAL_LIMIT=0 runs all cases.
 	$(PYTHON) tests/evals/run_agent_task_completion_live_smoke.py --fixture $(EVAL_FIXTURE) --env-file $(EVAL_ENV_FILE) --limit $(EVAL_LIMIT) $(LIVE_SMOKE_CASE_ARG) $(LIVE_SMOKE_OUTPUT_ARG)
+
+eval-report: ## Render a baseline JSON into a self-contained HTML report. EVAL_REPORT=<json path>.
+	$(PYTHON) scripts/eval_report.py $(EVAL_REPORT)
+
+db-schema: ## Regenerate docs/generated/db-schema.md.
+	$(PYTHON) scripts/generate_db_schema.py
+
+eval-judge-agreement: ## Compare two eval reports' judge verdicts. EVAL_A=<json> EVAL_B=<json>.
+	$(PYTHON) scripts/eval_judge_agreement.py $(EVAL_A) $(EVAL_B)
+
+eval-offline-judge: ## Two-stage eval: judge dumped trajectories without re-running the agent. EVAL_TRAJ=<jsonl> [JUDGE_MODEL].
+	$(PYTHON) tests/evals/run_agent_task_completion_live_smoke.py --env-file $(EVAL_ENV_FILE) --judge-trajectories $(EVAL_TRAJ) $(BASELINE_JUDGE_MODEL_ARG) $(BASELINE_JUDGE_BASE_URL_ARG) $(EVAL_OUTPUT_ARG) $(BASELINE_LIMIT_ARG)

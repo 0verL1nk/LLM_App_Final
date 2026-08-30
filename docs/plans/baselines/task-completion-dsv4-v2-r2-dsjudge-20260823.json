@@ -1,0 +1,1394 @@
+{
+  "generated_at_utc": "2026-08-23T15:46:14.651251+00:00",
+  "fixture_path": "tests\\evals\\fixtures\\agent_task_eval_set_v1.jsonl",
+  "run_config": {
+    "runner_mode": "offline_judge",
+    "judge_model": "deepseek-v4-flash",
+    "trajectories": "docs/plans/baselines/trajectories-dsv4-v2-r2-20260823.jsonl"
+  },
+  "total_cases": 19,
+  "completed_cases": 4,
+  "completion_rate": 0.21052631578947367,
+  "final_success_rate": 0.21052631578947367,
+  "process_success_rate": 0.8421052631578947,
+  "evidence_coverage_rate": 1.0,
+  "average_execution_completion_ratio": 0.8944444444444445,
+  "failed_case_ids": [
+    "project_rag_fact_001",
+    "project_compare_001",
+    "project_compare_constraints_001",
+    "web_latest_001",
+    "web_recency_001",
+    "web_tradeoff_001",
+    "hybrid_research_001",
+    "hybrid_rollout_001",
+    "hybrid_guardrail_001",
+    "hybrid_reject_001",
+    "project_contradiction_001",
+    "project_abstain_001",
+    "web_overturn_001",
+    "routing_discrimination_local_001",
+    "project_delegation_scaling_001"
+  ],
+  "remediation_area_counts": {
+    "prompt": 15,
+    "architecture": 3
+  },
+  "cases": [
+    {
+      "case_id": "project_rag_fact_001",
+      "category": "project_rag",
+      "prompt": "请在当前项目文档范围内概括 RAG 论文的核心结论。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 1,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": ""
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "final answer did not satisfy the task contract",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "已检索到 RAG 论文（Lewis et al., *Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks*, arXiv:2005.11401）的相关文档片段，以下是其核心结论的概括：\n\n## RAG 论文核心结论\n\n**1. 核心思想：参数记忆 + 非参数记忆的端到端结合**\nRAG 是一种通用微调方法：参数记忆为预训练 seq2seq Transformer（BART），非参数记忆为维基百科的稠密向量索引，由预训练检索器 DPR 访问；两者在概率模型中以端到端方式联合训练，直接最小化答案的负对数似然<evidence>chunk_3|o3-483</evidence><evidence>chunk_0|o0-485</evidence>。\n\n**2. 开放域问答达到 SOTA**\nRAG 在 Natural Questions、WebQuestions、CuratedTrec 三个开放域问答任务上取得当时最先进结果，优于纯参数化的 seq2seq 模型（closed-book）以及任务特化的抽取式检索架构（open-book）<evidence>chunk_21|o21-472</evidence><evidence>chunk_3|o3-422</evidence>，且无需 REALM、T5+SSM 那种昂贵的\"显著跨度掩码\"预训练<evidence>chunk_5|o5-491</evidence>。\n\n**3. 生成任务上更具体、更多样、更符合事实**\n在 MS-MARCO 和 Jeopardy 生成任务上，RAG 生成的回答比纯参数化 BART 基线更符合事实、更具体且更多样；文档后验分布显示非参数记忆能引导生成，从参数记忆中抽取特定知识<evidence>chunk_9|o9-489</evidence><evidence>chunk_22|o22-516</evidence>。\n\n**4. 事实核查接近专用系统**\n在 FEVER 上，RAG 与当时最先进系统的差距在 4.3% 以内，而那些系统是带有领域特定架构和大量工程、并依赖中间检索监督的复杂流水线——RAG 无需这些<evidence>chunk_22|o22-516</evidence><evidence>chunk_9|o9-489</evidence>。\n\n**5. 可学习检索的价值与消融发现**\n- 冻结检索器训练时所有任务结果均下降，说明学习检索是 RAG 的关键特征<evidence>chunk_14|o14-433</evidence>；\n- 与 BM25 对比：FEVER 上 BM25 更优（声明高度实体中心化、适合词重叠检索），而可微检索在其余所有任务上更好，尤其在开放域问答上至关重要<evidence>chunk_6|o6-483</evidence>。\n\n**6. 索引可热替换带来可更新性与可解释性**\n非参数记忆的优势在于知识可直接修订和扩展而无需重新训练，且被访问的知识可被检查、解释，为决策提供了溯源<evidence>chunk_4|o4-481</evidence><evidence>chunk_13|o13-333</evidence>。\n\n---\n\n**一句话总结**：RAG 通过将预训练检索器与 seq2seq 生成器端到端结合，证明了\"参数记忆 + 非参数记忆 + 生成\"的组合在知识密集型任务上的价值——在开放域 QA 上达到 SOTA、在生成任务上更事实化且多样化，同时具备知识可更新、决策可溯源的优势。\n\n（注：检索结果未返回页码信息，引用仅含 chunk_id 与偏移；如需我进一步梳理 RAG-Sequence 与 RAG-Token 两种变体或实验细节，请告知。）",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 4,
+        "run_latency_ms": 15697.958400000061,
+        "total_tool_calls": 2,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_compare_001",
+      "category": "project_compare",
+      "prompt": "请比较当前项目中的 RAG 与 Self-RAG 两篇论文，并给出选型建议。",
+      "completed": false,
+      "final_success": false,
+      "process_success": false,
+      "execution_completion_ratio": 0.8,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 51,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": ""
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "update_plan",
+          "delegate_task",
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": false
+      },
+      "feedback": {
+        "failure_reason": "final answer did not satisfy the task contract; execution completion ratio was below the required threshold",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt",
+          "architecture"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome.",
+          "Improve multi-step execution reliability so planned work completes before the final answer is produced."
+        ]
+      },
+      "answer": "我来处理这个对比任务。这是一个多文档综合对比任务，需要并行收集两篇论文的证据并独立核验，我先建立执行计划并确认项目文档范围。已确认项目包含两篇文档：`RAG`（arXiv:2005.11401）与 `Self RAG`（arXiv:2310.11511）。现在并行委派两个 researcher 分别收集两篇论文的核心证据。委派工具当前不可用（返回 `durable_run_required`），我将调整策略：改为自行多轮检索两篇论文的证据，并在结论前完成证据核验。更新计划并同时启动多路检索。第一轮检索已获取大量核心证据。还需补充两篇论文的具体性能数字、基座模型与局限讨论，继续并行检索。证据已较充分。最后补充一轮检索，获取 Self-RAG 的具体性能数字与讨论/局限部分，以及 RAG 生成器的明确描述。最后再尝试获取 Self-RAG 的结果表格数字与基座模型信息，然后进入证据核验与汇总。证据已充分且经自查核验（所有引用均来自本轮真实返回的 chunk）。更新计划后给出最终对比结论。# RAG vs Self-RAG：论文对比与选型建议\n\n## 一、两篇论文概览\n\n| 维度 | **RAG**（arXiv:2005.11401，Lewis et al. 2020） | **Self-RAG**（arXiv:2310.11511，Asai et al. 2023） |\n|---|---|---|\n| 核心思路 | 参数记忆 + 非参数记忆的概率化融合 | 在 RAG 之上加入\"自反思\"，让 LM 自己决定何时检索、如何批判自己的输出 |\n| 检索方式 | **始终检索**：对每个输入固定取 top-K 文档做 marginalize | **按需检索**：模型先输出 Retrieve 令牌判断是否需要检索<evidence>arxiv:2310.11511:chunk_78|p?|o3239-3646</evidence> |\n| 质量自评 | 无（检索后直接生成，不再回头评估） | 有：反思令牌（ISREL/ISSUP/ISUSE）逐段批判自己的生成<evidence>arxiv:2310.11511:chunk_103|p?|o13817-14298</evidence> |\n| 可核查性 | 无引用归因机制 | 每段输出附带\"是否被 passage 支持\"的自评，便于事实核查<evidence>arxiv:2310.11511:chunk_85|p?|o5906-6364</evidence> |\n\n## 二、架构与机制对比\n\n**RAG 的架构**：参数记忆是预训练 seq2seq transformer（BART-large，400M 参数），非参数记忆是 Wikipedia 稠密向量索引，由 DPR bi-encoder 检索器访问，两者在一个概率模型中端到端联合训练<evidence>arxiv:2005.11401:chunk_11|p?|o4284-4764</evidence><evidence>arxiv:2005.11401:chunk_24|p?|o10109-10605</evidence>。检索器以 DPR 在 NQ/TriviaQA 上的监督初始化，联合微调时无额外检索监督<evidence>arxiv:2005.11401:chunk_25|p?|o10606-11102</evidence><evidence>arxiv:2005.11401:chunk_45|p?|o19020-19506</evidence>。有两种解码公式：\n- **RAG-Sequence**：整段输出共享同一组 top-K 文档，对文档做边缘化<evidence>arxiv:2005.11401:chunk_20|p?|o8433-8886</evidence>\n- **RAG-Token**：每个 token 可从不同文档取内容，逐 token 边缘化<evidence>arxiv:2005.11401:chunk_21|p?|o8815-9307</evidence>\n\n**Self-RAG 的机制**：训练**单个任意 LM** 端到端学会\"检索—生成—反思\"。推理时模型先解码 Retrieve 令牌（yes/no/continue）决定是否检索；需要时并行处理 K 个 passage，逐段生成内容与批判令牌，最后用段级 beam search（tree-decoding）选出事实性与整体质量最佳的片段<evidence>arxiv:2310.11511:chunk_79|p?|o3647-4126</evidence><evidence>arxiv:2310.11511:chunk_127|p?|o24070-24540</evidence>。反思令牌共四类：Retrieve{yes,no,continue}、ISREL{relevant,irrelevant}、ISSUP{fully/partially/no support}、ISUSE{5,4,3,2,1}<evidence>arxiv:2310.11511:chunk_103|p?|o13817-14298</evidence>。\n\n**训练方式对比**：RAG 只需一步端到端微调；Self-RAG 是两阶段——先用 critic 模型 C（Llama2-7B 初始化，与 GPT-4 判定一致率 >90%）离线为语料插入反思令牌，再用标准 LM 目标在扩展词表（含反思令牌）上训练生成器 M，推理时不再依赖 critic<evidence>arxiv:2310.11511:chunk_86|p?|o6365-6864</evidence><evidence>arxiv:2310.11511:chunk_110|p?|o16860-17347</evidence><evidence>arxiv:2310.11511:chunk_118|p?|o20379-20867</evidence><evidence>arxiv:2310.11511:chunk_121|p?|o21746-22153</evidence>。Self-RAG 作者指出其训练成本显著低于 RLHF/PPO<evidence>arxiv:2310.11511:chunk_123|p?|o22452-22868</evidence>。\n\n## 三、实验与性能对比\n\n**RAG**：在四个开放域 QA 数据集（NQ、TriviaQA、WebQuestions、CuratedTrec）上报告 EM，并在其中三个任务上达到当时 SOTA<evidence>arxiv:2005.11401:chunk_34|p?|o14458-14953</evidence><evidence>arxiv:2005.11401:chunk_4|p?|o1312-1789</evidence><evidence>arxiv:2005.11401:chunk_44|p?|o18586-19019</evidence>。test 分数行显示 NQ 44.5、TQA 56.8/68.0、WQ 45.2、CT 52.2<evidence>arxiv:2005.11401:chunk_48|p?|o20386-20883</evidence>；在 MS-MARCO 抽象式 QA 上比 BART 高 2.6 BLEU 和 2.6 ROUGE-L<evidence>arxiv:2005.11401:chunk_49|p?|o20884-21342</evidence>；FEVER-2 标签准确率 BART 81.1 → RAG-Token 89.5<evidence>arxiv:2005.11401:chunk_48|p?|o20386-20883</evidence>。Jeopardy 生成人评中 RAG 更事实化的比例（42.7%）远超 BART（7.1%）<evidence>arxiv:2005.11401:chunk_51|p?|o21734-22172</evidence>。即使正确答案不在任何检索文档中，NQ 上仍有 11.8% 答对（抽取式模型为 0%）<evidence>arxiv:2005.11401:chunk_49|p?|o20884-21342</evidence>。\n\n**Self-RAG**：在六个任务（推理、长文生成、短形式 QA 含 PopQA long-tail 与 TriviaQA-unfiltered）上做 zero-shot 评估，显著优于**参数量更大**的预训练/指令微调 LLM 及主流 RAG 方法，引用准确率（citation accuracy）更高；在四个任务上超过 retrieval-augmented ChatGPT，也优于 Llama2-chat 与 Alpaca<evidence>arxiv:2310.11511:chunk_89|p?|o7765-8251</evidence><evidence>arxiv:2310.11511:chunk_133|p?|o26834-27324</evidence><evidence>arxiv:2310.11511:chunk_131|p?|o25932-26421</evidence>。基线包括 Llama2-7B/13B、Alpaca-7B/13B、ChatGPT、Llama2-chat-13B<evidence>arxiv:2310.11511:chunk_136|p?|o28196-28681</evidence>。\n\n**可维护性**：RAG 的非参数记忆支持\"热替换\"——只需更换索引即可更新世界知识（论文用 2016 vs 2018 两个 Wikipedia dump 验证）<evidence>arxiv:2005.11401:chunk_65|p?|o27976-28438</evidence>。Self-RAG 的检索频率可通过反思令牌在推理时灵活调节（硬/软约束）<evidence>arxiv:2310.11511:chunk_88|p?|o7265-7764</evidence>。\n\n## 四、各自定位与已知短板\n\n**RAG**：优点是工程简洁（单模型端到端微调）、知识热更新、多样性更好<evidence>arxiv:2005.11401:chunk_62|p?|o26653-27149</evidence>。短板是**无条件检索**——Self-RAG 论文指出传统 RAG\"无论是否需要都固定检索固定数量文档，且从不回头评估生成质量\"<evidence>arxiv:2310.11511:chunk_85|p?|o5906-6364</evidence>；另外可微检索并非普遍最优（FEVER 上 BM25 反而更好）<evidence>arxiv:2005.11401:chunk_64|p?|o27570-28047</evidence>。\n\n**Self-RAG**：优点是自适应检索（避免无谓检索）、细粒度自评、可控解码、可引用核查<evidence>arxiv:2310.11511:chunk_93|p?|o9423-9913</evidence><evidence>arxiv:2310.11511:chunk_88|p?|o7265-7764</evidence>。短板是**训练成本更高**（需要两阶段：训练 critic + 用其扩充语料再训练生成器）<evidence>arxiv:2310.11511:chunk_110|p?|o16860-17347</evidence>；推理时对多个 passage 并行生成 + 段级 beam search，计算开销高于单次生成。\n\n## 五、选型建议（基于证据）\n\n1. **优先 Self-RAG 的场景**：追求事实性、可核查性与综合质量（开放域 QA、长文生成、需要引用归因），且你**有能力做两阶段训练**（先训 critic 或直接用现成 Self-RAG 模型）。其零样本下以更少参数超越更大 LLM 与主流 RAG 的效果有直接证据支撑<evidence>arxiv:2310.11511:chunk_89|p?|o7765-8251</evidence>。\n2. **优先经典 RAG 的场景**：工程快速落地、计算预算敏感、基座是 BART/T5 类 seq2seq、或需要**不停训练即可更新知识**（热替换索引）<evidence>arxiv:2005.11401:chunk_65|p?|o27976-28438</evidence>。它也是理解 RAG 系方法的最佳起点。\n3. **折中路径**：若既想要质量又难做全量训练，可采用 Self-RAG 的**按需检索 + 批判**思想（软约束/可调检索频率）<evidence>arxiv:2310.11511:chunk_88|p?|o7265-7764</evidence>，但用现成 LLM + 轻量自评实现——不过这属于工程改造，超出两篇论文的直接结论。\n\n**一句话结论**：经典 RAG 胜在\"简单、可热更新、零门槛\"，适合快速落地与知识库频繁更替的场景；Self-RAG 胜在\"按需检索 + 自反思 + 可核查引用\"，适合对事实性和输出质量要求高、且能承担两阶段训练成本的场景。在大多数新项目中，如果算力允许，Self-RAG 是更优的终态选择。\n\n---\n\n**证据说明**：以上引用均来自本项目两份文档的检索结果；文档未提供页码元数据（page_no 为 null），故以 `p?` 标注。两点需注意的边界：(1) Self-RAG 结果表格的**具体数值**（如 PopQA 上的精确准确率）在现有向量索引中未检索到，因此只引用了论文的定性结论；(2) RAG（2020 年论文）未设专门 Limitations 章节，其短板系从消融与机制证据推断。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 40,
+        "run_latency_ms": 108730.82400000567,
+        "total_tool_calls": 20,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_scope_boundary_001",
+      "category": "project_scope_boundary",
+      "prompt": "只基于当前项目文档判断：项目内现有材料是否已经支持引入 Self-RAG？不要引用外部最新资料。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 9,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "1. Strictly within current project documents: satisfied. The answer opens with “基于项目内全部材料（仅 1 篇文档：arxiv:2310.11511...）” and all cited evidence is tied to that project document (e.g., “chunk_13|o13-494”, “chunk_17|o17-502”); no external source is relied on. 2. Explicitly avoid relying on external latest information: satisfied. The answer repeatedly frames the conclusion as based only on internal materials (“基于项目内全部材料...检索完成”, “项目内没有任何针对自身场景的验证或工程评估材料”) and does not cite external latest work; the mention of selfrag.github.io comes from the document itself. 3. States whether current internal materials are sufficient to support adopting Self-RAG now: satisfied. The answer gives an explicit verdict: “现有材料‘有条件支持’引入 Self-RAG”, then clearly distinguishes that the material supports the technical case but “不能支撑的是‘直接落地’的决策”, concluding that materials are sufficient for starting an adoption evaluation but not for direct deployment. This explicitly states whether current internal materials suffice."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "项目内只有一篇文档（`arxiv:2310.11511`，即 SELF-RAG 论文本身）。我再检索实验效果与局限部分，以便判断材料是否足以支撑引入决策。我再检索论文中的具体实验数字，确认材料里是否包含效果证据。最后再检索论文中是否有明确的量化对比结论（如与 ChatGPT/Llama2 的对比数字）。基于项目内全部材料（仅 1 篇文档：`arxiv:2310.11511`《Self RAG》，2023-10-17 v1 预印本），检索完成，结论如下。\n\n## 结论：现有材料\"有条件支持\"引入 Self-RAG\n\n材料能支撑的是\"技术层面值得引入\"的论证（动机、方法、作者实验证据、开源资源均齐备）；不能支撑的是\"直接落地\"的决策（项目内没有任何针对自身场景的验证或工程评估材料）。\n\n### 一、材料中支持引入的证据\n\n**1. 明确的动机论证**\n论文指出 LLM 存在事实错误，而传统 RAG\"无论是否必要、无论段落是否相关都无差别检索固定数量段落\"，会损害模型多样性或产生无益回答；SELF-RAG 通过按需检索 + 自反思解决这一问题<evidence>chunk_13|o13-494</evidence>，在不牺牲创造力和通用性的前提下提升质量与事实性<evidence>chunk_0|o0-484</evidence>。\n\n**2. 方法可行性与低成本训练**\nSELF-RAG 训练\"任意单个 LM\"，通过扩展词表的 reflection tokens（Retrieve、ISREL、ISSUP、ISUSE）统一为下一 token 预测；批评模型离线把 token 插入语料，生成器用标准 LM 目标训练，**无需 PPO/reward model，训练成本远低于 RLHF**<evidence>chunk_10|o10-509</evidence><evidence>chunk_5|o5-421</evidence>。推理时按需检索、并行处理多段落并自我批评挑选最优输出<evidence>chunk_7|o7-486</evidence>。\n\n**3. 作者实验证据**\n材料包含完整实验：闭集任务（PubHealth、ARC-Challenge）、短格式问答（PopQA 长尾子集、TriviaQA-unfiltered），零样本评估，与 Llama2 7B/13B、Alpaca、ChatGPT、Llama2-chat13B、Ret-ChatGPT、Ret-Llama2-chat、perplexity.ai 及同期 RAG 方法对比<evidence>chunk_17|o17-502</evidence><evidence>chunk_3|o3-476</evidence><evidence>chunk_16|o16-506</evidence>；论文声明在所有任务上优于基线，并验证了 reflection tokens 训练与推理的有效性及测试时自定义能力<evidence>chunk_6|o6-485</evidence><evidence>chunk_22|o22-512</evidence>。\n\n**4. 落地资源**\n论文明确公开代码与训练模型（selfrag.github.io）<evidence>chunk_7|o7-486</evidence><evidence>chunk_16|o16-132</evidence>，降低了复现与引入门槛。\n\n### 二、材料中的关键边界（决定\"有条件\"的部分）\n\n- **证据全部为作者自报告**：该文档是 2023-10-17 的 arXiv v1 预印本（标注 \"Preprint.\"）<evidence>chunk_16|o16-132</evidence><evidence>chunk_5|o5-421</evidence>，项目内**没有**第三方复现、独立评测或后续更新版本；\n- **缺少本项目场景的适配证据**：论文实验聚焦 PopQA、TriviaQA、PubHealth、ARC 等知识密集型/推理任务<evidence>chunk_13|o13-423</evidence>，项目内没有关于自身任务类型、数据、延迟/成本约束的任何材料；\n- 因此\"能否在我们项目落地\"（效果、代价、集成方式）在本项目文档范围内**证据不足**。\n\n### 三、建议\n\n如果决策目标是\"是否值得启动 Self-RAG 引入评估\"，现有材料已充分支持（论证完整 + 可复现资源）；如果决策目标是\"直接上线\"，现有材料不支持，需先依据该论文在其开源资源基础上做本场景的小规模验证。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 16,
+        "run_latency_ms": 40563.43899999774,
+        "total_tool_calls": 8,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_gap_001",
+      "category": "project_gap",
+      "prompt": "如果只看当前项目文档，现有材料对 Self-RAG 落地评估还缺什么关键信息？请给出结论和下一步补充建议。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 13,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Item 1 (identify at least one meaningful information gap): Satisfied. The answer explicitly identifies multiple gaps, e.g. “**1. 推理/部署成本无任何量化数据（最致命）**” and “**2. 检索组件配置缺失**”. These are meaningful information gaps for a Self-RAG landing assessment. Item 2 (state that current evidence is incomplete for a full landing decision): Satisfied. The answer states “它足以回答“方法是什么、论文里效果如何”，但**不足以支撑 Self-RAG 的落地评估**” and later “现有文档能回答“Self-RAG 有效吗”（效果侧证据充分），但回答不了“Self-RAG 落得下来吗、要花多少钱、合规吗、会怎么失败””. This clearly declares the current evidence incomplete for a full landing decision. Item 3 (give a concrete next step to close the gap): Satisfied. The answer gives concrete steps, e.g. “**自建小规模落地验证**：用官方 checkpoint 在自有语料上跑通端到端，实测延迟/吞吐/单请求成本/检索触发频率，建立成本模型；同时测量与普通 RAG 的推理开销倍数。” It also gives “**补齐附录与工程材料**：获取并核对论文附录原文（A.3 阈值、B.1 实验设置、B.2、D 指令列表、Table 5）以及官方 GitHub/模型仓库的 README、权重卡”。 The whole answer is non-empty and judgeable; every rubric item is satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "search_document",
+          "update_plan",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 3,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 3,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "我先快速摸清项目文档范围与 Self-RAG 相关内容的覆盖情况，再据此判断缺口并组织检索。项目范围已确认：当前只有一份文档《Self RAG》(arXiv:2310.11511)。要判断\"落地评估缺什么\"，需要从多个维度核对该论文覆盖了什么、没覆盖什么。这是多路证据收集 + 结论需独立核验的任务，我先建计划，再并行委派检索。委派接口当前不可用（durable_run_required），我改为自己并行多路检索各维度证据，最后再做证据核验。先发第一批覆盖性检索：第一批证据已覆盖方法、训练、评测与基线。继续第二批定向检索，核实检索器配置、训练数据、推理细节与局限性等关键维度：核心维度证据已基本齐备。最后再补三路核实：检索器具体配置、推理开销量化、训练超参数与局限性声明。补充最后一轮核验：确认附录是否包含检索器配置/超参数/成本细节，以及许可证相关信息是否存在。委派在当前环境不可用，我已完成全部维度的并行检索，并逐条交叉核验了证据（对照论文正文确认\"哪些信息存在、哪些检索不到\"）。更新计划后给出结论。# 结论\n\n当前项目文档只有一份《Self RAG》论文（arXiv:2310.11511, v1），它足以回答\"方法是什么、论文里效果如何\"，但**不足以支撑 Self-RAG 的落地评估**：论文覆盖了方法机制、训练流程、评测结果与基线对比，却几乎没有提供工程落地所需的成本、配置、许可与风险信息。按对落地评估的影响排序，存在 6 个关键缺口。\n\n---\n\n## 一、文档已覆盖（作为对照基线）\n\n- **方法机制**：训练任意 LM 通过 reflection tokens（Retrieve、ISREL、ISSUP、ISUSE）实现按需检索与自我反思<evidence>chunk_27|p-|o27-511</evidence>，检索时按段并行处理 K 个段落、做 segment-level beam search<evidence>chunk_6|p-|o6-476</evidence>，并用可调权重 wG 控制段评分<evidence>chunk_23|p-|o23-517</evidence>。\n- **训练流程**：critic C 以 Llama 2-7B 初始化<evidence>chunk_7|p-|o6-494</evidence>，用 GPT-4 蒸馏的 reflection token 数据（每类 4k–20k 条）训练<evidence>chunk_13|p-|o13-487</evidence>；generator 训练语料来自 Open-Instruct 处理数据采样<evidence>chunk_1|p-|o1-471</evidence>。\n- **评测**：6 个任务（PubHealth、ARC-Challenge、PopQA、TriviaQA-unfiltered、传记生成、ALCE-ASQA），zero-shot，指标含 accuracy、FactScore、str-em、MAUVE、citation precision/recall<evidence>chunk_5|p-|o5-495</evidence><evidence>chunk_20|p-|o20-499</evidence>；基线含 Llama2/Alpaca/ChatGPT/Llama2-chat/Ret-ChatGPT/Ret-Llama2-chat/perplexity.ai 等<evidence>chunk_3|p-|o3-476</evidence><evidence>chunk_0|p-|o0-473</evidence>。\n- **发布物**：代码与训练好的模型指向 https://selfrag.github.io/<evidence>chunk_5|p-|o5-121</evidence>。\n\n## 二、关键缺口（当前文档检索不到的信息）\n\n**1. 推理/部署成本无任何量化数据（最致命）**\n落地评估最需要的是成本模型，而文档只有机制描述：每段要并行处理 K 个候选段落、beam search B 个候选、额外生成多类 critique token<evidence>chunk_6|p-|o6-476</evidence><evidence>chunk_12|p-|o12-482</evidence>——但没有给出**延迟、吞吐、FLOPs、额外 token 开销、硬件规格或单请求成本**的任何数字。无法估算单次请求的延迟预算与推理成本，这是落地评估的第一大障碍。\n\n**2. 检索组件配置缺失**\n检索器 R 在文中只是符号（\"Large-scale passage collections\"）<evidence>chunk_4|p-|o4-488</evidence>，未给出具体检索器实现、语料库、K/B 的具体取值与阈值设定（正文只引用附录 A.3/B.1，而当前项目文档的文本索引中未包含这些附录细节内容）。评估\"检索质量对端到端效果的影响\"无从谈起。\n\n**3. 训练复现与超参数缺失**\ngenerator 训练只有\"从 Open-Instruct processed data 采样\"一句<evidence>chunk_1|p-|o1-471</evidence>，**训练语料规模、学习率、轮数、batch、GPU 时数等全部缺失**（仅有 critic 数据量 4k–20k/类<evidence>chunk_13|p-|o13-487</evidence>）。一旦落地需要换基座模型或换领域，重训/再蒸馏成本完全不可估。\n\n**4. 许可与商用条款缺失**\n文档只给 GitHub 链接，**没有任何模型权重许可证、数据许可或商用条款说明**。合规环节（尤其是基于 Llama 2 的权重商用限制）无法在现有材料中确认。\n\n**5. 局限性/失败模式/风险讨论缺失**\n全文未检索到 Limitations 章节。尤其值得注意的是：critic 数据依赖 GPT-4 蒸馏<evidence>chunk_16|p-|o16-509</evidence>，而论文在 related work 中批评他人依赖专有模型会\"raise API costs and diminish reproducibility\"<evidence>chunk_16|p-|o16-509</evidence>——这一点同样适用于 Self-RAG 自身，但论文未将其作为自身局限讨论。落地评估缺少风险清单（蒸馏依赖、专有模型 API 成本、检索失败时的行为等）。\n\n**6. 评测覆盖不足以支撑业务决策**\n仅 6 个英文任务、zero-shot<evidence>chunk_28|p-|o28-438</evidence>；无跨语言、领域、多轮对话、高并发/流式场景评测，也无成本-质量权衡分析（论文虽有 wG 权重调节机制<evidence>chunk_23|p-|o23-517</evidence>，但未给出默认权重值与调参指南）。\n\n---\n\n## 三、下一步补充建议（按优先级）\n\n1. **补齐附录与工程材料**：获取并核对论文附录原文（A.3 阈值、B.1 实验设置、B.2、D 指令列表、Table 5）以及官方 GitHub/模型仓库的 README、权重卡——补上检索器实现、K/B 默认值、超参数与许可信息。\n2. **自建小规模落地验证**：用官方 checkpoint 在自有语料上跑通端到端，实测延迟/吞吐/单请求成本/检索触发频率，建立成本模型；同时测量与普通 RAG 的推理开销倍数。\n3. **补针对性评测**：在你的目标领域/语言/多轮场景上做评测，并收集失败案例（检索无关、支撑不足、幻觉残留），形成风险清单。\n4. **明确换基座/换领域的迁移成本**：估算 critic 数据再蒸馏（GPT-4 API 成本）与重训的算力需求，判断是否值得自建。\n5. **定义业务指标**：成本/收益、延迟预算、与现网 RAG 的端到端对比——论文只有 perplexity.ai 的质量对比，没有工程侧对比，这部分必须自行补测。\n\n**一句话总结**：现有文档能回答\"Self-RAG 有效吗\"（效果侧证据充分），但回答不了\"Self-RAG 落得下来吗、要花多少钱、合规吗、会怎么失败\"——后四者是落地评估的真正缺口，需靠论文附录、官方仓库和自建验证来补齐。\n\n> 说明：本次检索在项目文档索引中未命中附录正文、许可信息、推理成本数字与 Limitations 章节，据此判定为\"当前项目材料缺失\"；若你认为文档索引可能不完整（如附录未被切块收录），可先补充附录原文再复核。另外，委派子代理当前不可用，上述结论由我直接检索并交叉核验完成。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 52,
+        "run_latency_ms": 111046.54730000038,
+        "total_tool_calls": 26,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_compare_constraints_001",
+      "category": "project_compare",
+      "prompt": "结合当前项目文档，如果团队本季度更看重稳定交付和较低工程复杂度，RAG 与 Self-RAG 应该优先选哪个？",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 25,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": ""
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "search_document",
+          "update_plan",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "final answer did not satisfy the task contract",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "我先快速了解当前项目文档范围和检索到的证据，然后为这个对比任务建立计划并并行收集证据。项目范围已确认：共 2 篇文档 —— **RAG**（arXiv:2005.11401）与 **Self RAG**（arXiv:2310.11511）。这是一个跨文档对比决策任务，我先建立执行计划，然后并行委派证据收集与独立核验。现在并行委派两路证据收集任务：委派工具在当前环境不可用（`durable_run_required`），我改为直接执行多轮检索（检索策略与核验标准不变）。继续补充两个方向的关键证据：证据已较充分。我再补一轮针对性检索，确认 RAG 的训练要求与 Self-RAG 推理开销这两个关键对比维度：证据已充分覆盖两个对比维度。由于当前环境不支持子代理委派，我按同等标准自行完成了证据核验（逐条对照工具返回的 chunk/offset）。更新计划并给出结论：## 结论：优先选 **RAG（标准检索增强生成）**\n\n在\"稳定交付 + 较低工程复杂度\"的季度目标下，两份论文证据指向同一个结论：**Self-RAG 的优势主要在生成质量与可引用性（citation accuracy），代价是显著更高的训练与推理工程复杂度；RAG 则以简单、成熟的组件化架构和\"换索引即更新知识\"的运维特性更适合稳定交付**。\n\n---\n\n### 一、工程复杂度对比（决定性维度）\n\n**RAG 的架构更简单、可复用预训练组件**\n\nRAG 由两个标准组件构成：预训练检索器（DPR）+ 密集向量索引（非参数记忆）+ 预训练 seq2seq 生成器（BART-large，400M 参数），组合成概率模型端到端训练<evidence>arxiv:2005.11401:chunk_11|o4284-4764</evidence><evidence>arxiv:2005.11401:chunk_24|o10109-10605</evidence>。且论文明确强调它**不需要昂贵、专门化的预训练**（如 salient span masking），检索器直接用现成 DPR 初始化即可<evidence>arxiv:2005.11401:chunk_45|o19020-19506</evidence>。整体是一条\"检索器 + 索引 + 生成器\"的成熟流水线，组件边界清晰，出错面小。\n\n**Self-RAG 的训练与推理链路明显更重**\n\n- **训练侧**：需要同时训练两个模型——critic 模型 C 和生成器 M；critic 用 GPT-4 提示采集的输入/输出/reflection token 数据监督训练，再离线把 reflection tokens 插入语料，最后端到端训练生成器<evidence>arxiv:2310.11511:chunk_110|o16860-17347</evidence><evidence>arxiv:2310.11511:chunk_87|o6865-7264</evidence><evidence>arxiv:2310.11511:chunk_86|o6365-6864</evidence>。论文虽称\"相比 RLHF 训练成本远低\"，但**这仍是完整的训练管线，不是开箱即用**<evidence>arxiv:2310.11511:chunk_98|o11556-12043</evidence>。这对本季度\"稳定交付\"是实质性风险：要新增数据采集（依赖 GPT-4）、critic 训练、生成器微调三块工程。\n- **推理侧**：Self-RAG 每步要先预测 Retrieve 是否需要检索（自适应检索、可设阈值）<evidence>arxiv:2310.11511:chunk_126|o23688-24147</evidence>，然后**并行处理多个 passage**、逐片段评估相关性，再生成多个 critique token 自我批判并选择最优输出，还支持 segment-level beam search 等可定制解码<evidence>arxiv:2310.11511:chunk_79|o3647-4126</evidence><evidence>arxiv:2310.11511:chunk_107|o15579-15987</evidence><evidence>arxiv:2310.11511:chunk_88|o7265-7764</evidence>。对比常规 RAG\"检索一次、生成一次\"的流程，Self-RAG 的推理是**多环节、多决策点的复杂管线**——环节越多，潜在故障面和调优面越大，与\"较低工程复杂度\"直接冲突。\n\n### 二、稳定性 / 运维对比（加分项在 RAG）\n\nRAG 有一个对稳定交付很关键的特性：**非参数记忆（索引）可在测试时直接替换来更新知识，无需重新训练**——论文用 2016/2018 两份 Wikipedia 索引做实验，索引与年份匹配时准确率 70%/68%，不匹配时骤降，证明\"换索引\"机制有效<evidence>arxiv:2005.11401:chunk_65|o27976-28438</evidence><evidence>arxiv:2005.11401:chunk_68|o29295-29764</evidence>。这意味着知识更新是低风险的运维操作。Self-RAG 文档中未见类似的\"低成本热更新\"机制。\n\n### 三、质量收益是 Self-RAG 的牌，但不是本季度目标\n\nSelf-RAG 论文报告其在六类任务上优于更大规模的预训练/指令微调模型，且在 4 个任务上超过检索增强 ChatGPT，引用准确性更高<evidence>arxiv:2310.11511:chunk_89|o7765-8251</evidence>，并自述\"更鲁棒\"<evidence>arxiv:2310.11511:chunk_94|o9849-10301</evidence>。但这些是**质量/事实性收益**，对应的是\"效果瓶颈\"而非\"交付风险\"。\n\n---\n\n### 建议\n\n1. **本季度先上 RAG**：以\"预训练检索器 + 索引 + 生成器\"的标准链路交付，知识更新走索引替换，工程面可控、风险低。\n2. **为 Self-RAG 留后门**：如果上线后发现**事实性/引用准确性成为用户核心痛点**，再评估引入 Self-RAG——但要为 critic 数据采集（依赖 GPT-4）、critic + 生成器双模型训练、复杂推理管线预留额外工期，不宜放在以稳定交付为 KPI 的季度。\n\n**说明与局限**：两份文档均为研究论文而非部署指南，\"工程复杂度\"结论是从论文描述的流水线（组件数、训练环节数、推理决策点）推断的；RAG 原论文也含端到端微调，并非零训练，只是相对 Self-RAG 的管线显著更轻。若你们已有现成的检索/向量库基础设施，RAG 的复杂度优势会进一步放大。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 24,
+        "run_latency_ms": 71952.97289999871,
+        "total_tool_calls": 12,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "web_latest_001",
+      "category": "web_research",
+      "prompt": "请联网检索 2025 年以来 Self-RAG 的最新进展，并给出两条结论。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "Item 1 (answer should reflect post-2025 web research on Self-RAG): Not satisfied. The final answer explicitly reports that all web and academic searches failed and that no reliable external evidence was obtained; it does not report any post-2025 research findings. Quotable span of failure: \"外部检索在当前会话中不可用，证据不足，我不会用记忆中的通用知识冒充检索结果。\" There is no span presenting post-2025 web research.\n\nItem 2 (provide at least two concrete takeaways from recent developments): Not satisfied. Although the answer lists two numbered \"结论,\" they are not takeaways from recent Self-RAG developments; they are statements about the inability to retrieve information. Quotable span showing the non-substantive nature: \"证据不足，无法给出'2025 年以来 Self-RAG 最新进展'的经核验结论\" and \"要完成这项任务需要恢复联网检索能力。\" Neither reflects any recent development in Self-RAG.\n\nItem 3 (avoid pretending project-local documents are the source of recency): Satisfied. The answer explicitly refuses to pass off internal or memorized knowledge as current retrieval results. Quotable span: \"我不会用记忆中的通用知识冒充检索结果\" and \"我不会基于既有知识推测 2025 年的具体进展，以免把未经验证的信息当作检索结果呈现。\"\n\nOverall score: false, because not every rubric item is satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "Item 1 (answer should reflect post-2025 web research on Self-RAG): Not satisfied. The final answer explicitly reports that all web and academic searches failed and that no reliable external evidence was obtained; it does not report any post-2025 research findings. Quotable span of failure: \"外部检索在当前会话中不可用，证据不足，我不会用记忆中的通用知识冒充检索结果。\" There is no span presenting post-2025 web research.\n\nItem 2 (provide at least two concrete takeaways from recent developments): Not satisfied. Although the answer lists two numbered \"结论,\" they are not takeaways from recent Self-RAG developments; they are statements about the inability to retrieve information. Quotable span showing the non-substantive nature: \"证据不足，无法给出'2025 年以来 Self-RAG 最新进展'的经核验结论\" and \"要完成这项任务需要恢复联网检索能力。\" Neither reflects any recent development in Self-RAG.\n\nItem 3 (avoid pretending project-local documents are the source of recency): Satisfied. The answer explicitly refuses to pass off internal or memorized knowledge as current retrieval results. Quotable span: \"我不会用记忆中的通用知识冒充检索结果\" and \"我不会基于既有知识推测 2025 年的具体进展，以免把未经验证的信息当作检索结果呈现。\"\n\nOverall score: false, because not every rubric item is satisfied.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "检索工具首次调用未命中，我换用不同措辞再试。连续两次查询均未命中检索记录（web fixture miss / 学术接口 429）。我再尝试几种不同角度的关键词组合。很抱歉，本轮无法给出可靠的检索结论——外部检索在当前会话中不可用，证据不足，我不会用记忆中的通用知识冒充检索结果。\n\n**检索失败情况**\n\n我按\"2025 年 Self-RAG 进展\"这一时效性问题，先后发起了 3 轮共 7 次检索，全部未获得有效外部证据：\n\n| 轮次 | 查询 | 结果 |\n|---|---|---|\n| 1 | `Self-RAG 2025 improvements new methods self-reflection retrieval augmented generation` | web 检索未命中（fixture miss，无实时回退） |\n| 1 | `Self-RAG latest progress 2025 self-reflective RAG variants` | web 检索未命中 |\n| 1 | `Self-RAG self-reflection retrieval augmented generation 2025`（学术库） | Semantic Scholar 429 限流 |\n| 2 | `Self-RAG 2025 progress` | web 检索未命中 |\n| 2 | `Self-Reflective Retrieval-Augmented Generation latest research` | web 检索未命中 |\n| 2 | `Self-RAG self-reflection LLM`（学术库） | Semantic Scholar 429 限流 |\n| 3 | `Self-RAG 2025` / `self-RAG self-reflection tokens critique retrieval 2025` / `adaptive retrieval self-critique LLM 2025 survey` | web 检索全部未命中 |\n\n**结论**\n\n1. **证据不足，无法给出\"2025 年以来 Self-RAG 最新进展\"的经核验结论。** 检索环境报错 `query not captured in fixture 'v2'`（当前处于回放模式且未预录上述查询，无实时联网回退），学术接口同时限流，因此没有可采信、带发布日期的外部来源可供引用。\n2. **要完成这项任务需要恢复联网检索能力。** 请先刷新/录制检索 fixture（覆盖上述关键词）或恢复实时检索与学术接口访问，我再按\"2025 年以来的新方法、改进点、评测与落地\"三个角度重新检索，并给出带 URL 与截至日期的两条结论。\n\n在获得可靠外部证据前，我不会基于既有知识推测 2025 年的具体进展，以免把未经验证的信息当作检索结果呈现。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 18,
+        "run_latency_ms": 16106.453600004897,
+        "total_tool_calls": 9,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "web_recency_001",
+      "category": "web_research",
+      "prompt": "请联网检索近年的 Self-RAG 公开进展，判断研究关注点是否已经从论文指标转向系统落地，并说明依据。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "1. Rely on current web findings: Not satisfied. The final answer reports that all web and academic searches failed (e.g., \"我没有拿到任何带日期、带 URL 的公开资料来支持'是/否/正在过渡'的结论\") and explicitly does not use current web findings to answer the task.\n2. Make a yes or qualified-yes-or-no judgment about whether attention has shifted toward system deployment concerns: Not satisfied. The answer refuses to make the requested judgment, stating \"结论：证据不足，无法给出有依据的判断\" and \"我无法负责任地给出'关注点已转向落地'的结论.\" It does not offer a yes, no, or qualified judgment.\n3. Cite the basis for that judgment instead of giving a timeless summary: Not satisfied. Because no judgment is made, there is no cited basis for a deployment-shift judgment; the answer cites only retrieval-environment failures and labels its background knowledge as non-evidence (\"以下仅作背景知识（非检索证据）\").\n\nOverall score is false because all three rubric items are unsatisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "1. Rely on current web findings: Not satisfied. The final answer reports that all web and academic searches failed (e.g., \"我没有拿到任何带日期、带 URL 的公开资料来支持'是/否/正在过渡'的结论\") and explicitly does not use current web findings to answer the task.\n2. Make a yes or qualified-yes-or-no judgment about whether attention has shifted toward system deployment concerns: Not satisfied. The answer refuses to make the requested judgment, stating \"结论：证据不足，无法给出有依据的判断\" and \"我无法负责任地给出'关注点已转向落地'的结论.\" It does not offer a yes, no, or qualified judgment.\n3. Cite the basis for that judgment instead of giving a timeless summary: Not satisfied. Because no judgment is made, there is no cited basis for a deployment-shift judgment; the answer cites only retrieval-environment failures and labels its background knowledge as non-evidence (\"以下仅作背景知识（非检索证据）\").\n\nOverall score is false because all three rubric items are unsatisfied.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "检索工具返回了 fixture miss（当前回放环境未捕获这些查询，不会回退到实时搜索）。我换用不同的关键词组合再试，同时尝试学术检索渠道。网络搜索回放仍为 fixture miss，学术检索遇到 429 限流。再各试一次（换关键词/缩小范围），确认是否属于环境性失败而非个别查询未命中。两次尝试均告失败后，结论已经明确：这是**检索通道的环境性故障**，而非某个关键词未命中。以下如实汇报，不降级为通用知识冒充证据。\n\n## 检索执行情况（全部失败）\n\n**search_web（5 个查询，全部返回 fixture miss）**\n1. `Self-RAG self-reflective retrieval-augmented generation recent progress 2025`\n2. `Self-RAG 落地 应用 系统 2024 2025 生产环境`\n3. `Self-RAG deployment production implementation challenges adoption`\n4. `Self-RAG paper 2023 Asai reflective tokens`\n5. `Self-RAG 进展`\n\n工具返回 `web_fixture_miss: query not captured in fixture 'v2'`，且明确提示 **replay never falls back to live search**——即当前环境没有捕获任何 web 查询快照，也不会回退到实时搜索。这是 fixture 缺失的系统性问题，不是查询措辞问题。\n\n**search_papers（2 个查询，全部 429）**\n1. `Self-RAG self-reflective retrieval-augmented generation` → Semantic Scholar 429\n2. `self-reflective RAG critique tokens generation` → Semantic Scholar 429\n\n学术检索通道被限流（两次重试仍 429）。\n\n## 结论：证据不足，无法给出有依据的判断\n\n**\"研究关注点是否已从论文指标转向系统落地\"这一问题，在当前检索条件下无法基于外部证据作答。** 我没有拿到任何带日期、带 URL 的公开资料来支持\"是/否/正在过渡\"的结论。按照检索纪律，这里应明确声明证据不足，而不是凭记忆断言。\n\n以下仅作**背景知识（非检索证据）**，请勿当作\"近年进展\"引用：\n- 原始 Self-RAG 论文为 Asai 等人 2023 年发表于 arXiv（提出 reflection tokens、批评模型、按需检索等机制），属于已知公开事实，但**本会话未能通过检索核验**，且它不构成\"近年\"的证据。\n- 关于 RAG 是否从基准指标转向生产落地，业界确有相关讨论，但具体时间点、代表性系统、量化证据均需实时检索确认。\n\n## 建议\n\n- 若希望得到可靠的\"近年进展\"判断，请在**已录制 web 检索 fixture（v2）** 的环境中重新提问，或将本任务委托给可访问实时搜索的会话。\n- 恢复后建议至少覆盖三个角度：① Self-RAG 衍生工作（如 CRAG、GraphRAG、自适应 RAG 的引用与改进）；② 生产框架落地情况（LangChain/LlamaIndex 等对 Self-RAG 风格批评机制的支持）；③ 2024–2025 年 RAG 评测（如 RAGAS、LIVEBENCH、行业报告）是否以部署指标为主。\n\n在证据恢复之前，我无法负责任地给出\"关注点已转向落地\"的结论。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 16,
+        "run_latency_ms": 18008.813599997666,
+        "total_tool_calls": 8,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "web_tradeoff_001",
+      "category": "web_tradeoff",
+      "prompt": "请联网检索并总结近年 Self-RAG 的主要收益与主要代价，各给至少一项。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "The final answer does not supply any concrete benefit or cost/downside of Self-RAG; it only reports that web retrieval failed and declines to give an answer. Therefore it does not meet the rubric's requirement to use web research to identify at least one benefit and one cost, nor does it present an explicit tradeoff. No quotable span from the answer satisfies any rubric item."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "The final answer does not supply any concrete benefit or cost/downside of Self-RAG; it only reports that web retrieval failed and declines to give an answer. Therefore it does not meet the rubric's requirement to use web research to identify at least one benefit and one cost, nor does it present an explicit tradeoff. No quotable span from the answer satisfies any rubric item.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "我将联网检索 Self-RAG 的相关资料，先从多个角度发起查询。网页检索工具返回了 fixture miss（无法回退到实时检索）。我改用学术论文检索通道继续尝试。检索通道暂时受限，我换关键词重试网页检索。再尝试一次学术检索（可能是瞬时限流）。再试几个不同措辞的查询，确认是否只是特定查询未被夹具覆盖。## 检索结果：证据不足，未能完成联网核实\n\n我按纪律发起了多轮检索，但当前会话的外部检索通道全部不可用，**无法给出有可靠来源支撑的结论**。按照\"证据不足时不降级为通用知识作答\"的原则，我不臆测收益/代价的具体数字或结论。\n\n### 已尝试的查询（全部失败）\n\n**search_web（6 次，全部返回 `web_fixture_miss`，提示夹具 v2 未捕获该查询、回放模式下不回退实时检索）：**\n1. `Self-RAG self-reflective retrieval-augmented generation benefits limitations`\n2. `Self-RAG paper costs inefficiency token overhead evaluation 2024`\n3. `Self-RAG 后续工作 复现 质疑 代价 收益`\n4. `Self-RAG paper Asai self-reflective retrieval generation critique`\n5. `Self-RAG costs overhead retrieval tokens inference`\n6. `\"Self-RAG\" limitations high inference cost` / `Self-RAG` / `retrieval augmented generation survey 2024 cost benefit`\n\n**search_papers（3 次，全部返回 `Semantic Scholar request failed with status 429`，即限流）：**\n1. `Self-RAG self-reflective retrieval augmented generation`\n2. `retrieval augmented generation critique efficiency cost analysis`\n3. `Self-RAG reflection tokens generation`\n\n### 当前状况说明\n- 网页检索工具处于回放模式（fixture v2），我请求的查询均未预先录制，且明确\"从不回退实时搜索\"；\n- 学术论文通道被限流（429）。\n\n### 建议的下一步（任一即可）\n1. **稍后重试**：限流（429）可能随时间恢复；网页检索需先刷新/录制 fixture（`Record or refresh the fixture`）才能回放命中。\n2. **提供来源**：如果您把 Self-RAG 原始论文（如 arXiv 上 Asai et al. 的 Self-RAG 论文，编号约为 2310.11511，**此编号为记忆线索、未经本次检索核实**）或相关评测/复现文章的 URL/文本给我，我可以基于您提供的资料做总结。\n3. **换工具/环境**：在具备实时检索能力的会话中重新发起同样的问题。\n\n是否需要我稍后重试，或您提供具体资料后我再继续？",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 22,
+        "run_latency_ms": 21199.978500000725,
+        "total_tool_calls": 11,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "hybrid_research_001",
+      "category": "hybrid_research",
+      "prompt": "请结合当前项目文档和联网检索，评估 Self-RAG 是否适合纳入本项目后续路线。",
+      "completed": false,
+      "final_success": false,
+      "process_success": false,
+      "execution_completion_ratio": 0.75,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 22,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "Item 1 (combine current project evidence with recent web findings): Not satisfied. The answer extensively cites project documents, e.g. \"文档证据：项目内共 2 篇文档——原版 RAG（arxiv:2005.11401）与 Self-RAG（arxiv:2310.11511）\" and multiple <evidence> citations from those papers. However, it does not combine these with any recent web findings. It explicitly states \"本环境联网检索不可用（search_web 多次返回'fixture 未命中'，search_papers 返回 429 限流），因此 Self-RAG 的社区采用、生产落地案例、与 CRAG/Adaptive-RAG 的横向对比等外部信息本次无法核实\" and later \"外部证据全部缺失（联网接口不可用）\". No quotable span is a recent web finding; the statements about web unavailability do not satisfy the rubric requirement.\n\nItem 2 (weigh adoption benefits versus engineering cost or risk): Satisfied. The answer has a dedicated \"收益（文档支撑）\" list and a \"门槛与风险\" list, weighing benefits against costs/risks. Quotable examples: \"收益（文档支撑）1. 事实性与引用准确率提升明显，适合知识密集型问答/长文本生成场景\" and \"门槛与风险 1. 必须微调生成器 LM（在含反思令牌的语料上训练），且需先训练 critic 模型并构建训练语料——这是与'直接提示词实现'方案的本质区别\" and \"推理开销：多片段并行处理 + 逐片段批判 + beam search 会放大计算成本\". This is a genuine benefit-versus-cost/risk analysis.\n\nItem 3 (finish with a concrete roadmap recommendation such as adopt, defer, or pilot): Satisfied. The answer concludes with a concrete staged recommendation: \"建议：分阶段纳入——先作为技术调研与对比基线纳入研究路线，再视微调算力与业务约束决定是否工程化落地\" and provides a roadmap section \"五、落地建议（路线草案）\" with 近期/中期/决策点 actions. This is a concrete roadmap recommendation.\n\nBecause item 1 is not satisfied, the overall score is false."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "search_document",
+          "update_plan",
+          "delegate_task",
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": false
+      },
+      "feedback": {
+        "failure_reason": "Item 1 (combine current project evidence with recent web findings): Not satisfied. The answer extensively cites project documents, e.g. \"文档证据：项目内共 2 篇文档——原版 RAG（arxiv:2005.11401）与 Self-RAG（arxiv:2310.11511）\" and multiple <evidence> citations from those papers. However, it does not combine these with any recent web findings. It explicitly states \"本环境联网检索不可用（search_web 多次返回'fixture 未命中'，search_papers 返回 429 限流），因此 Self-RAG 的社区采用、生产落地案例、与 CRAG/Adaptive-RAG 的横向对比等外部信息本次无法核实\" and later \"外部证据全部缺失（联网接口不可用）\". No quotable span is a recent web finding; the statements about web unavailability do not satisfy the rubric requirement.\n\nItem 2 (weigh adoption benefits versus engineering cost or risk): Satisfied. The answer has a dedicated \"收益（文档支撑）\" list and a \"门槛与风险\" list, weighing benefits against costs/risks. Quotable examples: \"收益（文档支撑）1. 事实性与引用准确率提升明显，适合知识密集型问答/长文本生成场景\" and \"门槛与风险 1. 必须微调生成器 LM（在含反思令牌的语料上训练），且需先训练 critic 模型并构建训练语料——这是与'直接提示词实现'方案的本质区别\" and \"推理开销：多片段并行处理 + 逐片段批判 + beam search 会放大计算成本\". This is a genuine benefit-versus-cost/risk analysis.\n\nItem 3 (finish with a concrete roadmap recommendation such as adopt, defer, or pilot): Satisfied. The answer concludes with a concrete staged recommendation: \"建议：分阶段纳入——先作为技术调研与对比基线纳入研究路线，再视微调算力与业务约束决定是否工程化落地\" and provides a roadmap section \"五、落地建议（路线草案）\" with 近期/中期/决策点 actions. This is a concrete roadmap recommendation.\n\nBecause item 1 is not satisfied, the overall score is false.; execution completion ratio was below the required threshold",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt",
+          "architecture"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome.",
+          "Improve multi-step execution reliability so planned work completes before the final answer is produced."
+        ]
+      },
+      "answer": "我先了解项目文档情况，并检索文档中对 Self-RAG 及项目技术路线的相关描述。项目内有两篇文档（RAG 与 Self-RAG 论文），这是一个\"评估是否纳入路线\"的多步任务。我先建立执行计划，并并行委派两条证据收集线（文档证据 + 联网证据）。委派工具在当前环境不可用（durable run 未开启），我改为自己完成全部证据收集与核验。继续检索文档中的训练要求、实验效果与 RAG 基线细节。文档证据已较充分。我再补充 Self-RAG 的推理代价/局限细节，并同步启动联网检索（工程采用与替代方案部分文档无法覆盖）。联网检索触发了 fixture 未命中。换几个关键词再试，并同时尝试学术检索。外部检索（search_web 与 search_papers）在当前环境均不可用（web 返回 fixture 未命中、学术接口 429），我基于两篇项目文档完成评估，并将外部证据缺口如实标注。先更新计划状态。# Self-RAG 纳入本项目后续路线评估\n\n## 结论（TL;DR）\n\n**建议：分阶段纳入——先作为技术调研与对比基线纳入研究路线，再视微调算力与业务约束决定是否工程化落地。** Self-RAG 与项目当前范围（RAG → Self-RAG）高度契合，文档证据显示其能在事实性、引用准确率与推理可控性上显著优于常规 RAG 及更大的指令微调模型；但它是一个**需要模型微调（critic + generator）**的框架，而非即插即用的提示工程方案，这是纳入路线前必须权衡的关键门槛。\n\n## 一、证据基础与重要限制\n\n- 文档证据：项目内共 2 篇文档——原版 RAG（arxiv:2005.11401）与 Self-RAG（arxiv:2310.11511）<evidence>arxiv:2005.11401:chunk_0|p–|o0-72</evidence><evidence>arxiv:2310.11511:chunk_70|p–|o0-82</evidence>。\n- **外部证据缺口（必须声明）**：本环境联网检索不可用（search_web 多次返回\"fixture 未命中\"，search_papers 返回 429 限流），因此 **Self-RAG 的社区采用、生产落地案例、与 CRAG/Adaptive-RAG 的横向对比等外部信息本次无法核实**。下文涉及外部生态的判断均明确标注为\"一般性认知、未经本次联网核实\"，不当作已证实事实。项目内也没有独立的\"路线规划\"文档，评估是基于两篇论文本身。\n\n## 二、Self-RAG 的核心机制（文档证据）\n\nSelf-RAG 通过 reflection tokens（反思令牌）让单一 LM 实现\"按需检索 + 自生成 + 自批评\"：\n\n- **按需自适应检索**：模型先判断继续生成是否需要检索增强，需要则输出 retrieval token<evidence>arxiv:2310.11511:chunk_78|p–|o3239-3646</evidence>。\n- **反思令牌分两类**：retrieval token（是否检索）与 critique token（评估生成质量，包括相关性、事实支持度、整体效用）<evidence>arxiv:2310.11511:chunk_107|p–|o15579-15987</evidence>。\n- **端到端训练**：critic 模型先在语料中**离线**插入反思令牌，再用常规 LM 目标训练生成器，使推理时无需再依赖 critic<evidence>arxiv:2310.11511:chunk_86|p–|o6365-6864</evidence><evidence>arxiv:2310.11511:chunk_110|p–|o16860-17347</evidence>；训练成本远低于 RLHF<evidence>arxiv:2310.11511:chunk_98|p–|o11556-12043</evidence>。\n- **推理可控**：并行处理多个检索片段、按片段生成批判令牌并择优，支持 segment-level beam search 与硬/软约束解码，可灵活调节检索频率<evidence>arxiv:2310.11511:chunk_79|p–|o3647-4126</evidence><evidence>arxiv:2310.11511:chunk_88|p–|o7265-7764</evidence><evidence>arxiv:2310.11511:chunk_89|p–|o7765-8251</evidence>。\n- **效果**：在六个任务（含推理与长文本生成）上显著超越参数更大的预训练/指令微调模型和主流 RAG 方法，引用准确率更高；在四个任务上超过 retrieval-augmented ChatGPT<evidence>arxiv:2310.11511:chunk_89|p–|o7765-8251</evidence>；对比基线包括 Llama2 7B/13B、Alpaca 7B/13B、ChatGPT、Llama2-chat13B、Ret-ChatGPT 等<evidence>arxiv:2310.11511:chunk_136|p–|o28196-28681</evidence><evidence>arxiv:2310.11511:chunk_138|p–|o29140-29613</evidence>。\n\n## 三、与原版 RAG 的对比\n\n原版 RAG 是\"参数记忆（seq2seq）+ 非参数记忆（Wikipedia 稠密索引 + DPR 检索器）\"的端到端概率模型，含 RAG-Sequence / RAG-Token 两种形式，在开放域 QA 上取得 SOTA<evidence>arxiv:2005.11401:chunk_11|p–|o4284-4764</evidence><evidence>arxiv:2005.11401:chunk_4|p–|o1312-1789</evidence>，优势是知识可测试时更新、无需重新训练<evidence>arxiv:2005.11401:chunk_65|p–|o27976-28438</evidence>。\n\nSelf-RAG 与其关键差异是：**是否检索由模型自己决策（而非固定 top-K 检索）、生成后增加自评估环节、推理期可控**<evidence>arxiv:2310.11511:chunk_79|p–|o3647-4126</evidence>。即 Self-RAG 是原版 RAG 范式的\"反思增强\"升级，两者并非互斥——Self-RAG 的检索器仍可复用现有向量检索栈。\n\n## 四、纳入路线的利弊评估\n\n**收益（文档支撑）**\n1. 事实性与引用准确率提升明显，适合知识密集型问答/长文本生成场景<evidence>arxiv:2310.11511:chunk_89|p–|o7765-8251</evidence>；\n2. 按需检索减少无效检索，推理期可控（可按应用调节检索频率、按用户偏好定制行为）<evidence>arxiv:2310.11511:chunk_88|p–|o7265-7764</evidence>；\n3. 训练成本低于 RLHF，且有公开代码与模型（论文声明 release）<evidence>arxiv:2310.11511:chunk_79|p–|o3647-4126</evidence>——一般性认知：官方 selfrag.github.io 提供 7B/13B 权重，未经本次联网核实。\n\n**门槛与风险**\n1. **必须微调生成器 LM**（在含反思令牌的语料上训练），且需先训练 critic 模型并构建训练语料——这是与\"直接提示词实现\"方案的本质区别<evidence>arxiv:2310.11511:chunk_109|p–|o16457-16859</evidence><evidence>arxiv:2310.11511:chunk_110|p–|o16860-17347</evidence>；\n2. **推理开销**：多片段并行处理 + 逐片段批判 + beam search 会放大计算成本<evidence>arxiv:2310.11511:chunk_79|p–|o3647-4126</evidence><evidence>arxiv:2310.11511:chunk_88|p–|o7265-7764</evidence>（文档未给出量化数字，无法精确估算）；\n3. **检索器依赖**：反思令牌评估的是检索片段质量，检索器本身弱会拖累整体（此为框架性推断，文档未直接表述）；\n4. **生态对比缺口**：与 CRAG / Adaptive-RAG / GraphRAG 等后续方案的取舍**本次无法提供联网证据**，纳入路线前建议补做该对比。\n\n## 五、落地建议（路线草案）\n\n1. **近期（1-2 个月）**：将 Self-RAG 作为研究/对比基线纳入评估集，用现有 RAG 栈与公开权重做离线评测（事实性、引用准确率、延迟成本），积累本项目数据上的第一手数据；\n2. **中期**：若有微调算力，对 7B–13B 开源模型复现端到端训练并做消融（反思令牌 vs 无反思、按需检索 vs 固定 top-K）；若无微调条件，可先借鉴\"按需检索 + 自反思\"思想做提示词级近似方案；\n3. **决策点**：工程化前必须补做外部调研（CRAG/Adaptive-RAG 对比、社区落地案例、推理成本基准），并明确本项目是偏\"研究验证\"还是\"生产服务\"——前者强烈建议纳入，后者需先过成本关。\n\n**本次评估的主要局限**：外部证据全部缺失（联网接口不可用），所有\"生态/生产/对比\"类判断均未经核实；项目内无路线规划文档，契合度判断基于项目范围命名（RAG, Self RAG）与两篇论文本身。建议在外部检索恢复后补一轮核验再定稿。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 36,
+        "run_latency_ms": 80952.28860000498,
+        "total_tool_calls": 18,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "hybrid_rollout_001",
+      "category": "hybrid_rollout",
+      "prompt": "请结合当前项目文档和联网检索，为 Self-RAG 给出一个是否试点以及如何分阶段 rollout 的建议。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 28,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "逐项核对：（1）rubric 要求“结合项目文档和近期联网检索结果”。最终答复大量引用了项目内两篇论文（RAG 与 Self-RAG）的检索证据，但没有提供任何近期网页检索发现；答复只明确说明外部检索不可用，例如“本次联网与学术外部检索在当前环境中均不可用，无法核实社区批评、生产实践等‘论文之外’的信息”。由于没有任何近期 web findings 被纳入回答，该项不满足。（2）rubric 要求“决定 Self-RAG 是否值得试点”。最终答复明确给出决定：“建议：值得试点，但只做‘小范围、知识密集型、低风险’场景的受控试点（Pilot）”，该项满足。（3）rubric 要求“提供分阶段 rollout 建议，而不是简单的是/否一句话”。最终答复给出了“基线对齐 → 试点验证 → 灰度扩展 → 生产推广”四阶段建议，并分别给出各阶段行动、验收标准与注意点，明显不是单一 yes/no 句，该项满足。由于第（1）项未满足，整体 score 为 false。"
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "search_document",
+          "update_plan",
+          "delegate_task",
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "逐项核对：（1）rubric 要求“结合项目文档和近期联网检索结果”。最终答复大量引用了项目内两篇论文（RAG 与 Self-RAG）的检索证据，但没有提供任何近期网页检索发现；答复只明确说明外部检索不可用，例如“本次联网与学术外部检索在当前环境中均不可用，无法核实社区批评、生产实践等‘论文之外’的信息”。由于没有任何近期 web findings 被纳入回答，该项不满足。（2）rubric 要求“决定 Self-RAG 是否值得试点”。最终答复明确给出决定：“建议：值得试点，但只做‘小范围、知识密集型、低风险’场景的受控试点（Pilot）”，该项满足。（3）rubric 要求“提供分阶段 rollout 建议，而不是简单的是/否一句话”。最终答复给出了“基线对齐 → 试点验证 → 灰度扩展 → 生产推广”四阶段建议，并分别给出各阶段行动、验收标准与注意点，明显不是单一 yes/no 句，该项满足。由于第（1）项未满足，整体 score 为 false。",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "我先了解一下当前项目里有哪些文档、以及文档中关于 Self-RAG 的内容，再决定检索与委派方案。项目中共有 2 篇文档：`RAG`（arxiv:2005.11401）和 `Self RAG`（arxiv:2310.11511），且用户明确要求\"文档 + 联网\"双路证据并给出分阶段建议——这属于多源综合任务。我先建立执行计划，并同轮并行委派两个 researcher 分别收集文档证据与外部证据。委派在当前环境不可用（durable_run_required），我改为按同一计划自行执行检索与核验。先并行补齐文档证据：文档证据已较充分。我补充检索 Self-RAG 论文的局限/讨论部分，同时并行发起联网检索获取外部实践信息：联网检索在当前环境不可用（fixture 未收录该查询，且不回退到实时搜索）。我改用学术检索渠道获取外部证据：再尝试一次更通用的联网查询，确认外部证据是否确实不可得：外部证据渠道（联网检索与学术检索）在当前环境均不可用，我已通过文档证据 + 对检索返回 citation 的逐条核验完成分析。更新计划状态后给出结论。# Self-RAG 试点与分阶段 Rollout 建议\n\n## 一、结论摘要\n\n**建议：值得试点，但只做\"小范围、知识密集型、低风险\"场景的受控试点（Pilot），并采用\"基线对齐 → 试点验证 → 灰度扩展 → 生产推广\"四阶段 rollout。** 理由来自项目内两篇一手论文（Self-RAG 论文本身 + RAG 基线论文）给出的强证据；但需要特别提醒：**本次联网与学术外部检索在当前环境中均不可用，无法核实社区批评、生产实践等\"论文之外\"的信息，这部分必须在试点前作为闸门项补齐**（详见第四节）。\n\n---\n\n## 二、文档证据：Self-RAG 是什么、成本与效果如何\n\n**机制（为什么它比标准 RAG 多了一步\"自我反思\"）**\n- Self-RAG 训练单个 LM，通过**反射 token（reflection tokens）**实现按需检索（on-demand retrieval）与对自身输出的批判：先判断\"是否需要检索\"，再并行处理多个检索段落、评估相关性并生成输出，最后生成批判 token 挑选事实性与质量最优的输出<evidence>arxiv:2310.11511:chunk_73|p1|o966-1450</evidence><evidence>arxiv:2310.11511:chunk_79|p1|o3647-4126</evidence><evidence>arxiv:2310.11511:chunk_78|p1|o3239-3646</evidence>\n- 这与传统 RAG 形成对比：常规 RAG 无论是否需要都固定检索固定数量文档，且从不回头审视生成质量<evidence>arxiv:2310.11511:chunk_85|p1|o5906-6364</evidence>。项目内的 RAG 基线论文（Lewis et al. 2020）正是\"参数化 seq2seq + 非参数化稠密索引（DPR）\"端到端训练的组合，也是 Self-RAG 的改进对象<evidence>arxiv:2005.11401:chunk_11|p1|o4284-4764</evidence><evidence>arxiv:2005.11401:chunk_19|p1|o7966-8432</evidence>\n\n**训练成本（试点可行性的关键利好）**\n- reflection tokens 由训练好的 critic 模型**离线**插入语料，生成器仅用标准 LM 目标训练，**训练成本远低于 RLHF/PPO**，且推理时不再依赖 critic<evidence>arxiv:2310.11511:chunk_98|p1|o11556-12043</evidence><evidence>arxiv:2310.11511:chunk_123|p1|o22452-22868</evidence><evidence>arxiv:2310.11511:chunk_86|p1|o6365-6864</evidence>\n\n**效果（论文报告的收益）**\n- 7B/13B 规模的 Self-RAG 在开放域 QA、推理、事实核查任务上**超过 ChatGPT 与 retrieval-augmented Llama2-chat**，并在长文生成上显著提升事实性与引用准确率（citation accuracy）<evidence>arxiv:2310.11511:chunk_74|p1|o1451-1947</evidence><evidence>arxiv:2310.11511:chunk_89|p1|o7765-8251</evidence>\n- 全程**零样本评估**，即无需按任务微调即可迁移<evidence>arxiv:2310.11511:chunk_131|p1|o25932-26421</evidence>\n- 代码与训练好的模型已开源（selfrag.github.io）<evidence>arxiv:2310.11511:chunk_79|p1|o3647-4126</evidence>\n\n**可调性（对生产友好）**\n- 推理时可设置检索触发阈值、按段做 segment-level beam search，用反射 token 概率加权作为段评分，灵活调节检索频率与行为偏好<evidence>arxiv:2310.11511:chunk_126|p1|o23688-24147</evidence><evidence>arxiv:2310.11511:chunk_88|p1|o7265-7764</evidence>\n\n---\n\n## 三、为什么\"建议试点\"而非\"直接上生产\"\n\n| 支持试点的证据 | 需要谨慎的风险 |\n|---|---|\n| 训练成本远低于 RLHF/PPO，开源模型可直接起步<evidence>arxiv:2310.11511:chunk_98|p1|o11556-12043</evidence><evidence>arxiv:2310.11511:chunk_79|p1|o3647-4126</evidence> | 推理需**并行处理多个检索段落并生成批判 token**，单位请求开销高于常规 RAG<evidence>arxiv:2310.11511:chunk_79|p1|o3647-4126</evidence> |\n| 零样本即可迁移，适合低成本快速验证<evidence>arxiv:2310.11511:chunk_131|p1|o25932-26421</evidence> | 论文报告的是 7B/13B 规模效果，**更大模型/自训模型的收益未在文档中验证** |\n| 事实性与引用准确率提升是论文的主要贡献<evidence>arxiv:2310.11511:chunk_74|p1|o1451-1947</evidence> | 批判质量依赖训练 critic 的数据质量；**论文局限章节在本环境检索不充分**，需在试点中实测 |\n| 检索频率可调（阈值控制），可按场景裁剪成本<evidence>arxiv:2310.11511:chunk_126|p1|o23688-24147</evidence> | 外部（联网/学术）证据当前不可得，社区批评与生产实践无法核实 |\n\n---\n\n## 四、分阶段 Rollout 建议\n\n> ⚠️ **前置闸门（Gate 0）**：本次会话中 `search_web` 与 `search_papers` 均不可用（外部证据不足），因此下文第 3–4 阶段的推进必须以\"补齐外部验证\"为硬性条件：包括社区复现情况、已知缺陷（如批判 token 偏差、长文场景的延迟放大）、以及近两年更优的自适应 RAG 变体对比。**不要跳过此闸门直接放量。**\n\n**Phase 1 — 基线对齐（1–2 周）**\n- 用同一评测集（开放域 QA + 事实核查 + 带引用的长文生成）同时跑：标准 RAG（项目内 RAG 论文方案）、Self-RAG 开源 7B/13B、以及当前线上基线，指标用正确率/事实性/引用准确率\n- 验收标准：复现论文量级的相对收益（Self-RAG ≥ 线上基线 + 事实性与引用准确率显著提升），并测出**每请求延迟与成本增幅**（预估并行段落 + 批判 token 的开销）\n- 产出：试点决策评审材料（是否继续的 Go/No-Go）\n\n**Phase 2 — 小范围试点（3–6 周）**\n- 场景选择：**知识密集型、低风险**（内部知识问答、事实核查辅助、带引用长文生成），避开高并发、强时延约束的在线场景\n- 配置：利用阈值控制检索频率（先高后低做敏感性测试）<evidence>arxiv:2310.11511:chunk_126|p1|o23688-24147</evidence>，探索用反射 token 定制行为（segment-level beam search）<evidence>arxiv:2310.11511:chunk_88|p1|o7265-7764</evidence>\n- 验收标准：与 Phase 1 基线相比的事实性提升、幻觉率下降、引用可验证率；**同时记录误判率（检索触发过少导致漏召回、批判放行错误输出）**，并人工抽检批判质量\n\n**Phase 3 — 灰度扩展（1–2 个季度）**\n- 扩展到对可控性有要求的场景（内容风格/安全约束），利用反射 token 做推理期定制而不需额外训练<evidence>arxiv:2310.11511:chunk_98|p1|o11556-12043</evidence>\n- 若需内部自训：利用\"离线 critic 标注 + 标准 LM 目标\"的低成本路径训练领域生成器<evidence>arxiv:2310.11511:chunk_86|p1|o6365-6864</evidence><evidence>arxiv:2310.11511:chunk_123|p1|o22452-22868</evidence>\n- 验收标准：延迟/成本预算内达标、支持工单解决率、无新增事实性事故\n\n**Phase 4 — 生产推广 + 持续监控**\n- 全量替换前先做 A/B，监控指标：事实性、引用命中、检索触发率分布、p95 延迟、单位成本\n- 建立回落机制（阈值调低即退化为\"近似标准 RAG\"，机制上支持这种平滑降级）<evidence>arxiv:2310.11511:chunk_126|p1|o23688-24147</evidence>\n\n---\n\n## 五、证据与不确定性说明\n\n- 本文档事实均来自项目内两篇一手论文的检索结果，citation 已逐条核验、无编造；Self-RAG 的机制、低成本训练、效果与可调性证据充分。\n- **明确不足**：联网检索与学术检索在当前环境返回不可用（fixture miss / 429），因此\"社区批评、生产落地经验、后续变体对比\"等外部事实**没有证据支撑，本建议未做任何外部断言**，并已将其设为 Phase 1→2 的硬性闸门。若需要，可在我方网络可用时补充检索后更新建议。\n\n总体判断：**Self-RAG 值得以低成本方式（开源模型 + 零样本）进入 Phase 1/2 试点，但不应跳过外部证据补齐与延迟成本实测直接放量生产。**",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 32,
+        "run_latency_ms": 78057.04010000045,
+        "total_tool_calls": 16,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "hybrid_guardrail_001",
+      "category": "hybrid_guardrail",
+      "prompt": "如果项目要试点 Self-RAG，请结合当前项目文档和联网检索给出必须先补齐的 guardrail 或观测项。",
+      "completed": false,
+      "final_success": false,
+      "process_success": false,
+      "execution_completion_ratio": 0.5,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 30,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "Item-by-item rubric analysis:\n\n1. Combine project evidence and recent web findings: Not satisfied. The answer cites project documents extensively (e.g., evidence spans arxiv:2310.11511:chunk_126, chunk_120, chunk_117, etc.) and quotes document text. However, it explicitly states web/academic search was unavailable: '联网与学术检索在当前环境均不可用（web fixture miss / Semantic Scholar 429）' and '「通用实践建议」部分为行业通行的生产化实践，无外部来源可引用'. No recent web finding is cited, quoted, or dated; the answer only names RAGAS/LangSmith/TruLens as tools to be checked later. Therefore this item fails.\n\n2. Identify concrete guardrails or observability requirements needed before a Self-RAG pilot: Satisfied. The answer gives a prioritized table with concrete items, e.g., 'Retrieve=Yes 触发率、阈值生效情况，按 query 类别分桶统计', 'critique token 抽样人工复核（校准自评 vs 真值）', 'ISSUP=No 或 ISFACT 低分的生成必须被拦截/改写/重检索，而不是只记录', 'citation 可验证性：每段输出必须能回指具体 passage', and a checklist with '领域测试集', '降级路径', '自评校准机制', '双基线对比', '成本与延迟预算', '日志落全链路'.\n\n3. Connect them to implementation risk instead of giving generic safety slogans: Satisfied. The answer ties each guardrail to concrete failure modes, e.g., '触发过少 → 事实性风险；触发过多 → 成本/延迟膨胀', 'ISSUP 低分率 = 幻觉率的代理指标', '自评信号本身可能误判...不能把自评当最终真相，需要抽样人工复核校准', and 'ISSUP 低分...拦截 → 重检索或限定措辞；二次失败 → 拒答并计入错误样本'. This is risk-driven rather than generic.\n\nOverall: because the first rubric item is not satisfied (no web findings were combined), the overall score is false."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "search_document",
+          "update_plan",
+          "delegate_task",
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": false
+      },
+      "feedback": {
+        "failure_reason": "Item-by-item rubric analysis:\n\n1. Combine project evidence and recent web findings: Not satisfied. The answer cites project documents extensively (e.g., evidence spans arxiv:2310.11511:chunk_126, chunk_120, chunk_117, etc.) and quotes document text. However, it explicitly states web/academic search was unavailable: '联网与学术检索在当前环境均不可用（web fixture miss / Semantic Scholar 429）' and '「通用实践建议」部分为行业通行的生产化实践，无外部来源可引用'. No recent web finding is cited, quoted, or dated; the answer only names RAGAS/LangSmith/TruLens as tools to be checked later. Therefore this item fails.\n\n2. Identify concrete guardrails or observability requirements needed before a Self-RAG pilot: Satisfied. The answer gives a prioritized table with concrete items, e.g., 'Retrieve=Yes 触发率、阈值生效情况，按 query 类别分桶统计', 'critique token 抽样人工复核（校准自评 vs 真值）', 'ISSUP=No 或 ISFACT 低分的生成必须被拦截/改写/重检索，而不是只记录', 'citation 可验证性：每段输出必须能回指具体 passage', and a checklist with '领域测试集', '降级路径', '自评校准机制', '双基线对比', '成本与延迟预算', '日志落全链路'.\n\n3. Connect them to implementation risk instead of giving generic safety slogans: Satisfied. The answer ties each guardrail to concrete failure modes, e.g., '触发过少 → 事实性风险；触发过多 → 成本/延迟膨胀', 'ISSUP 低分率 = 幻觉率的代理指标', '自评信号本身可能误判...不能把自评当最终真相，需要抽样人工复核校准', and 'ISSUP 低分...拦截 → 重检索或限定措辞；二次失败 → 拒答并计入错误样本'. This is risk-driven rather than generic.\n\nOverall: because the first rubric item is not satisfied (no web findings were combined), the overall score is false.; execution completion ratio was below the required threshold",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt",
+          "architecture"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome.",
+          "Improve multi-step execution reliability so planned work completes before the final answer is produced."
+        ]
+      },
+      "answer": "我先了解一下当前项目文档的情况，再决定如何组织检索与核验。项目文档范围已确认：当前只有 RAG（arxiv:2005.11401）和 Self RAG（arxiv:2310.11511）两篇论文。这个任务需要「项目文档证据 + 联网实践证据 + 独立核验」，属于多路证据综合，我先建计划再并行委派。委派在当前环境不可用（`durable_run_required`），我改为自行完成多路检索，并在最后做独立核验。先并行检索文档证据：文档侧证据已较充分。再补两条文档证据（factuality 批评 token、局限/开销），同时并行启动联网检索：联网检索命中了 fixture 缺失，我换一组查询词重试，同时用学术检索兜底：再尝试几个不同措辞的联网查询：联网与学术检索在当前环境均不可用（fixture miss / 429）。我最后再试一次学术检索，若仍失败则基于文档证据 + 明确标注的通用实践给出结论：外部证据源全部不可用（联网 fixture miss、学术检索 429），我将基于项目文档证据 + 明确标注的通用实践给出结论，并自行完成证据核验。更新计划状态：# Self-RAG 试点前必须先补齐的 Guardrail 与观测项\n\n**先说结论**：试点 Self-RAG 比常规 RAG 多一层「自评机制」（reflection tokens），因此观测重点应放在**检索触发决策、critique token 质量、引用可验证性**三个 Self-RAG 特有面上；同时补齐与自评结果联动的**降级/拦截策略**，否则自评信号只被记录、不被执行，等于没有 guardrail。\n\n> ⚠️ **证据来源说明**：本环境联网检索与学术检索均不可用（web fixture miss / Semantic Scholar 429），以下「机制依据」全部来自项目文档（Self-RAG、RAG 论文，已附证据）；「通用实践建议」部分为行业通行的生产化实践，**无外部来源可引用**，落地前请以官方文档（如 RAGAS/LangSmith/TruLens 手册）复核。\n\n---\n\n## 一、机制依据：Self-RAG 三个必须被观测的决策点\n\n### 1. 检索触发（Retrieve token）——自适应检索是 Self-RAG 的第一道闸门\n\nSelf-RAG 在每一步先输出 retrieval token 判断是否检索；也可用阈值控制：**Retrieve=Yes 的概率超过阈值才触发检索**<evidence>arxiv:2310.11511:chunk_126|o23688-24147</evidence>。这是与传统 RAG（固定检索 K 篇）的关键差异<evidence>arxiv:2310.11511:chunk_92|o8928-9422</evidence>。因此必须观测：\n\n- **触发率与阈值分布**：触发过少 → 事实性风险；触发过多 → 成本/延迟膨胀。\n- **任务类型与触发的相关性**：论文明确指出可按目标调控——事实密集型任务应多检索，开放创作型任务应少检索<evidence>arxiv:2310.11511:chunk_125|o23288-23759</evidence>。试点若混合两类 query，需按类别分别设阈值，而不是全局一个阈值。\n\n### 2. Critique token 序列（ISREL / ISSUP / ISUSE / ISFACT）——自评质量本身需要被监控\n\n推理时：检索后评估 passage 相关性（ISREL），生成段落后评估该段落是否被证据支持（ISSUP），最后输出整体效用（ISUSE）<evidence>arxiv:2310.11511:chunk_120|o21258-21745</evidence>，并在多 passage 并行 + beam search 时用 reflection token 概率的加权和作为 segment 分数来选择最佳输出<evidence>arxiv:2310.11511:chunk_127|o24070-24540</evidence><evidence>arxiv:2310.11511:chunk_89|o7765-8251</evidence>。也就是说：\n\n- **ISSUP 低分率 = 幻觉率的代理指标**，必须实时监控；\n- **自评信号本身可能误判**：critic 训练数据由 GPT-4 蒸馏而来（每类 4k–20k 样本）<evidence>arxiv:2310.11511:chunk_117|o19910-20384</evidence><evidence>arxiv:2310.11511:chunk_115|o18929-19422</evidence>，critic 与 GPT-4 的一致性虽 >90%<evidence>arxiv:2310.11511:chunk_118|o20379-20867</evidence>，但仍有 ~10% 的误判空间，且依赖专有模型会带来 API 成本与可复现性问题<evidence>arxiv:2310.11511:chunk_115|o18929-19422</evidence>。**不能把自评当最终真相**，需要抽样人工复核校准。\n\n### 3. 引用与可验证性（citation）——Self-RAG 的卖点也是验收点\n\nSelf-RAG 每个段落附带引用和「该段是否被 passage 支持」的自评，便于事实核验<evidence>arxiv:2310.11511:chunk_85|o5906-6364</evidence>，并以更高 citation accuracy 作为宣称优势<evidence>arxiv:2310.11511:chunk_89|o7765-8251</evidence>。因此 **citation precision/recall 是试点的核心验收指标**，而不是只看端到端 accuracy。\n\n### 4. RAG 侧既有要点（试点基线也需覆盖）\n\n- 非参数索引可测试时更新<evidence>arxiv:2005.11401:chunk_65|o27976-28438</evidence> → 需要**索引更新/漂移观测**；\n- 检索器学习 vs BM25 对比、learned retrieval 有效<evidence>arxiv:2005.11401:chunk_63|o27150-27569</evidence> → 试点应保留**检索器回退对比**；\n- 论文评测口径：accuracy、Q-BLEU-1、人工 factuality 评估<evidence>arxiv:2310.11511:chunk_133|o26834-27324</evidence><evidence>arxiv:2005.11401:chunk_40|o16731-17208</evidence> → 试点须自建同口径的领域测试集。\n\n---\n\n## 二、必须先补齐的 Guardrail 与观测项清单（按优先级）\n\n> 以下「文档依据」列引用项目论文；「通用实践」列因联网不可用，无外部来源，属于行业通行做法，需自行复核。\n\n| 优先级 | 层级 | 观测项 / Guardrail | 指标与信号 | 触发后的动作（必须预先定义） | 依据 |\n|---|---|---|---|---|---|\n| **P0** | 检索触发 | Retrieve=Yes 触发率、阈值生效情况，按 query 类别分桶统计 | 触发率、阈值命中分布、低/高触发告警 | 触发率异常 → 调阈值或回退固定检索；检索结果为空/ISREL 全低 → **拒答或声明无法回答**，禁止硬编 | 文档：<evidence>arxiv:2310.11511:chunk_126|o23688-24147</evidence>；通用：检索兜底策略 |\n| **P0** | 自评可信度 | critique token 抽样人工复核（校准自评 vs 真值） | critic 与人工/GPT-4 一致性、各 token 类别分布漂移 | 一致性跌破基线（论文 >90%）→ 冻结试点、重训 critic 或换标注源 | 文档：<evidence>arxiv:2310.11511:chunk_118|o20379-20867</evidence> |\n| **P0** | 输出拦截 | **ISSUP=No 或 ISFACT 低分的生成必须被拦截/改写/重检索**，而不是只记录 | 低支持率输出占比、拦截率、改写后复检通过率 | 拦截 → 重检索或限定措辞；二次失败 → 拒答并计入错误样本 | 文档：<evidence>arxiv:2310.11511:chunk_107|o15579-15987</evidence>；通用：生成侧 guardrail |\n| **P0** | 引用验证 | citation 可验证性：每段输出必须能回指具体 passage | citation precision / recall（按论文口径自建标注集） | 引用无支撑 → 降级为不引用+明示不确定 | 文档：<evidence>arxiv:2310.11511:chunk_85|o5906-6364</evidence> |\n| **P1** | 检索质量 | 检索器命中率、索引漂移、版本/更新时间 | top-K recall、nDCG、索引新鲜度 | 命中率下滑 → 重建索引或回退 BM25 基线对比 | 文档：<evidence>arxiv:2005.11401:chunk_63|o27150-27569</evidence><evidence>arxiv:2005.11401:chunk_65|o27976-28438</evidence> |\n| **P1** | 成本/性能 | K 路并行 + beam search 的推理放大 | 端到端延迟、每请求 token/成本、检索次数分布 | 超预算 → 调小 K/B 或降低触发阈值上限 | 文档：<evidence>arxiv:2310.11511:chunk_127|o24070-24540</evidence>；通用：SLO |\n| **P1** | 数据/合规 | 输入输出过滤（提示注入、PII、敏感内容）、检索源权限白名单 | 拦截率、漏报抽检 | 命中敏感规则 → 阻断或脱敏后放行 | 通用实践（无外部来源） |\n| **P2** | 效果回归 | 与基线对比：无检索 LLM、标准 RAG | accuracy、factuality、citation accuracy、fluency、拒答率 | 试点不显著优于基线 → 终止或缩小范围 | 文档：<evidence>arxiv:2310.11511:chunk_89|o7765-8251</evidence><evidence>arxiv:2005.11401:chunk_40|o16731-17208</evidence> |\n| **P2** | 反馈闭环 | 在线用户反馈、错误聚类 | 反馈率、bad-case 分类占比 | 定期复盘进入测试集与 critic 校准集 | 通用实践（无外部来源） |\n\n---\n\n## 三、试点前 Checklist（可直接作为验收条件）\n\n1. **领域测试集**：自建 100–300 条带标注 QA 样本（含 citation 标注），与论文口径一致（accuracy/factuality/citation precision-recall）<evidence>arxiv:2310.11511:chunk_133|o26834-27324</evidence>。\n2. **降级路径**：为「检索不到 / ISREL 全低 / ISSUP 持续低」三种情况定义明确动作（拒答、改写、声明不确定），并写自动化测试。\n3. **自评校准机制**：上线前用 50–100 条人工标注样本测 critic 一致性，建立漂移基线（论文为 >90%）<evidence>arxiv:2310.11511:chunk_118|o20379-20867</evidence>。\n4. **双基线对比**：同数据上跑「无检索 LLM」和「标准固定检索 RAG」作为 A/B 参照，用同一评测集<evidence>arxiv:2005.11401:chunk_63|o27150-27569</evidence>。\n5. **成本与延迟预算**：先测量 K 路并行 + beam search 的放大倍数，再定 SLO（文档未给开销数据，需试点实测）。\n6. **日志落全链路**：每个请求记录 Retrieve token 概率、各 critique token、选中片段来源、拦截/降级动作——这是事后审计的唯一凭据。\n\n---\n\n**证据不足声明**：本次回答中「通用实践」列（输入输出过滤、反馈闭环、SLO 等）无外部来源支撑，因为联网与学术检索在当前环境均不可用；建议在正式立项评审前，用 RAGAS / LangSmith / TruLens 等官方文档补核这些观测项的指标口径。项目文档侧结论均已附 citation，其中页码字段在工具返回中为 null，仅引用 chunk_id 与 offset。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 38,
+        "run_latency_ms": 79098.51389999676,
+        "total_tool_calls": 19,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "hybrid_reject_001",
+      "category": "hybrid_reject",
+      "prompt": "如果团队当前只能接受很低的复杂度和延迟开销，请结合项目文档和联网检索判断 Self-RAG 现在是否应该暂缓。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 33,
+        "required_count": 2
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": ""
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "update_plan",
+          "delegate_task",
+          "search_document",
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "final answer did not satisfy the task contract",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "项目范围内有两篇文档：RAG（arXiv:2005.11401）和 Self-RAG（arXiv:2310.11511）。这是一个需要\"文档证据 + 联网证据\"综合判断、且结论需独立核验的任务，我先建立计划，并并行派出两个 researcher 分别收集文档侧和联网侧证据。委派机制在当前运行环境不可用（`durable_run_required`），我改为亲自并行检索文档与联网证据，并在最后自行完成证据核验。文档侧已获得 Self-RAG 推理流程的关键证据（每 segment 解码 retrieval token、逐段落生成 critique token、segment-level beam search）。还需要确认论文中是否有量化开销的表述，并继续尝试联网证据。文档证据已比较充分。联网检索当前环境未命中 fixture，我再换关键词尝试一次，同时确认论文实验配置（K、beam size）以量化开销规模。联网证据连续三次未命中（环境 fixture 限制），再做最后一次尝试；若仍失败则基于文档证据收敛并如实说明。联网证据在当前环境确实不可用（4 次不同关键词均未命中检索 fixture，学术库接口也返回 429）。我已获得充分的文档证据，并亲自完成证据核验（逐条对照工具返回的 chunk_id/偏移）。更新计划后给出结论。## 结论\n\n**在\"团队只能接受很低复杂度和延迟开销\"的前提下，Self-RAG 现在应当暂缓**（不建议作为当前阶段的方案，可留待约束放宽或验证充分后再评估）。这一判断主要基于项目内文档证据；量化延迟倍数和第三方部署评估因当前环境联网检索不可用而缺乏，已如实标注。\n\n---\n\n### 1. 推理开销是 Self-RAG 的结构性成本，而非可忽略项\n\n论文算法决定了每个生成段（segment）都有额外开销：\n\n- **每个 segment 都要先解码一个 retrieval token** 判断是否需要检索；需要检索时还要生成多类 critique token（评估段落相关性 `ISREL`、支持度 `ISSUP`、整体效用 `ISUSE`）<evidence>arxiv:2310.11511:chunk_106|o15125-15578</evidence><evidence>arxiv:2310.11511:chunk_107|o15579-15987</evidence>\n- **检索时取 top-K 段落，对每个段落并行生成候选**，再做 **segment-level beam search**（beam size=B）<evidence>arxiv:2310.11511:chunk_127|o24070-24540</evidence>，每个 segment 的得分 = 生成概率 + 三类 critique token 概率的加权和<evidence>arxiv:2310.11511:chunk_128|o24541-25035</evidence>\n- 论文明确将其与传统 RAG 区分开：Self-RAG 是\"按需检索 → 多段落并发处理 → 用 critique 自选最优输出\"，而传统 RAG 是固定检索后直接生成<evidence>arxiv:2310.11511:chunk_79|o3647-4126</evidence>\n\n也就是说，每多一个检索段，就多出 K 路生成 × 多类反思 token × beam 维护的计算量——这是**推理架构自带的放大开销**，不是配置项能消除的。论文作者也在相关工作处承认，这类\"提升性能\"的方法\"often comes at the expense of [efficiency]\"，并对其他迭代式框架标注\"at the cost of inference efficiency\"<evidence>arxiv:2310.11511:chunk_92|o8928-9422</evidence><evidence>arxiv:2310.11511:chunk_99|o12044-12539</evidence>。\n\n### 2. 工程与训练复杂度同样不低\n\n- 需要**训练两个模型**：critic C（负责标注反思 token）和 generator M<evidence>arxiv:2310.11511:chunk_110|o16860-17347</evidence>\n- 训练数据要用 GPT-4 等强模型**离线为每个 segment 标注反思 token**，且数据构建本身要模拟完整推理流程（逐段判断是否检索）<evidence>arxiv:2310.11511:chunk_111|o17279-17649</evidence><evidence>arxiv:2310.11511:chunk_119|o20802-21257</evidence>\n- 官方模型为 7B/13B 规模<evidence>arxiv:2310.11511:chunk_74|o1451-1947</evidence>，对部署资源也有要求\n\n（相对优势是：训练成本低于 RLHF<evidence>arxiv:2310.11511:chunk_98|o11556-12043</evidence>，且推理时不再依赖额外 critic 服务<evidence>arxiv:2310.11511:chunk_86|o6365-6864</evidence>——但这只说明它不比 RLHF 更重，不代表推理轻量。）\n\n### 3. 对照项目内 RAG 基线：RAG 明显更轻\n\n项目内另一篇 RAG 论文是\"seq2seq 生成器 + DPR 检索器 + 固定 top-k 文档\"的端到端结构<evidence>arxiv:2005.11401:chunk_11|o4284-4764</evidence>，检索 k 取 5–10<evidence>arxiv:2005.11401:chunk_32|o13492-13971</evidence>，**没有逐段检索决策、没有反思 token、没有 critique 打分**。即便 RAG-Sequence 的 thorough decoding 也有多次 forward pass 成本<evidence>arxiv:2005.11401:chunk_30|o12527-13020</evidence>，但整体架构与推理流程的复杂度仍显著低于 Self-RAG，更贴合\"低复杂度、低延迟\"约束。\n\n### 4. 缓解手段存在，但不足以改变结论\n\nSelf-RAG 支持通过阈值或硬/软约束**灵活调整检索频率**<evidence>arxiv:2310.11511:chunk_88|o7265-7764</evidence><evidence>arxiv:2310.11511:chunk_126|o23688-24147</evidence>，甚至按任务定制（事实性任务多检索、开放性任务少检索）<evidence>arxiv:2310.11511:chunk_125|o23288-23759</evidence>。这可以压低一部分延迟，但：\n- 它调节的是**\"质量 vs 检索次数\"的权衡**，而非\"关闭反思/beam 搜索\"的低延迟模式；\n- 反思 token 解码与 segment-level beam search 的开销仍在；\n- 文档中没有说明可将开销压到接近 vanilla/RAG 的程度。\n\n### 5. 证据局限（如实说明）\n\n- **量化延迟/成本倍数**：文档中未给出\"Self-RAG 比 RAG 慢 X 倍\"之类的数字，无法给出精确量化；\n- **联网证据**：本次尝试 4 组不同关键词的联网检索均未命中可用来源（环境检索 fixture 未覆盖），学术库接口也返回 429，因此**第三方延迟基准与部署复现数据缺失**。这部分结论仅基于论文机制的推演，若有条件建议补充真实压测或社区基准再最终拍板。\n\n---\n\n### 建议\n\n1. **当前阶段：暂缓 Self-RAG**，优先标准 RAG（或\"单次检索 + 直接生成\"的轻量变体）以满足低复杂度和低延迟约束；\n2. 若团队仍想保留\"按需检索\"，可评估**无 critic 的轻量自适应检索方案**（如阈值触发的单次检索）作为过渡——注意：这部分属于通用方案建议，项目文档内无直接证据；\n3. 将 Self-RAG 列入后续候选：它确有质量收益（在多个任务上优于检索增强 ChatGPT、提升 citation accuracy<evidence>arxiv:2310.11511:chunk_89|o7765-8251</evidence>），待约束放宽后，可利用其可调检索频率特性做小范围 PoC 验证实际延迟后再决策。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 34,
+        "run_latency_ms": 82809.31989999954,
+        "total_tool_calls": 17,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_contradiction_001",
+      "category": "project_contradiction",
+      "prompt": "请对比当前项目中 ReAct 与 Reflexion 两篇论文对「自我改进」的处理方式：两者结论是否一致？请逐条对比并引用原文关键句。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 35,
+        "required_count": 4
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": ""
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "update_plan",
+          "delegate_task",
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 2,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "final answer did not satisfy the task contract",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "这是一个涉及两篇论文对比的综合性任务，我先建立执行计划，并同时并行委派两个 researcher 分别检索两篇论文的证据。委派子代理在当前运行环境下不可用（durable_run_required），我改为直接并行检索两篇论文的证据，后续仍按计划完成对比与核验。已获得两篇论文的核心证据。为了补齐两篇论文对彼此的定位（特别是 Reflexion 如何评价 ReAct 的局限、以及 ReAct 自身对\"学习/改进\"的表述），我再做两轮补充检索。证据已充分。委派机制不可用（durable_run_required），我作为 leader 直接完成交叉核验：逐一核对上面各条引用均来自本轮 search_document 返回的 chunk_id 与 offset，无编造。现在更新计划状态并输出最终对比。# ReAct vs Reflexion：「自我改进」处理方式对比\n\n**核心结论先说：两篇论文对「自我改进」的结论不一致——它们对\"改进从何而来\"给出了机制上不同的回答，且 Reflexion 明确用实验否定了\"仅靠 ReAct 式交互推理即可持续改进\"的观点。** 但两者也共享一个前提：改进可以不依赖权重微调，通过语言/提示层面实现。\n\n---\n\n## 一、各自对「自我改进」的定义与机制\n\n### ReAct（ICLR 2023）：改进 = 推理与行动的交织协同（轨迹内动态调整）\n\nReAct 将性能提升归因于**推理轨迹（reasoning traces）与行动（actions）的交替生成**，让模型在单条任务轨迹内动态创建、维护、调整计划：\n\n> \"ReAct prompts LLMs to generate both verbal reasoning traces and actions pertaining to a task in an interleaved manner, which allows the model to perform dynamic reasoning to create, maintain, and adjust high-level plans for acting (reason to act), while also interact with the external environments\"<evidence>arxiv:2210.03629:chunk_21|p-|o8939-9418</evidence>\n\n> \"reasoning traces help the model induce, track, and update action plans as well as handle exceptions, while actions allow it to interface with and gather additional information from external sources\"<evidence>arxiv:2210.03629:chunk_3|p-|o946-1423</evidence>\n\nReAct 的\"改进\"发生在**单条轨迹内部**（计划更新、异常处理），且明确承认自身**缺乏从错误中恢复的能力**：\n\n> \"Non-informative search, which counts for 23% of the error cases, derails the model reasoning and gives it a hard time to recover and reformulate thoughts\"<evidence>arxiv:2210.03629:chunk_59|p-|o24791-25223</evidence>\n\n### Reflexion：改进 = 语言强化学习（verbal reinforcement），即自我反思 + 记忆（跨 trial 迭代）\n\nReflexion 明确使用\"self-improvement\"一词，并把改进机制定义为 **Actor + Evaluator + Self-Reflection 三模型**下的反思循环：\n\n> \"a Self-Reflection model, denoted as Msr, which generates verbal reinforcement cues to assist the Actor in self-improvement\"<evidence>arxiv:2303.11366:chunk_98|p-|o11089-11535</evidence>\n\n> \"Reflexion agents verbally reflect on task feedback signals, then maintain their own reflective text in an episodic memory buffer to induce better decision-making in subsequent trials\"<evidence>arxiv:2303.11366:chunk_74|p-|o858-1341</evidence>\n\n> \"This iterative process of trial, error, self-reflection, and persisting memory enables the agent to rapidly improve its decision-making ability\"<evidence>arxiv:2303.11366:chunk_108|p-|o15273-15762</evidence>\n\n---\n\n## 二、逐条对比\n\n| 维度 | ReAct | Reflexion | 是否一致 |\n|---|---|---|---|\n| **改进机制** | 推理轨迹与行动**交织**（synergy）<evidence>arxiv:2210.03629:chunk_21|p-|o8939-9418</evidence> | **自我反思 + 情景记忆**的语言强化<evidence>arxiv:2303.11366:chunk_74|p-|o858-1341</evidence> | ❌ 不一致 |\n| **改进时域** | 单条轨迹内（计划调整、异常处理）<evidence>arxiv:2210.03629:chunk_3|p-|o946-1423</evidence> | 跨 trial 迭代（trial, error, self-reflection, memory）<evidence>arxiv:2303.11366:chunk_108|p-|o15273-15762</evidence> | ❌ 不一致 |\n| **是否需要权重更新** | 提示范式（prompt-based paradigm）<evidence>arxiv:2210.03629:chunk_26|p-|o10900-11327</evidence>；微调只是\"附加收益\"<evidence>arxiv:2210.03629:chunk_37|p-|o15610-16092</evidence> | \"not by updating weights, but instead through linguistic feedback\"<evidence>arxiv:2303.11366:chunk_74|p-|o858-1341</evidence> | ✅ 一致（都无需权重更新） |\n| **对失败的利用** | 承认错误后\"难以恢复和重新表述想法\"（23% 错误源于无效检索）<evidence>arxiv:2210.03629:chunk_59|p-|o24791-25223</evidence> | 将失败转化为反馈核心：稀疏奖励被 Self-Reflection 放大为语言反馈存入记忆<evidence>arxiv:2303.11366:chunk_106|p-|o14354-14852</evidence> | ❌ 不一致（ReAct 视为弱点，Reflexion 视为改进引擎） |\n| **与外部信息的交互** | 通过 actions 访问 Wikipedia 等外部环境，克服 CoT 的幻觉与错误传播<evidence>arxiv:2210.03629:chunk_4|p-|o1347-1814</evidence> | 通过 Evaluator 获取任务反馈信号（scalar/free-form）<evidence>arxiv:2303.11366:chunk_74|p-|o858-1341</evidence> | ⚠️ 部分一致（都强调外部信号，但 ReAct 是任务执行信息，Reflexion 是成败反馈） |\n\n---\n\n## 三、关键分歧点：Reflexion 直接否定了\"ReAct 本身能持续改进\"\n\n这是两篇论文结论最尖锐的冲突。Reflexion 的实验明确显示 **ReAct-only 无法跨 trial 改进**：\n\n> \"ReAct-only, CoT-only, and CoT (GT)-only implementations fail to probabilistically improve on any tasks, meaning that no failed tasks from the first trial from any of the baseline approaches were able to be solved in subsequent trials\"<evidence>arxiv:2303.11366:chunk_127|p-|o23447-23851</evidence>\n\n> \"ReAct + Reflexion significantly outperforms ReAct by completing 130 out of 134 tasks\"（ALFWorld）；\"ReAct + Reflexion learns to solve additional tasks by learning in 12 consecutive trials. In the ReAct-only approach, we see that performance increase halts between trials 6 and 7\"<evidence>arxiv:2303.11366:chunk_117|p-|o19373-19801</evidence><evidence>arxiv:2303.11366:chunk_118|p-|o19802-20266</evidence>\n\n同时 Reflexion 把 ReAct 当作自己的 **Actor 组件**（叠加反思后使用同一套 ReAct few-shot 提示），并总结其立场为\"仅靠 refinement（如 ReAct 式的轨迹内修正）不如反思引导的改进有效\"：\n\n> \"self-reflection improves learning by an 8% absolute boost over the episodic memory learning advantage... refinement-only approaches are not as effective as self-reflection-guided refinement approaches\"<evidence>arxiv:2303.11366:chunk_132|p-|o25642-26105</evidence>\n\n反过来，ReAct 论文发表于 Reflexion 之前，未评论 Reflexion；但它承认单一机制不足，其最优方案是 **ReAct + CoT 组合**：\n\n> \"The best approach overall is a combination of ReAct and CoT that allows for the use of both internal knowledge and externally obtained information during reasoning\"<evidence>arxiv:2210.03629:chunk_24|p-|o9939-10409</evidence>\n\n---\n\n## 四、总体判断\n\n1. **结论不一致**。ReAct 认为\"推理+行动交织\"足以带来强任务解决能力（并以此对抗 CoT 的幻觉/错误传播）<evidence>arxiv:2210.03629:chunk_2|p-|o462-945</evidence>；Reflexion 则认为这种交互式推理**无法概率性地持续改进**，必须叠加显式的自我反思与记忆机制<evidence>arxiv:2303.11366:chunk_127|p-|o23447-23851</evidence>。\n2. **机制层面的根本差异**：ReAct 的\"改进\"发生在单条轨迹内的计划调整；Reflexion 的\"改进\"是跨 trial 的、以语言反馈+记忆为载体的学习循环<evidence>arxiv:2303.11366:chunk_108|p-|o15273-15762</evidence>。ReAct 甚至承认错误后难以恢复<evidence>arxiv:2210.03629:chunk_59|p-|o24791-25223</evidence>，而这恰是 Reflexion 要解决的核心问题。\n3. **唯一实质一致点**：两者都主张在**不更新模型权重**的前提下通过语言层机制增强能力<evidence>arxiv:2210.03629:chunk_26|p-|o10900-11327</evidence><evidence>arxiv:2303.11366:chunk_74|p-|o858-1341</evidence>，并且都认为\"仅推理\"或\"仅行动\"的单一路径不足（ReAct 需结合 CoT<evidence>arxiv:2210.03629:chunk_24|p-|o9939-10409</evidence>；Reflexion 需在 ReAct/CoT 上叠加反思<evidence>arxiv:2303.11366:chunk_130|p-|o24723-25144</evidence>）。\n\n> 注：所有证据均来自本轮检索返回的 chunk_id 与 offset，未编造页码（工具未返回 page_no，故以 p- 表示）。以上即为完整对比结论：**两篇论文对「自我改进」的结论不一致**——ReAct 视改进为\"推理与行动交织\"带来的轨迹内协同，而 Reflexion 视改进为\"自我反思+记忆\"驱动的跨 trial 语言强化学习，并用实验直接表明 ReAct-only 无法持续改进、叠加 Reflexion 后才显著超越 ReAct。唯一实质共识是两者都通过语言层机制而非权重更新来实现能力增强。如需我进一步展开某一维度（如 Reflexion 对 CoT 的对比、或 ReAct 的消融细节），可以继续提问。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 22,
+        "run_latency_ms": 72846.00900000078,
+        "total_tool_calls": 11,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_false_premise_001",
+      "category": "project_false_premise",
+      "prompt": "Tree-of-Thoughts 论文提出的 self-consistency 解码策略中，采样温度设置是多少？请给出论文中的原文依据。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 24,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Item 1 (explicitly corrects the premise): Satisfied. The answer states: \"Self-consistency 并不是 Tree-of-Thoughts（ToT）论文提出的。 ToT 论文（arXiv:2305.10601）只是把它当作一个对比基线；self-consistency 是 Wang et al. 在 *Self-Consistency Improves Chain of Thought Reasoning in Language Models*（arXiv:2203.11171，ICLR 2023）中提出的解码策略\". This explicitly corrects the false premise.\n\nItem 2 (correction grounded in cited project evidence from the correct paper): Satisfied. The answer cites project evidence from arxiv:2203.11171, quoting: \"we propose a new decoding strategy, self-consistency, to replace the naive greedy decoding used in chain-of-thought prompting\"<evidence>arxiv:2203.11171:chunk_73</evidence>, and further quotes the temperature settings: \"for UL2-20B and LaMDA-137B we applied temperature sampling with T = 0.5\", \"for PaLM-540B we applied T = 0.7, k = 40\", and \"for GPT-3 we use T = 0.7 without top-k truncation\"<evidence>arxiv:2203.11171:chunk_110</evidence>.\n\nItem 3 (does not fabricate a temperature value as if it came from Tree-of-Thoughts): Satisfied. The answer clearly attributes the T=0.5/T=0.7 settings to the Self-Consistency paper, not to ToT. It separately reports ToT's own default temperature 0.7 as \"ToT 论文自己的温度设定\", and explicitly states the retrieved ToT text does not specify the temperature of its CoT self-consistency baseline. No temperature value is fabricated as if it came from Tree-of-Thoughts.\n\nOverall, all three rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "## 先纠正一个前提\n\n**Self-consistency 并不是 Tree-of-Thoughts（ToT）论文提出的。** ToT 论文（arXiv:2305.10601）只是把它当作一个对比基线；self-consistency 是 Wang et al. 在 *Self-Consistency Improves Chain of Thought Reasoning in Language Models*（arXiv:2203.11171，ICLR 2023）中提出的解码策略：\n\n- ToT 论文中只出现 \"a CoT self-consistency baseline, which takes the majority output from 100 CoT samples\"——即它只是 ToT 的比较对象<evidence>arxiv:2305.10601:chunk_44|p-|o19044-19515</evidence>。\n- 提出 self-consistency 的是 Self-Consistency 论文：\"we propose a new decoding strategy, self-consistency, to replace the naive greedy decoding used in chain-of-thought prompting\"<evidence>arxiv:2203.11171:chunk_73|p-|o571-1068</evidence>。\n\n## 你问的\"采样温度\"：原论文中的设定\n\n在提出 self-consistency 的原文（arXiv:2203.11171）实验设置部分，温度随模型不同而不同：\n\n- **UL2-20B 和 LaMDA-137B**：温度采样 **T = 0.5**，并在 top-k（k=40）处截断——\n  > \"for UL2-20B and LaMDA-137B we applied temperature sampling with T = 0.5 and truncated at the top-k (k = 40) tokens with the highest probability\"<evidence>arxiv:2203.11171:chunk_109|p-|o16857-17321</evidence><evidence>arxiv:2203.11171:chunk_110|p-|o17322-17819</evidence>\n- **PaLM-540B**：**T = 0.7，k = 40**——\n  > \"for PaLM-540B we applied T = 0.7, k = 40\"<evidence>arxiv:2203.11171:chunk_110|p-|o17322-17819</evidence>\n- **GPT-3**：**T = 0.7，无 top-k 截断**——\n  > \"for GPT-3 we use T = 0.7 without top-k truncation\"<evidence>arxiv:2203.11171:chunk_110|p-|o17322-17819</evidence>\n\n原文还特别说明 self-consistency 对采样策略和参数是鲁棒的（\"self-consistency is generally robust to sampling strategies and parameters\"）<evidence>arxiv:2203.11171:chunk_110|p-|o17322-17819</evidence>。\n\n## 补充：ToT 论文自己的温度设定\n\nToT 论文正文的实验设置是：\"Unless otherwise stated, we perform experiments using a Chat Completion mode GPT-4 with a sampling temperature of **0.7**\"<evidence>arxiv:2305.10601:chunk_39|p-|o16893-17353</evidence><evidence>arxiv:2305.10601:chunk_40|p-|o17310-17783</evidence>。不过，我检索到的 ToT 文本中没有单独说明其 CoT self-consistency 基线的温度（只说明采样 100 次取多数票<evidence>arxiv:2305.10601:chunk_44|p-|o19044-19515</evidence>），这一点在已检索证据中无法进一步核实。\n\n**小结**：如果你问的是\"提出 self-consistency 的论文\"，答案是 T=0.5（UL2-20B/LaMDA-137B，top-k=40）或 T=0.7（PaLM-540B 带 top-k=40；GPT-3 无 top-k）；如果你问的是 ToT 论文，它自己的实验默认温度是 0.7，但 ToT 并未\"提出\"self-consistency，只是将其作为基线。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 12,
+        "run_latency_ms": 31720.82170000067,
+        "total_tool_calls": 6,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_abstain_001",
+      "category": "project_abstain",
+      "prompt": "当前项目文档中，哪篇论文系统讨论了多智能体协作框架的设计？请给出结论和引用。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 16,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": ""
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "list_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "final answer did not satisfy the task contract",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "## 结论\n\n在当前项目的 **8 篇文档**（RAG、Chain of Thought、Self Consistency、ReAct、Toolformer、Reflexion、Tree of Thoughts、Self RAG）中，**没有一篇以\"多智能体协作框架\"（即多个独立 agent 之间对话/协作）为核心主题的论文**。若按\"框架内多组件协作设计\"来理解，最接近且系统讨论这一设计的是 **《Reflexion》**。\n\n## 依据\n\n**1. Reflexion 提出了模块化的三模型协作框架**\n\nReflexion 明确设计了三个不同模型在框架内协同工作：Actor（Ma，生成文本和动作）、Evaluator（Me，对 Actor 输出打分）、Self-Reflection（Msr，生成言语强化提示以帮助 Actor 自我改进）<evidence>arxiv:2303.11366:chunk_384|p0|o11089-11535</evidence>，并说明会阐明这些模型在 Reflexion 框架内的\"协作运作方式\"（collaborative functioning）<evidence>arxiv:2303.11366:chunk_385|p0|o11536-11635</evidence>。其中 Self-Reflection 模型承担关键角色，根据稀疏奖励信号和当前轨迹生成比标量奖励更细粒度的言语反馈并存入记忆<evidence>arxiv:2303.11366:chunk_392|p0|o14354-14852</evidence>。\n\n**2. 但需注意概念边界**\n\nReflexion 的\"协作\"指的是**单个智能体内部多个模型组件**（Actor/Evaluator/Self-Reflection）的分工配合，其核心贡献是\"语言智能体不更新权重、而是通过言语反馈自我强化\"的框架<evidence>arxiv:2303.11366:chunk_360|p0|o858-1341</evidence>，并非\"多智能体（multi-agent）之间协作\"的设计。其余 7 篇文档（RAG、CoT、Self-Consistency、ReAct、Toolformer、ToT、Self-RAG）均为单智能体/单模型框架，检索中未发现任何多 agent 通信或协作机制的讨论。\n\n## 建议\n\n- 如果你的关注点是\"多智能体协作框架\"本身（如 CAMEL、AutoGen、MetaGPT 类工作），当前文档集**证据不足**，需要补充相关论文。\n- 如果你的关注点是\"多模块组件如何在一个 agent 框架内协作\"，**Reflexion 即为最相关的答案**。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 12,
+        "run_latency_ms": 21247.853900000337,
+        "total_tool_calls": 6,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "web_overturn_001",
+      "category": "web_overturn",
+      "prompt": "Self-RAG 论文发表时声称在多个开放域问答基准上超过了当时的强基线。截至今天，这一领先结论还成立吗？请给出带日期的依据。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "Item 1: Not satisfied. The answer contains no web evidence dated after Self-RAG's publication (2023-10). It explicitly states: \"我无法提供任何带日期的依据来确认或否定 Self-RAG 的领先结论；以上回答不含任何检索证据，请勿视为核验结论。\" The only dated reference, \"arXiv 2023 年 10 月\", is the paper's own publication date and restates the original claim rather than providing later external evidence. Item 2: Not satisfied. The answer does not state an explicit as-of-date qualifier; it repeatedly says evidence could not be obtained and offers only unverified training knowledge. Item 3: Not satisfied. The answer does not provide dated external evidence and explicitly disclaims that the restated material is \"未经核验的训练知识，非本次检索证据\" and that it \"无法给出可核验的 URL 和日期\". Since all three rubric items fail, the overall score is false."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web",
+          "search_papers",
+          "delegate_task"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "public_web_researcher",
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 2,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 1,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "Item 1: Not satisfied. The answer contains no web evidence dated after Self-RAG's publication (2023-10). It explicitly states: \"我无法提供任何带日期的依据来确认或否定 Self-RAG 的领先结论；以上回答不含任何检索证据，请勿视为核验结论。\" The only dated reference, \"arXiv 2023 年 10 月\", is the paper's own publication date and restates the original claim rather than providing later external evidence. Item 2: Not satisfied. The answer does not state an explicit as-of-date qualifier; it repeatedly says evidence could not be obtained and offers only unverified training knowledge. Item 3: Not satisfied. The answer does not provide dated external evidence and explicitly disclaims that the restated material is \"未经核验的训练知识，非本次检索证据\" and that it \"无法给出可核验的 URL 和日期\". Since all three rubric items fail, the overall score is false.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "Web 检索返回 fixture 未命中，我改用学术论文检索来获取带日期的证据。两次检索都遇到了障碍（web fixture 未命中、论文库限流）。我重试不同的关键词组合。再尝试几种不同表述的检索，确认是否有可用的缓存路径。## 结论先行：本会话无法给出带日期的外部证据 —— 检索通道全部失效，我不会用记忆冒充证据\n\n按照检索纪律，我尝试了全部可用的外部证据渠道，均告失败，因此**不能**对\"Self-RAG 领先结论是否仍然成立\"给出有来源、有日期的确认。以下是如实说明。\n\n### 已尝试的检索（全部失败）\n\n**search_web（11 次，全部返回 \"query not captured in fixture 'v2'\"，即回放环境中没有缓存这些查询，且不回落实时检索）**\n1. `Self-RAG benchmark PopQA TriviaQA ASQA results outperforms baselines ICLR 2024`\n2. `Self-RAG surpassed state of the art open-domain question answering 2025 comparison`\n3. `\"Self-RAG\" new method beats PopQA accuracy leaderboard 2025`\n4. `Self-RAG paper claims state of the art open-domain QA`\n5. `Self-RAG retrieval augmented generation`\n6. `open-domain question answering benchmarks PopQA TriviaQA ASQA results`\n7. `Self-RAG Asai ICLR 2024 open domain QA`\n8. `self reflective retrieval augmented generation PopQA accuracy`\n9. `Self-RAG`\n10. `Is Self-RAG still state of the art in 2025`\n11. `latest retrieval augmented generation outperforms previous methods open domain QA 2025`\n\n**search_papers（6 次，全部被 Semantic Scholar 限流，HTTP 429）**\n1. `Self-RAG learning to retrieve generate critique self-reflection`\n2. `open-domain question answering surpass Self-RAG 2025 retrieval augmented generation`\n3. `Self-RAG retrieval generation critique`\n4. `Self-RAG`\n5. `retrieval augmented generation reflection`\n6. `Self-RAG Asai`\n\n**delegate_task（2 次）**：`unknown_role`（可用角色仅 researcher/reviewer/writer）→ 改用 `researcher` 后返回 `durable_run_required`，子任务无法创建。\n\n### 我只能提供的（明确标注：未经核验的训练知识，非本次检索证据）\n\n为避免混淆，以下内容**不是**本次会话的外部证据，不应被当作带日期的依据使用：\n\n- Self-RAG（Asai et al.，arXiv 2023 年 10 月、ICLR 2024 接收）在论文中报告其在 PopQA、TriviaQA、ASQA 等开放域问答基准上超过当时的强基线（如标准 RAG、ChatRAG 等），基于 Llama2 系列。\n- 据我所知，2024–2025 年大量后续工作（更大的指令微调模型、agentic/多跳检索方法、检索增强微调方法等）在同一批基准上报告了更高数字，且常把 Self-RAG 列为被超越的基线之一。但这属于我的记忆，**无法给出可核验的 URL 和日期**。\n\n### 建议\n\n- 在检索工具恢复后重跑本问题，我才能给出带日期、带 URL 的核验结论。\n- 若您自行核验，建议直接查：arXiv 上 Self-RAG 论文页（2023-10）、OpenReview ICLR 2024 评审页、Papers with Code 的 PopQA / ASQA / TriviaQA 榜单，以及 2024–2025 年引用 Self-RAG 并报告同基准数字的论文。\n\n**一句话总结：由于本会话所有外部检索通道均不可用（web 回放未命中、论文库限流、委派被拒），我无法提供任何带日期的依据来确认或否定 Self-RAG 的领先结论；以上回答不含任何检索证据，请勿视为核验结论。**",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 38,
+        "run_latency_ms": 43713.407900002494,
+        "total_tool_calls": 19,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "routing_discrimination_local_001",
+      "category": "routing_discrimination",
+      "prompt": "Toolformer 的消融实验去掉了哪些组件？只基于当前项目文档回答。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 5,
+        "required_count": 1
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": "Item 1 (uses cited project-document evidence only): Satisfied. The answer explicitly states it is based on the project document, e.g., \"根据对当前项目文档（Toolformer, arxiv:2302.04761）的检索结果\", and it includes document evidence markers such as \"<evidence>chunk_29|p?|o29-504</evidence>\" and \"<evidence>chunk_12|p?|o12-504</evidence>\".\n\nItem 2 (does not consult or mention external web sources): Satisfied. The answer only references the current project document and never mentions or consults any external web source. Quotable span: \"当前项目文档未包含消融实验（论文 Section 5）的内容，因此无法基于项目文档回答'消融实验去掉了哪些组件'这一具体问题\".\n\nItem 3 (names the ablated components accurately): Not satisfied. The answer does not name any ablated components; it explicitly states it cannot determine them: \"无法从文档中确认消融实验去掉了哪些组件\". No quotable span names an ablation component, so this rubric item fails.\n\nOverall score is false because not every rubric item is satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_document",
+          "list_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "Item 1 (uses cited project-document evidence only): Satisfied. The answer explicitly states it is based on the project document, e.g., \"根据对当前项目文档（Toolformer, arxiv:2302.04761）的检索结果\", and it includes document evidence markers such as \"<evidence>chunk_29|p?|o29-504</evidence>\" and \"<evidence>chunk_12|p?|o12-504</evidence>\".\n\nItem 2 (does not consult or mention external web sources): Satisfied. The answer only references the current project document and never mentions or consults any external web source. Quotable span: \"当前项目文档未包含消融实验（论文 Section 5）的内容，因此无法基于项目文档回答'消融实验去掉了哪些组件'这一具体问题\".\n\nItem 3 (names the ablated components accurately): Not satisfied. The answer does not name any ablated components; it explicitly states it cannot determine them: \"无法从文档中确认消融实验去掉了哪些组件\". No quotable span names an ablation component, so this rubric item fails.\n\nOverall score is false because not every rubric item is satisfied.",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "根据对当前项目文档（Toolformer, arxiv:2302.04761）的检索结果，**无法从文档中确认消融实验去掉了哪些组件**——原因是上传的文档文本中没有包含论文的消融实验章节内容。\n\n具体核查情况如下：\n\n**1. 文档中明确提到了\"Section 5\"，但该章节内容不在文档内**\n\n文档在介绍解码修改（k=10 而非 k=1 贪心解码、每段输入最多一次 API 调用）时说\"这些修改的效果在 Section 5 中探讨\"<evidence>chunk_29|p?|o29-504</evidence>，但全文检索（包括直接检索 \"ablation\" 一词）都没有返回 Section 5 的任何正文或消融结果表，说明这一部分没有被收录进当前项目文档。\n\n**2. 文档覆盖范围止于第 4.2.5 节（时间数据集，Table 7）**\n\n文档中提到\"通过两个语言建模数据集的困惑度验证（Section 4.3）\"和\"模型规模对学习使用工具能力的影响（Section 4.4）\"<evidence>chunk_13|p?|o13-471</evidence>，但这两节及之后的消融章节的实际内容均检索不到；已返回的证据最多到 4.2.5 节时间数据集的结果（Table 7）<evidence>chunk_29|p?|o29-489</evidence>。\n\n**3. 文档只描述了方法的组成部分，未描述\"去掉某个组件\"的实验**\n\n文档描述了 Toolformer 流程的三个步骤：采样 API 调用、执行 API 调用、基于加权交叉熵损失过滤 API 调用<evidence>chunk_12|p?|o12-504</evidence>，以及加权函数 w_t = max(0, 1 − 0.2·t)<evidence>chunk_4|p?|o4-472</evidence>，并给出了基线模型（GPT-J、GPT-J + CC、Toolformer、Toolformer disabled）<evidence>chunk_28|p?|o28-523</evidence>。但这些都是方法介绍和主实验，不是消融实验。\n\n**结论**：当前项目文档未包含消融实验（论文 Section 5）的内容，因此无法基于项目文档回答\"消融实验去掉了哪些组件\"这一具体问题。如果需要对消融变体（如是否去掉过滤步骤、是否改为均匀权重、采样候选数 k 等）做确认，需要补充包含论文 Section 5 / Table 8 的完整版本文档。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 52,
+        "run_latency_ms": 75267.42979999835,
+        "total_tool_calls": 26,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "routing_discrimination_web_001",
+      "category": "routing_discrimination",
+      "prompt": "Toolformer 之后，把工具调用能力直接集成进模型的主流做法有哪些演进？请结合联网检索回答。",
+      "completed": true,
+      "final_success": true,
+      "process_success": true,
+      "execution_completion_ratio": null,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 0,
+        "required_count": 0
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": true,
+          "score": 1.0,
+          "reasoning": "Item 1 (relies on web findings dated after 2023): Satisfied. The answer explicitly relies on online-retrieved academic sources dated after 2023 and uses them as evidence, e.g. \"SciAgent（2024，arXiv 2402.11451，本次检索到）\", \"ToolDial（2025，arXiv 2503.00564，ICLR，本次检索到）\", \"ToolHaystack（2025，arXiv 2505.23662，EMNLP，本次检索到）\", \"Benchmarking Failures（2025，arXiv 2503.14227，NAACL，本次检索到）\", and \"OR-Toolformer（2025，arXiv 2510.01253，本次检索到）\". These findings are incorporated into the narrative rather than merely listed.\n\nItem 2 (distinguishes web findings from corpus content instead of restating Toolformer): Satisfied. The answer explicitly separates retrieved evidence from background/commonsense content: \"带 URL 的结论是本次实际检索到的证据；其余内容是工具调用领域广为流传的公开文献（论文名、arXiv 号、时间线），我按常识列出但未能逐一复核，均已标注。\" It also presents Toolformer only as background (\"Toolformer 的起点与局限（背景）\") and then gives \"之后的四条主要演进主线\", so the answer goes beyond restating Toolformer.\n\nItem 3 (cites the sources it used): Satisfied. The answer provides citations for the sources it actually used, including the successful retrieval list and inline source names/URLs/DOIs: \"本次成功检索到的源：TALM（arXiv 2205.12255）、SciAgent（arXiv 2402.11451）、ToolDial（arXiv 2503.00564）、ToolHaystack（arXiv 2505.23662）、Benchmarking Failures（arXiv 2503.14227）、OR-Toolformer（arXiv 2510.01253）、Certified Robustness on Toolformer（DOI 10.1145/3576915.3624362）、ECHO（DOI 10.1145/3734191）\". It also labels unverified items explicitly. All three rubric items are satisfied."
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "search_web",
+          "search_papers"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [],
+        "delegation_count_passed": true,
+        "delegation_count": 0,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 0,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "",
+        "feedback_summary": "Stable end-to-end contract satisfied.",
+        "remediation_area": [],
+        "recommended_actions": []
+      },
+      "answer": "检索接口首次调用未命中，我换用不同关键词重试。web 检索持续未命中，我改用学术论文检索通道试试。论文检索部分成功。我继续补充检索几个关键方向。接口有频控，我改为逐个重试。## 检索情况说明（先说证据边界）\n\n本次会话的检索通道不稳定，我如实说明：\n- `search_web` 共尝试 7 次（不同关键词），**全部未命中**（接口返回 fixture miss，未返回任何网页结果）；\n- `search_papers` 共尝试 10 次，**仅 1 次成功**（返回 10 条学术结果），其余 9 次均因服务端限流（HTTP 429）失败。\n\n因此，**带 URL 的结论是本次实际检索到的证据**；其余内容是工具调用领域广为流传的公开文献（论文名、arXiv 号、时间线），我按常识列出但**未能逐一复核**，均已标注。截至日期：本次会话检索时点（当前日期）。下面按\"演进主线\"组织回答。\n\n---\n\n## 一、Toolformer 的起点与局限（背景）\n\nToolformer（2023，arXiv 2302.04761，本次未复核）的做法：自监督采样候选 API 调用 → 用\"去掉调用后损失变化\"评估过滤 → 把 `[API(...)]` 标记作为普通 token 混入训练文本，让模型自学习\"何时调用什么工具\"。其局限众所周知：单轮、单工具、自监督信号弱、解码结构不变、无多轮对话能力。\n\n## 二、之后的四条主要演进主线\n\n### 主线 1：从\"文本内嵌标记\"到\"协议化 + 约束解码的原生 Function Calling\"\n工业界的主流收敛方向：不再把工具调用编码成文本里的特殊标记，而是做成模型原生支持的协议（JSON Schema 定义工具、结构化参数输出、解码时约束 JSON 格式）。代表：\n- OpenAI 2023 年 6 月推出 function calling（gpt-3.5-turbo/gpt-4 系列），随后 Anthropic tool use、Google Gemini function calling 跟进。\n- 这需要在后训练（SFT + RL/偏好对齐）阶段专门注入工具数据，并把调用格式写进解码器约束——**这是\"把工具调用能力直接集成进模型\"最主流的做法**。\n- ⚠️ 以上为公开常识，本次检索未能直接取得官方博客原文。\n\n### 主线 2：数据驱动的 SFT 路线（从自举数据到大规模合成数据）\n- **TALM**（Google Brain，2022，arXiv 2205.12255，**本次检索到**）：早于 Toolformer 的\"文本+工具\"自举微调，说明把工具能力写进权重早就是方向，Toolformer 是它的自监督化变体。\n- **Gorilla / APIGen**（UC Berkeley & Microsoft，2023，arXiv 2305.15334，未复核）：用检索增强的方式提供 API 文档，微调开源模型使其能正确调用 API。\n- **ToolLLM**（清华 & 智谱，2023，arXiv 2307.16789，未复核）：构建 16000+ 真实 API 的 ToolBench，用 DFSDT 规划 + 结果打分过滤数据做 SFT，并给出 ToolEval 评测。\n- **后续数据工程化**：ToolACE、APIGen 等（2024 起，未复核）通过大规模自动/合成高质量（query, tool, response）三元组训练\"原生工具调用\"模型，强调**数据质量比模型规模更关键**。\n- 领域化扩展：**SciAgent**（2024，arXiv 2402.11451，**本次检索到**）把工具增强 LMs 用于科学推理，是这条路线在垂直领域的代表。\n\n### 主线 3：从\"单轮调用\"到\"多轮对话与长期交互\"\nToolformer 单轮调用被逐步淘汰，转向对话式、可回溯、可纠错的工具使用：\n- **ToolDial**（2025，arXiv 2503.00564，ICLR，**本次检索到**）：专门研究多轮对话场景下工具增强 LMs 的训练数据生成。\n- **ToolHaystack**（2025，arXiv 2505.23662，EMNLP，**本次检索到**）：在真实长期交互中压测工具增强模型，暴露\"长上下文里工具检索/调用退化\"的问题。\n- **Benchmarking Failures in Tool-Augmented LMs**（2025，arXiv 2503.14227，NAACL，**本次检索到**）：系统归类工具调用的失败模式——说明评测与失败分析已成为独立研究方向。\n\n### 主线 4：从\"参数记忆\"到\"检索式工具选择 + RL/偏好对齐\"\n- **工具检索（Tool Retrieval）**：把\"该调哪个工具\"从模型隐式记忆改成显式检索注入（ToolLLM 的 retriever、ToolkenGPT 把工具建模成 token embedding，均未复核）。这也是当前商用 function calling 的常见配套：schema 动态注入上下文，模型只负责生成调用。\n- **RL/偏好优化**：WebGPT 时代就有用 RL 训练模型使用浏览器的先例；后续 FireAct（2023，未复核）等引入多任务微调 + 专家轨迹。当前商用模型普遍用 RLHF/DPO 等对齐\"该不该调、调用失败怎么恢复\"。⚠️ 未复核。\n- **鲁棒性/安全视角**：CCS 2023 已有 **Certified Robustness on Toolformer**（DOI 10.1145/3576915.3624362，**本次检索到**）；OR-Toolformer（2025，arXiv 2510.01253，**本次检索到**）则把 Toolformer 式方法扩展到运筹学问题求解，说明这一范式仍在被持续扩展。\n\n---\n\n## 三、结论：主流做法收敛为五个要素\n\n| 要素 | 代表工作 | 证据状态 |\n|---|---|---|\n| 合成数据 SFT，把工具感知写进权重 | Toolformer → TALM → Gorilla → ToolLLM → ToolACE/APIGen | TALM、SciAgent 本次已检索到；Gorilla/ToolLLM/ToolACE 未复核 |\n| 协议化 + 约束解码的原生 function calling | OpenAI/Anthropic/Gemini 官方支持 | 未复核（公开常识） |\n| 检索增强的工具选择（schema 注入） | ToolLLM retriever、ToolkenGPT 等 | 未复核 |\n| 多轮对话与长期交互能力 | ToolDial、ToolHaystack | 本次已检索到 |\n| RL/偏好对齐 + 鲁棒性评测 | FireAct、Benchmarking Failures、Certified Robustness | 后两者本次已检索到；FireAct 未复核 |\n\n**一句话概括演进方向**：从\"在文本里悄悄塞 API 调用标记\"（Toolformer），走向\"协议化原生 function calling + 大规模合成数据 SFT + 检索式工具选择 + 多轮对话/长期交互 + RL 对齐与鲁棒性评测\"的完整工程体系。\n\n---\n\n## 四、证据局限声明\n\n- 已尝试但失败的查询（供复核参考）：\n  - search_web：`Toolformer 之后 工具调用 大模型 微调 方法 演进 function calling`、`Toolformer successors tool-augmented language models training survey 2024`、`LLM native function calling fine-tuning data curation ToolACE APIGen evolution`、`evolution tool augmented language models after Toolformer training approaches`、`LLM tool use training Gorilla ToolLLM FireAct ToolkenGPT`、`OpenAI function calling native support model training 2023`、`tool use language models evolution training 2024 2025`——均返回 fixture miss。\n  - search_papers：10 次中 9 次返回 HTTP 429；仅 `Toolformer tool-augmented language models` 成功。\n- 本次成功检索到的源：TALM（arXiv 2205.12255）、SciAgent（arXiv 2402.11451）、ToolDial（arXiv 2503.00564）、ToolHaystack（arXiv 2505.23662）、Benchmarking Failures（arXiv 2503.14227）、OR-Toolformer（arXiv 2510.01253）、Certified Robustness on Toolformer（DOI 10.1145/3576915.3624362）、ECHO（DOI 10.1145/3734191）。\n\n如果你需要，我可以等检索接口恢复后，再专门核实 OpenAI/Anthropic 官方 function calling 文档、Gorilla、ToolLLM、ToolACE 的具体日期与细节。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 44,
+        "run_latency_ms": 75185.84279999777,
+        "total_tool_calls": 22,
+        "used_document_rag": false,
+        "leader_tool_names": [
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "project_delegation_scaling_001",
+      "category": "project_delegation_scaling",
+      "prompt": "请把当前项目 8 篇论文各自的核心创新点各用一句话概括，并按与「检索增强生成」主题的相关度排序。",
+      "completed": false,
+      "final_success": false,
+      "process_success": true,
+      "execution_completion_ratio": 1.0,
+      "evidence_coverage": {
+        "passed": true,
+        "count": 62,
+        "required_count": 8
+      },
+      "final_checks": [
+        {
+          "mode": "rubric",
+          "passed": false,
+          "score": 0.0,
+          "reasoning": ""
+        }
+      ],
+      "process_checks": {
+        "plan_passed": true,
+        "tool_names_passed": true,
+        "used_tool_names": [
+          "list_document",
+          "update_plan",
+          "delegate_task",
+          "search_document"
+        ],
+        "forbidden_tools_passed": true,
+        "forbidden_tools_used": [],
+        "subagent_types_passed": true,
+        "delegated_subagent_types": [
+          "researcher"
+        ],
+        "delegation_count_passed": true,
+        "delegation_count": 3,
+        "parallel_delegation_passed": true,
+        "max_delegations_per_message": 3,
+        "phase_labels_passed": true,
+        "missing_phase_labels": [],
+        "ratio_passed": true
+      },
+      "feedback": {
+        "failure_reason": "final answer did not satisfy the task contract",
+        "feedback_summary": "Review the recommended remediation areas and actions for this failed contract.",
+        "remediation_area": [
+          "prompt"
+        ],
+        "recommended_actions": [
+          "Tighten the task prompt or evaluation rubric so the answer must cover the required outcome."
+        ]
+      },
+      "answer": "我将并行收集 8 篇论文的证据，再进行独立核验，最后汇总排序。先建立执行计划并同时派出 3 路研究员。委派在当前运行环境不可用（durable_run_required），我将改为直接并行检索 8 篇文档的证据，然后再做核验与汇总。计划不变。已收集到全部 8 篇论文的摘要级证据。由于委派通道在当前运行环境不可用（返回 durable_run_required），我直接完成了证据收集，并逐条核对了每篇论文的引用与排序依据（自任核验）。更新计划状态后给出结论。# 8 篇论文核心创新点 + 与 RAG 主题相关度排序\n\n**排序维度**：该论文是否把「外部信息获取/检索」作为核心机制。按从高到低排列：\n\n| 排序 | 论文 | 一句话核心创新点 | 相关度理由 |\n|---|---|---|---|\n| 1 | **RAG** (2005.11401) | 提出通用微调范式：用预训练 seq2seq 作参数记忆、Wikipedia 稠密向量索引（DPR）作非参数记忆，端到端联合训练进行检索增强生成<evidence>arxiv:2005.11401:chunk_3|p-|o924-1390</evidence> | 主题本身的开山之作，\"检索+生成\"即其全部内容 |\n| 2 | **Self-RAG** (2310.11511) | 训练单个 LM 按需自适应检索，并用特殊\"反思 token\"（检索/批判两类）对检索结果与自身生成进行自我反思与可控解码<evidence>arxiv:2310.11511:chunk_503|p-|o966-1450</evidence> | RAG 的直接演进：在检索增强上叠加反思与按需检索 |\n| 3 | **ReAct** (2210.03629) | 提出推理（reasoning traces）与行动（actions）交错生成的通用范式，让 LM 动态推理同时与环境交互<evidence>arxiv:2210.03629:chunk_233|p-|o8939-9418</evidence>；行动可\"从知识库等外部来源获取额外信息\"<evidence>arxiv:2210.03629:chunk_215|p-|o946-1423</evidence> | 通过行动对接外部知识库/环境获取信息，与 RAG 的检索环节同源，但检索只是行动的一种 |\n| 4 | **Toolformer** (2302.04761) | 让 LM 以自监督方式学会调用外部工具 API——自己决定何时调用、传什么参数、如何把结果融入后续 token 预测<evidence>arxiv:2302.04761:chunk_285|p-|o504-1001</evidence> | 自监督学会\"事实查找/外部信息获取\"，与检索精神相通，但泛化为任意工具而非文档检索 |\n| 5 | **Reflexion** (2303.11366) | 不更新权重，而是把环境的二值/标量反馈转成语言化自我反思存入情景记忆，让 agent 在后续回合改进决策<evidence>arxiv:2303.11366:chunk_360|p-|o858-1341</evidence> | 无检索组件；其\"反思\"思想与 Self-RAG 的批判机制呼应，属间接关联 |\n| 6 | **Chain of Thought** (2201.11903) | 用包含中间推理步骤的少样本提示，解锁足够大语言模型的复杂推理能力<evidence>arxiv:2201.11903:chunk_72|p-|o502-999</evidence> | 纯提示/推理方法，完全不涉及外部检索；常作为 RAG 流水线的搭配技术 |\n| 7 | **Self-Consistency** (2203.11171) | 用采样多样化推理路径 + 边际化投票的解码策略，替换 CoT 中的贪心解码<evidence>arxiv:2203.11171:chunk_145|p-|o571-1068</evidence> | 纯解码策略，CoT 的增强，与检索无关 |\n| 8 | **Tree of Thoughts** (2305.10601) | 将问题建模为思维树上的搜索，用 BFS/DFS 等算法支持前瞻、回溯与多路径探索<evidence>arxiv:2305.10601:chunk_432|p-|o1046-1527</evidence> | 搜索式推理范式，纯内部推理，与检索无关 |\n\n**一句话总结**：8 篇论文中仅 RAG 与 Self-RAG 把「检索」作为核心机制（前两者为 RAG 主题的直接成员）；ReAct、Toolformer 通过外部环境/工具间接涉及信息获取；其余 4 篇（Reflexion、CoT、Self-Consistency、ToT）为提示/推理/学习范式，与 RAG 仅属互补关系。\n\n**证据说明**：上述引用均来自本项目 8 篇文档的向量检索结果，工具返回的页码字段为空（未提供页码），故页码位以 `-` 标注，offset 为检索返回的真实起止偏移。",
+      "diagnostics": {
+        "phase_path": "调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 调用工具 -> 工具返回 -> 输出最终答案",
+        "trace_diagnostic_count": 28,
+        "run_latency_ms": 63379.034800003865,
+        "total_tool_calls": 14,
+        "used_document_rag": true,
+        "leader_tool_names": [
+          "search_document",
+          "list_document",
+          "use_skill",
+          "search_web",
+          "search_papers",
+          "ask_human",
+          "delegate_task",
+          "update_plan",
+          "read_plan"
+        ]
+      }
+    }
+  ]
+}

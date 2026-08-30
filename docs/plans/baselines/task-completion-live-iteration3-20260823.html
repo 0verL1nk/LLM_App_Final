@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live 迭代3 · 契约校准 · 2026-08-23</title>
+<style>
+:root { color-scheme: light; }
+body {
+  margin: 0; padding: 32px 24px 64px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f9f9f7; color: #0b0b0b;
+}
+body.dark { color-scheme: dark; background: #0d0d0d; color: #ffffff; }
+.wrap { max-width: 1080px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 15px; margin: 32px 0 12px; color: #52514e; font-weight: 600; }
+body.dark h2 { color: #c3c2b7; }
+.meta { font-size: 13px; color: #898781; margin-bottom: 8px; }
+.meta code { background: rgba(11,11,11,0.05); padding: 1px 5px; border-radius: 4px; }
+body.dark .meta code { background: rgba(255,255,255,0.08); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tile {
+  background: #fcfcfb; border: 1px solid rgba(11,11,11,0.10); border-radius: 10px;
+  padding: 14px 16px;
+}
+body.dark .tile { background: #1a1a19; border-color: rgba(255,255,255,0.10); }
+.tile .label { font-size: 12px; color: #898781; margin-bottom: 6px; }
+.tile .value { font-size: 26px; font-weight: 650; }
+.tile .sub { font-size: 12px; color: #898781; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; font-weight: 600; color: #898781; padding: 8px 10px;
+  border-bottom: 1px solid #e1e0d9; white-space: nowrap;
+}
+body.dark th { border-bottom-color: #2c2c2a; }
+td { padding: 8px 10px; border-bottom: 1px solid #e1e0d9; vertical-align: top; }
+body.dark td { border-bottom-color: #2c2c2a; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12px;
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}
+.badge.good { color: #006300; background: rgba(12,163,12,0.12); }
+.badge.critical { color: #d03b3b; background: rgba(208,59,59,0.10); }
+body.dark .badge.good { color: #0ca30c; }
+body.dark .badge.critical { color: #e66767; }
+.barcell { display: flex; align-items: center; gap: 8px; min-width: 180px; }
+.bartrack { flex: 1; height: 8px; background: rgba(11,11,11,0.06); border-radius: 4px; }
+body.dark .bartrack { background: rgba(255,255,255,0.08); }
+.bar {
+  height: 8px; border-radius: 0 4px 4px 0; background: #2a78d6; position: relative;
+}
+body.dark .bar { background: #3987e5; }
+.barlabel { font-size: 12px; color: #52514e; white-space: nowrap; font-variant-numeric: tabular-nums; }
+body.dark .barlabel { color: #c3c2b7; }
+details { margin-top: 2px; }
+details summary { cursor: pointer; color: #2a78d6; font-size: 12px; }
+body.dark details summary { color: #3987e5; }
+pre.reason {
+  white-space: pre-wrap; font-size: 12px; line-height: 1.55; margin: 8px 0 0;
+  padding: 10px 12px; background: rgba(11,11,11,0.04); border-radius: 8px;
+  color: #52514e; font-family: inherit;
+}
+body.dark pre.reason { background: rgba(255,255,255,0.05); color: #c3c2b7; }
+.failed-checks { font-size: 12px; color: #d03b3b; margin-top: 2px; }
+body.dark .failed-checks { color: #e66767; }
+@media (prefers-color-scheme: dark) {
+  body:not(.light) { color-scheme: dark; background: #0d0d0d; color: #ffffff; }
+  body:not(.light) h2 { color: #c3c2b7; }
+  body:not(.light) .tile { background: #1a1a19; border-color: rgba(255,255,255,0.10); }
+  body:not(.light) th { border-bottom-color: #2c2c2a; }
+  body:not(.light) td { border-bottom-color: #2c2c2a; }
+  body:not(.light) .badge.good { color: #0ca30c; }
+  body:not(.light) .badge.critical { color: #e66767; }
+  body:not(.light) .bartrack { background: rgba(255,255,255,0.08); }
+  body:not(.light) .bar { background: #3987e5; }
+  body:not(.light) .barlabel { color: #c3c2b7; }
+  body:not(.light) details summary { color: #3987e5; }
+  body:not(.light) pre.reason { background: rgba(255,255,255,0.05); color: #c3c2b7; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Live 迭代3 · 契约校准 · 2026-08-23</h1>
+<div class="meta">生成时间: 2026-08-23T04:39:57.727133+00:00</div>
+<div class="meta">运行溯源: runner_mode=<code>live_model</code> · agent_model=<code>MiniMax-M3</code> · judge_model=<code>MiniMax-M3</code> · web_search_fallback=<code>True</code> · document_corpus=<code>E:\Web-leaning\PaperSage\.claude\worktrees\nice-lamarr-1ba065\tests\fixtures\papers\rag_agentic_reasoning</code> · delegation_note=<code>turn-level harness: delegate_task returns durable_run_required; delegation contracts measure leader behavior only</code></div>
+<div class="meta">fixture: <code>tests\evals\fixtures\agent_task_eval_set_v1.jsonl</code> · 用例 5 条 · 完成 0 条</div>
+
+<h2>聚合指标</h2>
+<div class="tiles">
+<div class="tile"><div class="label">完成率 (结果+过程)</div><div class="value">0.0%</div><div class="sub">0/5 用例</div></div>
+<div class="tile"><div class="label">结果层 · 裁判通过率</div><div class="value">40.0%</div></div>
+<div class="tile"><div class="label">过程层 · 契约通过率</div><div class="value">0.0%</div></div>
+<div class="tile"><div class="label">证据覆盖通过率</div><div class="value">100.0%</div></div>
+<div class="tile"><div class="label">计划执行完成度均值</div><div class="value">87.5%</div></div>
+<div class="tile"><div class="label">效率层 · 平均时延</div><div class="value">56.9s</div></div>
+<div class="tile"><div class="label">效率层 · 平均工具调用</div><div class="value">16.0</div><div class="sub">次/用例</div></div>
+</div>
+
+<h2>分类通过情况</h2>
+<table>
+<thead><tr><th>分类</th><th class="num">用例数</th><th>完成比例</th><th>未过用例</th></tr></thead>
+<tbody><tr><td>hybrid_reject</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="hybrid_reject: 0/1 通过; 未过: hybrid_reject_001"></div></div><span class="barlabel">0/1</span></div></td><td>hybrid_reject_001</td></tr><tr><td>hybrid_research</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="hybrid_research: 0/1 通过; 未过: hybrid_research_001"></div></div><span class="barlabel">0/1</span></div></td><td>hybrid_research_001</td></tr><tr><td>hybrid_rollout</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="hybrid_rollout: 0/1 通过; 未过: hybrid_rollout_001"></div></div><span class="barlabel">0/1</span></div></td><td>hybrid_rollout_001</td></tr><tr><td>project_compare</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="project_compare: 0/1 通过; 未过: project_compare_001"></div></div><span class="barlabel">0/1</span></div></td><td>project_compare_001</td></tr><tr><td>project_delegation_scaling</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="project_delegation_scaling: 0/1 通过; 未过: project_delegation_scaling_001"></div></div><span class="barlabel">0/1</span></div></td><td>project_delegation_scaling_001</td></tr></tbody>
+</table>
+
+<h2>改进方向归因</h2>
+<div class="meta">architecture × 2 · prompt × 5</div>
+
+<h2>逐用例明细</h2>
+<table>
+<thead><tr><th>用例</th><th>分类</th><th>结果层</th><th>过程层</th><th class="num">证据</th><th class="num">工具调用</th><th class="num">时延</th><th>裁判与契约</th></tr></thead>
+<tbody><tr><td>project_compare_001</td><td>project_compare</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">43/2</td><td class="num">16</td><td class="num">55.4s</td><td><div class="failed-checks">未过契约: subagent_types_passed</div><details><summary>裁判理由</summary><pre class="reason">The rubric requires three things: (1) compare RAG and Self-RAG using current project documents, (2) explain at least one meaningful tradeoff, and (3) give a concrete recommendation for this project rather than a generic summary.
+
+Item 1: Compare RAG and Self-RAG using current project documents. The answer clearly references both papers in the project (arxiv:2005.11401 for RAG, arxiv:2310.11511 for Self-RAG) with detailed method comparisons, experimental results, and evidence tags linking to specific chunks. Quoted span: &quot;论文 1: **RAG** (Lewis et al., 2020, arXiv:2005.11401) 论文 2: **Self-RAG** (Asai et al., 2023, arXiv:2310.11511)&quot;. Satisfied.
+
+Item 2: Explain at least one meaningful tradeoff. The answer provides multiple meaningful tradeoffs. For example: &quot;RAG 是&#x27;无条件检索 + 端到端训练&#x27;...Self-RAG 是&#x27;按需检索 + 自评筛选&#x27;&quot;. Also: &quot;对推理延迟敏感: RAG 没有 reflection tokens、不需要 segment 级 beam search，推理成本更低&quot; vs Self-RAG&#x27;s higher inference cost. Quoted span: &quot;对推理延迟敏感：RAG 没有 reflection tokens、不需要 segment 级 beam search，推理成本更低&quot;. Satisfied.
+
+Item 3: Give a concrete recommendation for this project rather than a generic summary. The answer provides a detailed scenario-based selection guide (A: choose RAG when..., B: choose Self-RAG when...) and a concrete one-line summary: &quot;要&#x27;低延迟 + 易更新 + 简单 QA&#x27;选 RAG；要&#x27;高质量 + 可溯源 + 可控推理 + 预算足&#x27;选 Self-RAG。&quot; This is a concrete recommendation grounded in the project context. Quoted span: &quot;**要&#x27;低延迟 + 易更新 + 简单 QA&#x27;选 RAG；要&#x27;高质量 + 可溯源 + 可控推理 + 预算足&#x27;选 Self-RAG。**&quot;. Satisfied.
+
+All three items are satisfied.</pre></details></td></tr><tr><td>hybrid_research_001</td><td>hybrid_research</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">36/2</td><td class="num">13</td><td class="num">41.3s</td><td><div class="failed-checks">未过契约: subagent_types_passed, delegation_count_passed, parallel_delegation_passed</div><details><summary>裁判理由</summary><pre class="reason">The rubric has three items to check:
+
+1. &quot;Combine current project evidence with recent web findings&quot;
+- The answer does combine current project evidence (document search results from the project documents, citing specific chunks from arxiv:2310.11511 and arxiv:2005.11401).
+- However, the web search explicitly failed: &quot;联网检索因限流失败&quot; and &quot;search_web 和 search_papers 均因 429 限流无法获取2024 年后的社区反馈&quot;. The agent explicitly notes: &quot;该项联网补足在评估可信度上仍有缺口&quot;. So while the agent attempted web search and acknowledged the failure, it did NOT successfully combine recent web findings into the analysis. The final answer is based only on project documents, not web findings. This item is NOT satisfied.
+
+2. &quot;Weigh adoption benefits versus engineering cost or risk&quot;
+- The answer clearly weighs benefits (factuality improvements, citation accuracy, outperforms ChatGPT on multiple tasks) against costs/risks (training cost, GPT-4 dependency, inference overhead, base model constraints, latency concerns). This item is satisfied with extensive discussion.
+
+3. &quot;Finish with a concrete roadmap recommendation such as adopt, defer, or pilot&quot;
+- The answer provides a conditional recommendation with three levels (L1: include in candidate pool, L2: prerequisites if adopting, L3: defer until info available) and ends with: &quot;Self-RAG 在&#x27;开源基座 + 强事实性需求 + 有训练算力&#x27;的场景下是值得纳入的高 ROI 路线；在其他场景下不应优先纳入&quot;. This provides a concrete recommendation framework, though it&#x27;s somewhat hedged due to missing project context. Still, it does offer adopt/defer guidance based on scenarios, which qualifies as a concrete roadmap recommendation.
+
+Since item 1 (web findings combination) is not satisfied, the overall score is false.</pre></details></td></tr><tr><td>hybrid_rollout_001</td><td>hybrid_rollout</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">40/2</td><td class="num">23</td><td class="num">64.8s</td><td><div class="failed-checks">未过契约: ratio_passed</div><details><summary>裁判理由</summary><pre class="reason">The rubric requires: (1) combine project documents and recent web findings, (2) decide whether Self-RAG deserves a pilot, and (3) provide a staged rollout recommendation rather than a single yes-or-no sentence.
+
+Item 1: Combine project documents and recent web findings. The answer does reference project documents (Self-RAG and RAG papers with chunk evidence). However, it explicitly states that web search failed due to rate-limiting (&#x27;外部行业实践证据缺失&#x27;) and therefore no web findings were incorporated. The rubric asks for combining both project documents AND recent web findings. Since web findings are missing and the assistant acknowledged this, this item is not satisfied.
+
+Item 2: Decide whether Self-RAG deserves a pilot. The answer provides a clear decision: &#x27;建议：试点（Conditional Yes）&#x27;. Satisfied.
+
+Item 3: Provide a staged rollout recommendation rather than a single yes-or-no sentence. The answer provides Phase 0 through Phase 4 with detailed steps, go/no-go criteria, and a summary table. Satisfied.
+
+Since item 1 (combining project documents AND recent web findings) is not satisfied because web findings are absent, the overall score is false.</pre></details></td></tr><tr><td>hybrid_reject_001</td><td>hybrid_reject</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">21/2</td><td class="num">5</td><td class="num">23.5s</td><td><div class="failed-checks">未过契约: plan_passed</div><details><summary>裁判理由</summary><pre class="reason">Rubric items:
+1. Combine project documents and recent web findings: The assistant searched project documents via search_document and attempted web search twice, but both web searches failed due to rate limiting (429/403). The assistant explicitly notes this: &quot;尝试用 `search_web` 补充业界关于 Self-RAG 落地成本/延迟的反馈，但因上游服务限流（429/403）未拿到外部来源&quot;. So there are no actual web findings incorporated — only project documents. This item is not fully satisfied since web findings are absent, only attempted.
+2. Assess Self-RAG under strict complexity and latency constraints: The assistant clearly assesses complexity (multiple extra decoding steps per segment, critique tokens, parallel passage processing, custom training pipeline) and latency (extended token generation, ranking overhead). Satisfied with quotes like &quot;每段都要输出 critique token&quot; and &quot;复杂度比 Self-RAG 低得多&quot;.
+3. Be willing to recommend deferring adoption if the tradeoff is not favorable: The assistant explicitly recommends &quot;建议暂缓 Self-RAG&quot; and &quot;暂缓 Self-RAG&quot;. Satisfied.
+
+Overall, item 1 requires combining both project docs AND web findings. Since web searches failed and no web findings were actually retrieved or used, item 1 is not satisfied. Therefore the overall score is false.</pre></details></td></tr><tr><td>project_delegation_scaling_001</td><td>project_delegation_scaling</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">94/8</td><td class="num">23</td><td class="num">99.7s</td><td><div class="failed-checks">未过契约: parallel_delegation_passed, ratio_passed</div><details><summary>裁判理由</summary><pre class="reason">Rubric item (1): The answer must cover all eight project papers with one grounded summary each. The final answer lists: RAG, Self-RAG, Toolformer, ReAct, Reflexion, Chain of Thought, Self-Consistency, Tree of Thoughts — exactly 8 papers, each with a one-sentence core innovation summary. Item (1) is satisfied.
+
+Rubric item (2): Each summary must be backed by an evidence citation from that paper. Each bullet includes an inline `&lt;evidence&gt;` tag pointing to specific chunk ids of the corresponding paper (e.g., RAG → arxiv:2005.11401:chunk_11; Self-RAG → arxiv:2310.11511:chunk_503/508; Toolformer → arxiv:2302.04761:chunk_285/292; ReAct → arxiv:2210.03629:chunk_233/251; Reflexion → arxiv:2303.11366:chunk_371; Chain of Thought → arxiv:2201.11903:chunk_71/83; Self-Consistency → arxiv:2203.11171:chunk_144/145/149; Tree of Thoughts → arxiv:2305.10601:chunk_440/451/442). These match the papers discussed. Item (2) is satisfied.
+
+Rubric item (3): The relevance ranking must be justified by cited content rather than paper titles alone. The answer provides an explicit ranking rationale: &quot;是否以检索/外部知识/工具调用为核心机制&quot; → &quot;可与 RAG 直接组合使用&quot; → &quot;纯提示推理/采样策略&quot;. The subsequent group headers and ordering reflect this reasoning grounded in each paper&#x27;s cited content (e.g., RAG&#x27;s definition of parametric + non-parametric memory as the RAG framework itself, ReAct&#x27;s tool-interaction via Wikipedia API, Toolformer&#x27;s API calls, etc.). Item (3) is satisfied.
+
+All three items are satisfied.</pre></details></td></tr></tbody>
+</table>
+</div>
+</body>
+</html>

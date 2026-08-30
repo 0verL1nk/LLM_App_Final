@@ -1,6 +1,9 @@
 """Inject durable user follow-ups at safe tool-to-model boundaries."""
 
-from __future__ import annotations
+# NOTE: Do NOT add ``from __future__ import annotations`` here. Stringified
+# annotations make langchain_core misread the config parameter typing and
+# emit a UserWarning on every agent creation (same family as the ToolRuntime
+# injection crash documented in plan_tools.py).
 
 from collections.abc import Callable
 from typing import Any

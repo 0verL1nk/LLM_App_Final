@@ -6,6 +6,7 @@ import {
   agentEventSchema,
   documentSchema,
   documentConversionSchema,
+  evalRunSnapshotSchema,
   messageSchema,
   projectSchema,
   runCreatedSchema,
@@ -30,6 +31,8 @@ export const keys = {
   resumableRuns: (projectId: string, sessionId: string) => ["runs", projectId, sessionId, "resumable"] as const,
   researchArtifacts: (projectId: string, sessionId: string) => ["research-artifacts", projectId, sessionId] as const,
   settings: ["settings"] as const,
+  evalRuns: ["eval-runs"] as const,
+  evalRun: (uid: string) => ["eval-runs", uid] as const,
   skills: ["skills"] as const,
   sessionSuggestions: (projectId: string, sessionId: string, messageCount: number) =>
     ["session-suggestions", projectId, sessionId, messageCount] as const,
@@ -250,6 +253,37 @@ export function useSteeringInput(projectId: string, sessionId: string) {
         { role: "user", content: prompt },
       ])
       void client.invalidateQueries({ queryKey: keys.resumableRuns(projectId, sessionId) })
+    },
+  })
+}
+
+export function useEvalRuns() {
+  return useQuery({
+    queryKey: keys.evalRuns,
+    queryFn: () => api("/evals/task-completion/runs", evalRunSnapshotSchema.extend({ report: z.any().optional() }).array()),
+  })
+}
+
+export function useEvalRun(uid: string | null) {
+  return useQuery({
+    queryKey: keys.evalRun(uid ?? ""),
+    enabled: Boolean(uid),
+    refetchInterval: (query) => (query.state.data?.status === "running" ? 2000 : false),
+    queryFn: () => api(`/evals/task-completion/runs/${uid}`, evalRunSnapshotSchema),
+  })
+}
+
+export function useStartEvalRun() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { trials?: number }) =>
+      api("/evals/task-completion/start", evalRunSnapshotSchema, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (snapshot) => {
+      queryClient.setQueryData(keys.evalRun(snapshot.uid), snapshot)
+      void queryClient.invalidateQueries({ queryKey: keys.evalRuns })
     },
   })
 }

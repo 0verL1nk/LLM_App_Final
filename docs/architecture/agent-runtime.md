@@ -64,6 +64,33 @@ disagreements remain separate for Leader review. The merge is persisted as an
 `evidence_merge` research artifact and the inspector renders its claims, open
 questions, and unresolved conflicts from that API fact.
 
+### Task-completion eval runners
+
+Two runners share the same scoring pipeline and differ only in how the turn is produced:
+
+- `make eval-baseline` drives the **scenario runner** (scripted answers and synthetic
+  tool calls). It calibrates the judge and the scoring pipeline; it never measures
+  real model quality.
+- `make eval-live-smoke EVAL_LIMIT=0` drives the **live runner** (real model, real
+  retriever over the committed paper corpus, canonical `execute_turn_core` path).
+  `EVAL_LIMIT=0` selects every case; the default `1` is a single-case smoke.
+- Both reports carry `run_config` provenance (runner mode, agent/judge model,
+  web-search fallback flag, fixture path) so a committed baseline under
+  `docs/plans/baselines/` is interpretable without reading code.
+
+Turn-level delegation measurement: the live harness runs a bare leader turn without a
+durable run context, so `delegate_task` returns `durable_run_required`. Delegation
+contracts (`required_subagent_types`, `min_delegation_count`,
+`require_parallel_delegation`) therefore measure the leader's emitted behavior —
+whether it delegates, to which roles, and whether it fans out ≥2 `delegate_task`
+calls in a single assistant message. Subagent execution quality is run-level and out
+of scope for this harness.
+
+Case diagnostics carry result-layer (judge verdict), process-layer (contract
+checks), and efficiency-layer signals (`run_latency_ms`, `total_tool_calls`) per the
+four-layer agent-eval framing (result / process / efficiency / risk); the risk layer
+(source-injection guardrail cases) is a registered follow-up.
+
 ## Runtime state ownership
 
 - `update_plan` owns the only optional execution-plan snapshot: revision, goal and typed

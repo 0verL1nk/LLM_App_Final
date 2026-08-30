@@ -1,13 +1,11 @@
 import argparse
 import json
 import os
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from agent.adapters.llm import create_chat_model
-from agent.adapters.rag import create_project_evidence_retriever
 from agent.application.evals import (
     AgentEvalCase,
     build_trajectory_llm_as_judge,
@@ -15,10 +13,7 @@ from agent.application.evals import (
     run_agent_evals,
     select_eval_cases,
 )
-from agent.application.turn_engine import execute_turn_core
-from agent.profiles import paper_leader_profile
-from agent.prompts.paper_domain import build_external_research_prompt
-from agent.session_factory import AgentDependencies, AgentRuntimeOptions, create_agent_session
+from agent.application.evals.live_harness import LivePaperSageEvalRunner
 
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "papers" / "rag_agentic_reasoning"
 
@@ -73,89 +68,6 @@ def _load_project_documents(max_chars_per_doc: int = 30000) -> list[dict[str, st
     return docs
 
 
-def _normalized_document_access(case: AgentEvalCase) -> str:
-    raw_access = case.metadata.get("document_access", "scoped")
-    normalized = str(raw_access or "scoped").strip().lower()
-    return "none" if normalized == "none" else "scoped"
-
-
-def _normalized_document_scope(case: AgentEvalCase) -> list[str]:
-    raw_scope = case.metadata.get("document_scope")
-    if not isinstance(raw_scope, list):
-        return []
-    scope: list[str] = []
-    for item in raw_scope:
-        value = str(item or "").strip()
-        if value:
-            scope.append(value)
-    return scope
-
-
-def build_case_document_context(
-    case: AgentEvalCase,
-    documents: list[dict[str, str]],
-) -> dict[str, Any]:
-    access_mode = _normalized_document_access(case)
-    if access_mode == "none":
-        return {
-            "document_access": "none",
-            "documents": [],
-            "document_name": None,
-            "scope_summary": "当前会话不提供项目文档，仅允许外部检索。",
-            "search_document_fn": None,
-            "search_document_evidence_fn": None,
-        }
-
-    requested_scope = _normalized_document_scope(case)
-    documents_by_uid = {
-        str(item.get("doc_uid") or "").strip(): item
-        for item in documents
-        if isinstance(item, dict) and str(item.get("doc_uid") or "").strip()
-    }
-    if requested_scope:
-        missing = [doc_uid for doc_uid in requested_scope if doc_uid not in documents_by_uid]
-        if missing:
-            raise ValueError(
-                f"Eval case '{case.case_id}' requested unknown document_scope entries: {missing}"
-            )
-        scoped_documents = [documents_by_uid[doc_uid] for doc_uid in requested_scope]
-    else:
-        scoped_documents = list(documents)
-
-    retriever = create_project_evidence_retriever(
-        documents=scoped_documents,
-        project_uid=f"task-completion-live-smoke:{case.case_id}",
-    )
-
-    def _search_document(query: str) -> str:
-        payload = retriever(query)
-        evidences = payload.get("evidences") if isinstance(payload, dict) else []
-        if not isinstance(evidences, list):
-            return ""
-        return "\n".join(
-            str(item.get("text") or "")
-            for item in evidences
-            if isinstance(item, dict) and str(item.get("text") or "").strip()
-        )
-
-    doc_names = [str(item.get("doc_name") or item.get("doc_uid") or "").strip() for item in scoped_documents]
-    preview_names = [item for item in doc_names if item][:3]
-    preview = ", ".join(preview_names)
-    if len(doc_names) > 3:
-        preview = f"{preview} 等 {len(doc_names)} 篇文档"
-    scope_summary = preview or f"仅限项目内 {len(scoped_documents)} 篇文档"
-    document_name = scoped_documents[0]["doc_name"] if len(scoped_documents) == 1 else None
-
-    return {
-        "document_access": "scoped",
-        "documents": scoped_documents,
-        "document_name": document_name,
-        "scope_summary": scope_summary,
-        "search_document_fn": _search_document,
-        "search_document_evidence_fn": retriever,
-    }
-
-
 def _build_live_llm() -> Any:
     api_key = str(os.getenv("OPENAI_API_KEY") or "").strip()
     model_name = str(os.getenv("OPENAI_MODEL_NAME") or "").strip()
@@ -177,45 +89,6 @@ def _build_live_llm() -> Any:
         base_url=base_url,
         temperature=0.0,
     )
-
-
-@dataclass(frozen=True)
-class LivePaperSageEvalRunner:
-    llm: Any
-    documents: list[dict[str, str]]
-    project_name: str
-
-    def __call__(self, case: AgentEvalCase) -> dict[str, Any]:
-        context = build_case_document_context(case, self.documents)
-        document_access = str(context["document_access"])
-        system_prompt = None
-        if document_access == "none":
-            system_prompt = build_external_research_prompt(
-                project_name=self.project_name,
-                scope_summary=str(context["scope_summary"]),
-            )
-        session = create_agent_session(
-            profile=paper_leader_profile,
-            deps=AgentDependencies(
-                search_document_fn=context["search_document_fn"],
-                search_document_evidence_fn=context["search_document_evidence_fn"],
-                document_access=document_access,
-            ),
-            options=AgentRuntimeOptions(
-                llm=self.llm,
-                project_name=self.project_name,
-                scope_summary=str(context["scope_summary"]),
-                document_name=context["document_name"],
-                system_prompt=system_prompt,
-            ),
-        )
-        return execute_turn_core(
-            prompt=case.prompt,
-            leader_agent=session.agent,
-            leader_runtime_config=session.runtime_config,
-            search_document_evidence_fn=context["search_document_evidence_fn"],
-            leader_tool_specs=session.tool_specs,
-        )
 
 
 def _default_output_path() -> Path:
@@ -249,12 +122,70 @@ def main() -> int:
     parser.add_argument(
         "--limit",
         type=int,
+        default=0,
+        help="Optional max number of cases to run after filtering. 0 (default) runs all selected cases.",
+    )
+    parser.add_argument(
+        "--repeat",
+        type=int,
         default=1,
-        help="Optional max number of cases to run after filtering. Defaults to 1.",
+        help="Trials per case; >1 enables pass^k gating (a case passes only if all trials pass).",
+    )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Concurrent cases; results stay in fixture order.",
+    )
+    parser.add_argument(
+        "--web-fixture",
+        default="",
+        help="Web fixture name: replay mode without --record-web, capture target with it.",
+    )
+    parser.add_argument(
+        "--record-web",
+        action="store_true",
+        help="Record live web results into --web-fixture (default name 'v1') instead of replaying.",
+    )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="With --record-web: discard existing entries and re-capture.",
+    )
+    parser.add_argument(
+        "--dump-trajectories",
+        default="",
+        help="Write per-case turn results to this JSONL for later offline judging.",
+    )
+    parser.add_argument(
+        "--judge-trajectories",
+        default="",
+        help="Offline mode: judge a dumped trajectory JSONL instead of running the agent.",
+    )
+    parser.add_argument(
+        "--judge-model",
+        default="",
+        help="Optional judge model override; defaults to OPENAI_MODEL_NAME (same as agent).",
+    )
+    parser.add_argument(
+        "--judge-base-url",
+        default="",
+        help="Optional judge base URL override; defaults to OPENAI_BASE_URL.",
     )
     args = parser.parse_args()
 
     _load_env_file(Path(args.env_file))
+
+    fixture_name = args.web_fixture.strip() or ("v1" if args.record_web else "")
+    web_fixture_checksum = ""
+    if args.record_web:
+        from agent.application.evals import web_fixture
+
+        web_fixture.activate_record(fixture_name, refresh=args.refresh)
+    elif fixture_name:
+        from agent.application.evals import web_fixture
+
+        web_fixture_checksum = web_fixture.activate_replay(fixture_name)
 
     fixture_path = Path(args.fixture)
     output_path = Path(args.output) if args.output else _default_output_path()
@@ -269,22 +200,252 @@ def main() -> int:
     if not cases:
         raise ValueError("No eval cases selected for live smoke run.")
 
+    judge_model_name = args.judge_model.strip() or str(os.getenv("OPENAI_MODEL_NAME") or "")
+    judge_base_url = args.judge_base_url.strip() or str(os.getenv("OPENAI_BASE_URL") or "")
+
+    if args.judge_trajectories:
+        # Offline judging (two-stage eval): reuse dumped turn results, only
+        # the judge runs - no agent execution, no document corpus needed.
+        with open(args.judge_trajectories, encoding="utf-8") as handle:
+            trajectories = {
+                row["case_id"]: row["turn_result"]
+                for row in (json.loads(line) for line in handle if line.strip())
+            }
+        cases = [case for case in cases if case.case_id in trajectories]
+        judge_llm = create_chat_model(
+            api_key=str(os.getenv("OPENAI_API_KEY") or ""),
+            model_name=judge_model_name,
+            base_url=judge_base_url or None,
+            temperature=0.0,
+        )
+        judge = build_trajectory_llm_as_judge(model=judge_llm)
+
+        def _offline_runner(case: Any) -> dict[str, Any]:
+            return trajectories[case.case_id]
+
+        report = run_agent_evals(
+            cases,
+            runner=_offline_runner,
+            judge=judge,
+            fixture_path=str(fixture_path),
+            run_config={
+                "runner_mode": "offline_judge",
+                "judge_model": judge_model_name,
+                "trajectories": args.judge_trajectories,
+            },
+        )
+        output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"offline judge: {report['completed_cases']}/{report['total_cases']} | report: {output_path}")
+        return 0
+
     documents = _load_project_documents()
     llm = _build_live_llm()
-    judge = build_trajectory_llm_as_judge(model=llm)
+    judge_llm = (
+        llm
+        if judge_model_name == str(os.getenv("OPENAI_MODEL_NAME") or "")
+        and not args.judge_base_url.strip()
+        else create_chat_model(
+            api_key=str(os.getenv("OPENAI_API_KEY") or ""),
+            model_name=judge_model_name,
+            base_url=judge_base_url or None,
+            temperature=0.0,
+        )
+    )
+    judge = build_trajectory_llm_as_judge(model=judge_llm)
+    activity_counters: dict[str, dict[str, int]] = {}
+
+    def _on_activity(case_id: str, event: dict) -> None:
+        performative = str(event.get("performative") or "")
+        if performative not in {"tool_call", "tool_result"}:
+            return
+        counters = activity_counters.setdefault(case_id, {"tool_calls": 0, "tool_results": 0})
+        if performative == "tool_call":
+            counters["tool_calls"] += 1
+        else:
+            counters["tool_results"] += 1
+        for item in progress_state["cases"]:
+            if item["case_id"] == case_id:
+                item["activity"] = {
+                    **counters,
+                    "last": performative,
+                    "updated_at": datetime.now(UTC).isoformat(),
+                }
+        _flush_progress()
+
     runner = LivePaperSageEvalRunner(
         llm=llm,
         documents=documents,
         project_name="Task Completion Live Smoke",
+        on_activity=_on_activity,
     )
+
+    # Progress bridge: CLI runs write a snapshot beside the report so the
+    # dev evals page can display them live (the in-app registry only knows
+    # about runs started via the API service).
+    progress_path = output_path.with_suffix(".progress.json")
+    progress_state: dict[str, Any] = {
+        "uid": output_path.stem,
+        "status": "running",
+        "fixture_path": str(fixture_path),
+        "trials": max(1, int(args.repeat)),
+        "started_at": datetime.now(UTC).isoformat(),
+        "finished_at": None,
+        "total_cases": len(cases),
+        "finished_cases": 0,
+        "completed_cases": 0,
+        "case_ids": [case.case_id for case in cases],
+        "cases": [
+            {"case_id": case.case_id, "category": case.category, "status": "pending",
+             "started_at": None, "finished_at": None, "summary": {}}
+            for case in cases
+        ],
+        "report": None,
+        "artifact_path": str(output_path),
+        "error": None,
+    }
+
+    def _flush_progress() -> None:
+        progress_path.write_text(
+            json.dumps(progress_state, ensure_ascii=False), encoding="utf-8"
+        )
+
+    def _on_progress_start(case_id: str) -> None:
+        for item in progress_state["cases"]:
+            if item["case_id"] == case_id:
+                item["status"] = "running"
+                item["started_at"] = datetime.now(UTC).isoformat()
+        _flush_progress()
+
+    def _on_progress_result(case_id: str, result: dict[str, Any]) -> None:
+        summary = {
+            key: result.get("process_checks", {}).get(key)
+            for key in ("delegation_count", "max_delegations_per_message")
+        }
+        coverage = result.get("evidence_coverage") or {}
+        diagnostics = result.get("diagnostics") or {}
+        summary.update(
+            {
+                "completed": bool(result.get("completed")),
+                "final_success": bool(result.get("final_success")),
+                "process_success": bool(result.get("process_success")),
+                "evidence_count": coverage.get("count"),
+                "evidence_required": coverage.get("required_count"),
+                "run_latency_ms": diagnostics.get("run_latency_ms"),
+                "total_tool_calls": diagnostics.get("total_tool_calls"),
+                "error_type": diagnostics.get("error_type"),
+                "failure_reason": (result.get("feedback") or {}).get("failure_reason"),
+            }
+        )
+        trials_info = result.get("trials")
+        if trials_info:
+            summary["trials"] = trials_info
+        for item in progress_state["cases"]:
+            if item["case_id"] == case_id:
+                item["status"] = (
+                    "errored" if summary.get("error_type")
+                    else ("passed" if summary.get("completed") else "failed")
+                )
+                item["finished_at"] = datetime.now(UTC).isoformat()
+                item["summary"] = summary
+        progress_state["finished_cases"] = sum(
+            1 for item in progress_state["cases"]
+            if item["status"] in {"passed", "failed", "errored"}
+        )
+        progress_state["completed_cases"] = sum(
+            1 for item in progress_state["cases"] if item["status"] == "passed"
+        )
+        _flush_progress()
+
+    _flush_progress()
+
+    trajectory_rows: list[dict[str, Any]] = []
+    live_runner = runner
+
+    def _serialize_turn_result(result: Any) -> dict[str, Any]:
+        """JSON-safe turn result: messages and evidence items become plain dicts."""
+        serialized: dict[str, Any] = {}
+        for key, value in dict(result).items():
+            if isinstance(value, (str, int, float, bool)) or value is None:
+                serialized[key] = value
+            elif key == "output_messages":
+                serialized[key] = [
+                    {
+                        "role": str(getattr(m, "type", "assistant")),
+                        "content": str(getattr(m, "content", "") or ""),
+                        "tool_calls": [
+                            {
+                                "name": str(call.get("name") or ""),
+                                "args": call.get("args") or {},
+                            }
+                            for call in (getattr(m, "tool_calls", None) or [])
+                        ],
+                    }
+                    for m in value
+                ]
+            elif isinstance(value, list):
+                serialized[key] = [
+                    item.model_dump() if hasattr(item, "model_dump")
+                    else (dict(item) if isinstance(item, dict) else str(item))
+                    for item in value
+                ]
+            elif isinstance(value, dict):
+                serialized[key] = value
+            else:
+                serialized[key] = str(value)
+        return serialized
+
+    def _runner_with_trajectory_dump(case: AgentEvalCase) -> dict[str, Any]:
+        result = live_runner(case)
+        trajectory_rows.append(
+            {"case_id": case.case_id, "turn_result": _serialize_turn_result(result)}
+        )
+        return result
 
     report = run_agent_evals(
         cases,
-        runner=runner,
+        runner=_runner_with_trajectory_dump if args.dump_trajectories else runner,
         judge=judge,
         fixture_path=str(fixture_path),
+        trials=max(1, int(args.repeat)),
+        parallel=max(1, int(args.parallel)),
+        on_case_start=_on_progress_start,
+        on_case_result=_on_progress_result,
+        run_config={
+            "runner_mode": "live_model",
+            "agent_model": str(os.getenv("OPENAI_MODEL_NAME") or ""),
+            "judge_model": judge_model_name,
+            "web_fixture": (
+                {"name": fixture_name, "mode": "record", "refresh": args.refresh}
+                if args.record_web
+                else ({"name": fixture_name, "checksum": web_fixture_checksum} if fixture_name else None)
+            ),
+            "web_search_fallback": bool(os.getenv("AGENT_WEB_ENABLE_DDG_FALLBACK")),
+            "document_corpus": str(FIXTURE_DIR),
+            "delegation_note": (
+                "turn-level harness: delegate_task returns durable_run_required; "
+                "delegation contracts measure leader behavior only"
+            ),
+        },
     )
     output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    if args.dump_trajectories:
+        Path(args.dump_trajectories).write_text(
+            "\n".join(json.dumps(row, ensure_ascii=False) for row in trajectory_rows)
+            + ("\n" if trajectory_rows else ""),
+            encoding="utf-8",
+        )
+        print(f"trajectories: {args.dump_trajectories} ({len(trajectory_rows)} cases)")
+
+    progress_state["status"] = "completed"
+    progress_state["finished_at"] = datetime.now(UTC).isoformat()
+    progress_state["report"] = {
+        "completion_rate": report.get("completion_rate"),
+        "final_success_rate": report.get("final_success_rate"),
+        "process_success_rate": report.get("process_success_rate"),
+        "evidence_coverage_rate": report.get("evidence_coverage_rate"),
+    }
+    _flush_progress()
 
     print(f"fixture: {fixture_path}")
     print(f"cases: {report['total_cases']}")

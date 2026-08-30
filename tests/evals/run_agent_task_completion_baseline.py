@@ -6,6 +6,12 @@ from pathlib import Path
 from typing import Any
 
 from langchain_core.messages import AIMessage, ToolMessage
+from scenario_baseline_payloads import (
+    _answer_for_case,
+    _search_document_evidence,
+    _tool_calls_for_case,
+    _web_search_payload,
+)
 
 from agent.adapters.llm import create_chat_model
 from agent.application.evals import (
@@ -72,34 +78,49 @@ class _ScenarioAgent:
             )
 
         answer = _answer_for_case(self._case)
-        tool_calls = _tool_calls_for_case(self._case)
         messages: list[Any] = []
-        delegated_roles = self._case.process_contract.required_subagent_types
+        search_tool_calls = _tool_calls_for_case(self._case)
+        if search_tool_calls:
+            messages.append(AIMessage(content="", tool_calls=search_tool_calls))
+            evidence_payload = _search_document_evidence(self._case)
+            messages.extend(
+                ToolMessage(
+                    content=(
+                        json.dumps(evidence_payload, ensure_ascii=False)
+                        if call["name"] in {"search_document", "read_document"}
+                        else _web_search_payload(self._case)
+                    ),
+                    tool_call_id=call["id"],
+                    name=call["name"],
+                )
+                for call in search_tool_calls
+            )
+        delegated_roles = list(self._case.process_contract.required_subagent_types)
         if delegated_roles:
+            target_count = max(len(delegated_roles), self._case.process_contract.min_delegation_count)
+            call_roles = [delegated_roles[index % len(delegated_roles)] for index in range(target_count)]
             task_calls = [
                 {
                     "id": f"task-{index}",
-                    "name": "task",
+                    "name": "delegate_task",
                     "args": {
-                        "subagent_type": role,
+                        "role": role,
                         "description": f"完成 {role} 子任务",
                     },
                     "type": "tool_call",
                 }
-                for index, role in enumerate(delegated_roles, start=1)
+                for index, role in enumerate(call_roles, start=1)
             ]
             messages.append(AIMessage(content="", tool_calls=task_calls))
             messages.extend(
                 ToolMessage(
                     content=f"{role} 已完成，并返回可核验结果",
                     tool_call_id=f"task-{index}",
-                    name="task",
+                    name="delegate_task",
                 )
-                for index, role in enumerate(delegated_roles, start=1)
+                for index, role in enumerate(call_roles, start=1)
             )
-            messages.append(AIMessage(content=answer))
-        else:
-            messages.append(AIMessage(content=answer, tool_calls=tool_calls))
+        messages.append(AIMessage(content=answer))
         result: dict[str, Any] = {
             "messages": messages,
         }
@@ -110,112 +131,6 @@ class _ScenarioAgent:
                 "completed_step_ids": ["step_1"],
             }
         return result
-
-
-def _answer_for_case(case: AgentEvalCase) -> str:
-    answers = {
-        "project_rag_fact_001": (
-            "基于当前项目文档，RAG 的核心价值是先检索再生成，用外部证据降低幻觉并提升回答相关性。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-        ),
-        "project_compare_001": (
-            "结合当前项目文档，RAG 实现更直接、接入成本更低；Self-RAG 增加了自反思与纠错链路，但工程复杂度更高。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-            "<evidence>chunk-2|p2|o0-10</evidence>"
-            "如果当前阶段优先追求稳定落地，建议先以 RAG 为主，再把 Self-RAG 作为后续试点方向。"
-        ),
-        "project_scope_boundary_001": (
-            "只看当前项目文档，我不会引用外部最新资料。现有材料已经说明 Self-RAG 值得关注，但还不足以直接支持现在就正式引入主链路。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-        ),
-        "project_gap_001": (
-            "如果只看当前项目文档，现阶段最大的缺口是缺少针对本项目真实延迟、复杂度和运维成本的落地评估。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-            "因此证据还不足以做完整落地决策，下一步应先补一个面向本项目的试点评估方案。"
-        ),
-        "project_compare_constraints_001": (
-            "结合当前项目文档，在更看重稳定交付和较低工程复杂度的前提下，RAG 仍然应该优先于 Self-RAG。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-            "<evidence>chunk-2|p2|o0-10</evidence>"
-            "原因是 Self-RAG 的自反思链路会带来额外编排和调试成本，而当前约束更偏向尽快稳定落地。"
-        ),
-        "web_latest_001": (
-            "基于近年的公开资料，Self-RAG 的最新进展集中在更强的可控评估链路与更重的系统成本两点。"
-            "结论一：关注点正在从论文指标转向真实系统集成。"
-            "结论二：是否值得引入，越来越取决于延迟、成本和观测能力。"
-        ),
-        "web_recency_001": (
-            "结合近年的公开进展，我的判断是研究关注点已经明显从单纯论文指标转向系统落地，但不是完全替代。"
-            "依据在于近期讨论更频繁地强调集成成本、延迟预算和可观测性，而不只是最终效果分数。"
-        ),
-        "web_tradeoff_001": (
-            "近年的公开资料显示，Self-RAG 的主要收益是能增强回答时的自校验和纠错能力；主要代价是系统链路更长、延迟和工程复杂度更高。"
-            "这意味着它的价值和成本必须作为一组明确 tradeoff 来看。"
-        ),
-        "hybrid_research_001": (
-            "结合当前项目文档与近期公开资料，Self-RAG 有机会提升答案自校验能力，但也会显著增加编排复杂度与延迟预算。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-            "<evidence>chunk-2|p2|o0-10</evidence>"
-            "近期公开经验同样强调真实系统中的成本、观测和稳定性约束，因此更适合先做小范围 pilot，再决定是否纳入正式 roadmap。"
-        ),
-        "hybrid_rollout_001": (
-            "结合项目文档和近期公开资料，我建议 Self-RAG 先做试点而不是立即全面纳入。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-            "<evidence>chunk-2|p2|o0-10</evidence>"
-            "近期公开经验显示它的收益往往伴随更高的系统成本，因此分阶段 rollout 应先做离线评估和小流量实验，再观察收益、延迟与成本，最后再决定是否进入正式路线图。"
-        ),
-        "hybrid_guardrail_001": (
-            "如果项目要试点 Self-RAG，至少要先补齐回答质量回归评估、延迟与成本观测，以及失败案例分析这几类 guardrail。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-            "<evidence>chunk-2|p2|o0-10</evidence>"
-            "结合近期公开资料，社区也越来越强调 observability、成本监控和失败样本复盘，否则更复杂的执行链路很难稳定落地，因此这些 guardrail 必须先补齐。"
-        ),
-        "hybrid_reject_001": (
-            "如果团队当前只能接受很低的复杂度和延迟开销，我倾向于建议暂缓 Self-RAG。"
-            "<evidence>chunk-1|p1|o0-10</evidence>"
-            "<evidence>chunk-2|p2|o0-10</evidence>"
-            "这是因为项目内约束和近期公开经验都表明，它的收益通常要用额外的系统复杂度、时延预算和观测建设来交换，在当前条件下 tradeoff 并不划算。"
-        ),
-    }
-    return answers.get(
-        case.case_id,
-        "结合当前材料，建议先做小范围验证，再决定是否扩大投入。",
-    )
-
-
-def _tool_calls_for_case(case: AgentEvalCase) -> list[dict[str, Any]]:
-    tool_calls: list[dict[str, Any]] = []
-    for tool_name in case.process_contract.required_tool_names:
-        if tool_name == "task":
-            continue
-        tool_calls.append({"name": tool_name, "args": {"query": case.prompt}})
-    if not tool_calls and case.process_contract.requires_evidence:
-        tool_calls.append({"name": "search_document", "args": {"query": case.prompt}})
-    return tool_calls
-
-
-def _search_document_evidence(case: AgentEvalCase) -> dict[str, Any]:
-    if case.case_id in {
-        "project_rag_fact_001",
-        "project_scope_boundary_001",
-        "project_gap_001",
-    }:
-        return {"evidences": [{"chunk_id": "chunk-1", "text": "证据", "page_no": 1}]}
-    if case.case_id in {
-        "project_compare_001",
-        "project_compare_constraints_001",
-        "hybrid_research_001",
-        "hybrid_rollout_001",
-        "hybrid_guardrail_001",
-        "hybrid_reject_001",
-    }:
-        return {
-            "evidences": [
-                {"chunk_id": "chunk-1", "text": "证据1", "page_no": 1},
-                {"chunk_id": "chunk-2", "text": "证据2", "page_no": 2},
-            ]
-        }
-    return {"evidences": []}
 
 
 def _build_runner(case: AgentEvalCase) -> ExecuteTurnEvalRunner:
@@ -311,6 +226,13 @@ def main() -> int:
         runner=lambda case: _build_runner(case)(case),
         judge=judge,
         fixture_path=str(fixture_path),
+        run_config={
+            "runner_mode": "scenario_calibration",
+            "agent_runner": "ScenarioAgent(scripted answers)",
+            "judge_model": judge_model,
+            "judge_base_url": judge_base_url or None,
+            "web_search_fallback": bool(os.getenv("AGENT_WEB_ENABLE_DDG_FALLBACK")),
+        },
     )
     output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 

@@ -20,6 +20,7 @@ from ..adapters.sqlite.project_repository import (
     list_project_sessions,
     save_project_session_messages,
 )
+from ..adapters.sqlite.rag_ingestion_repository import list_ready_project_documents
 from ..adapters.user_settings import (
     read_api_key_for_user,
     read_base_url_for_user,
@@ -56,6 +57,17 @@ from .steering_inputs import (
 from .workspace import require_project
 
 
+def _require_session(*, project_uid: str, session_uid: str, user_uuid: str) -> dict[str, Any]:
+    """Validate the project exists and contains the given session; return the project."""
+    project = require_project(project_uid=project_uid, user_uuid=user_uuid)
+    if not any(
+        str(item.get("session_uid") or "") == session_uid
+        for item in list_project_sessions(project_uid=project_uid, uuid=user_uuid)
+    ):
+        raise LookupError("Session not found")
+    return project
+
+
 @dataclass
 class _RuntimeEntry:
     session: AgentSession
@@ -76,17 +88,9 @@ class ResearchWorkspaceService:
         self, *, project_uid: str, session_uid: str, user_uuid: str, resolved_mode: str = "agent_teams"
     ) -> _RuntimeEntry:
         key = (user_uuid, project_uid, session_uid, resolved_mode)
-        project = require_project(project_uid=project_uid, user_uuid=user_uuid)
-        if not any(
-            str(item.get("session_uid") or "") == session_uid
-            for item in list_project_sessions(project_uid=project_uid, uuid=user_uuid)
-        ):
-            raise LookupError("Session not found")
-        documents = list_project_files(
-            project_uid=project_uid,
-            uuid=user_uuid,
-            active_only=True,
-        )
+        project = _require_session(
+            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid)
+        documents = list_project_files(project_uid=project_uid, uuid=user_uuid, active_only=True)
         scope = tuple(sorted(str(item.get("uid") or "") for item in documents))
         with self._guard:
             existing = self._entries.get(key)
@@ -152,13 +156,12 @@ class ResearchWorkspaceService:
         normalized_prompt = prompt.strip()
         if not normalized_prompt:
             raise ValueError("Prompt is required")
-        require_project(project_uid=project_uid, user_uuid=user_uuid)
-        if not any(
-            str(item.get("session_uid") or "") == session_uid
-            for item in list_project_sessions(project_uid=project_uid, uuid=user_uuid)
-        ):
-            raise LookupError("Session not found")
-        route = resolve_execution_route(prompt=normalized_prompt, requested_mode=execution_mode)
+        _require_session(
+            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid)
+        ready_count = len(list_ready_project_documents(project_uid=project_uid, uuid=user_uuid))
+        route = resolve_execution_route(
+            prompt=normalized_prompt, requested_mode=execution_mode, document_count=ready_count
+        )
         run, leader_task, created = create_leader_run(
             project_uid=project_uid,
             session_uid=session_uid,
@@ -368,12 +371,8 @@ class ResearchWorkspaceService:
         client_request_id: str,
     ) -> dict[str, Any]:
         """Persist a running-turn follow-up after validating workspace ownership."""
-        require_project(project_uid=project_uid, user_uuid=user_uuid)
-        if not any(
-            str(item.get("session_uid") or "") == session_uid
-            for item in list_project_sessions(project_uid=project_uid, uuid=user_uuid)
-        ):
-            raise LookupError("Session not found")
+        _require_session(
+            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid)
         input_item, _created = queue_steering_input(
             project_uid=project_uid,
             session_uid=session_uid,

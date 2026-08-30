@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live 收官基线 · 契约校准后 · 2026-08-23</title>
+<style>
+:root { color-scheme: light; }
+body {
+  margin: 0; padding: 32px 24px 64px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f9f9f7; color: #0b0b0b;
+}
+body.dark { color-scheme: dark; background: #0d0d0d; color: #ffffff; }
+.wrap { max-width: 1080px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 15px; margin: 32px 0 12px; color: #52514e; font-weight: 600; }
+body.dark h2 { color: #c3c2b7; }
+.meta { font-size: 13px; color: #898781; margin-bottom: 8px; }
+.meta code { background: rgba(11,11,11,0.05); padding: 1px 5px; border-radius: 4px; }
+body.dark .meta code { background: rgba(255,255,255,0.08); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tile {
+  background: #fcfcfb; border: 1px solid rgba(11,11,11,0.10); border-radius: 10px;
+  padding: 14px 16px;
+}
+body.dark .tile { background: #1a1a19; border-color: rgba(255,255,255,0.10); }
+.tile .label { font-size: 12px; color: #898781; margin-bottom: 6px; }
+.tile .value { font-size: 26px; font-weight: 650; }
+.tile .sub { font-size: 12px; color: #898781; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; font-weight: 600; color: #898781; padding: 8px 10px;
+  border-bottom: 1px solid #e1e0d9; white-space: nowrap;
+}
+body.dark th { border-bottom-color: #2c2c2a; }
+td { padding: 8px 10px; border-bottom: 1px solid #e1e0d9; vertical-align: top; }
+body.dark td { border-bottom-color: #2c2c2a; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12px;
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}
+.badge.good { color: #006300; background: rgba(12,163,12,0.12); }
+.badge.critical { color: #d03b3b; background: rgba(208,59,59,0.10); }
+body.dark .badge.good { color: #0ca30c; }
+body.dark .badge.critical { color: #e66767; }
+.barcell { display: flex; align-items: center; gap: 8px; min-width: 180px; }
+.bartrack { flex: 1; height: 8px; background: rgba(11,11,11,0.06); border-radius: 4px; }
+body.dark .bartrack { background: rgba(255,255,255,0.08); }
+.bar {
+  height: 8px; border-radius: 0 4px 4px 0; background: #2a78d6; position: relative;
+}
+body.dark .bar { background: #3987e5; }
+.barlabel { font-size: 12px; color: #52514e; white-space: nowrap; font-variant-numeric: tabular-nums; }
+body.dark .barlabel { color: #c3c2b7; }
+details { margin-top: 2px; }
+details summary { cursor: pointer; color: #2a78d6; font-size: 12px; }
+body.dark details summary { color: #3987e5; }
+pre.reason {
+  white-space: pre-wrap; font-size: 12px; line-height: 1.55; margin: 8px 0 0;
+  padding: 10px 12px; background: rgba(11,11,11,0.04); border-radius: 8px;
+  color: #52514e; font-family: inherit;
+}
+body.dark pre.reason { background: rgba(255,255,255,0.05); color: #c3c2b7; }
+.failed-checks { font-size: 12px; color: #d03b3b; margin-top: 2px; }
+body.dark .failed-checks { color: #e66767; }
+@media (prefers-color-scheme: dark) {
+  body:not(.light) { color-scheme: dark; background: #0d0d0d; color: #ffffff; }
+  body:not(.light) h2 { color: #c3c2b7; }
+  body:not(.light) .tile { background: #1a1a19; border-color: rgba(255,255,255,0.10); }
+  body:not(.light) th { border-bottom-color: #2c2c2a; }
+  body:not(.light) td { border-bottom-color: #2c2c2a; }
+  body:not(.light) .badge.good { color: #0ca30c; }
+  body:not(.light) .badge.critical { color: #e66767; }
+  body:not(.light) .bartrack { background: rgba(255,255,255,0.08); }
+  body:not(.light) .bar { background: #3987e5; }
+  body:not(.light) .barlabel { color: #c3c2b7; }
+  body:not(.light) details summary { color: #3987e5; }
+  body:not(.light) pre.reason { background: rgba(255,255,255,0.05); color: #c3c2b7; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Live 收官基线 · 契约校准后 · 2026-08-23</h1>
+<div class="meta">生成时间: 2026-08-23T04:49:49.861096+00:00</div>
+<div class="meta">运行溯源: runner_mode=<code>live_model</code> · agent_model=<code>MiniMax-M3</code> · judge_model=<code>MiniMax-M3</code> · web_search_fallback=<code>True</code> · document_corpus=<code>E:\Web-leaning\PaperSage\.claude\worktrees\nice-lamarr-1ba065\tests\fixtures\papers\rag_agentic_reasoning</code> · delegation_note=<code>turn-level harness: delegate_task returns durable_run_required; delegation contracts measure leader behavior only</code></div>
+<div class="meta">fixture: <code>tests\evals\fixtures\agent_task_eval_set_v1.jsonl</code> · 用例 19 条 · 完成 8 条</div>
+
+<h2>聚合指标</h2>
+<div class="tiles">
+<div class="tile"><div class="label">完成率 (结果+过程)</div><div class="value">42.1%</div><div class="sub">8/19 用例</div></div>
+<div class="tile"><div class="label">结果层 · 裁判通过率</div><div class="value">57.9%</div></div>
+<div class="tile"><div class="label">过程层 · 契约通过率</div><div class="value">68.4%</div></div>
+<div class="tile"><div class="label">证据覆盖通过率</div><div class="value">100.0%</div></div>
+<div class="tile"><div class="label">计划执行完成度均值</div><div class="value">72.1%</div></div>
+<div class="tile"><div class="label">效率层 · 平均时延</div><div class="value">55.7s</div></div>
+<div class="tile"><div class="label">效率层 · 平均工具调用</div><div class="value">9.8</div><div class="sub">次/用例</div></div>
+</div>
+
+<h2>分类通过情况</h2>
+<table>
+<thead><tr><th>分类</th><th class="num">用例数</th><th>完成比例</th><th>未过用例</th></tr></thead>
+<tbody><tr><td>hybrid_guardrail</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="hybrid_guardrail: 0/1 通过; 未过: hybrid_guardrail_001"></div></div><span class="barlabel">0/1</span></div></td><td>hybrid_guardrail_001</td></tr><tr><td>hybrid_reject</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="hybrid_reject: 0/1 通过; 未过: hybrid_reject_001"></div></div><span class="barlabel">0/1</span></div></td><td>hybrid_reject_001</td></tr><tr><td>hybrid_research</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="hybrid_research: 0/1 通过; 未过: hybrid_research_001"></div></div><span class="barlabel">0/1</span></div></td><td>hybrid_research_001</td></tr><tr><td>hybrid_rollout</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="hybrid_rollout: 0/1 通过; 未过: hybrid_rollout_001"></div></div><span class="barlabel">0/1</span></div></td><td>hybrid_rollout_001</td></tr><tr><td>project_abstain</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:100.0%" title="project_abstain: 1/1 通过"></div></div><span class="barlabel">1/1</span></div></td><td>-</td></tr><tr><td>project_compare</td><td class="num">2</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="project_compare: 0/2 通过; 未过: project_compare_001, project_compare_constraints_001"></div></div><span class="barlabel">0/2</span></div></td><td>project_compare_001, project_compare_constraints_001</td></tr><tr><td>project_contradiction</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:100.0%" title="project_contradiction: 1/1 通过"></div></div><span class="barlabel">1/1</span></div></td><td>-</td></tr><tr><td>project_delegation_scaling</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="project_delegation_scaling: 0/1 通过; 未过: project_delegation_scaling_001"></div></div><span class="barlabel">0/1</span></div></td><td>project_delegation_scaling_001</td></tr><tr><td>project_false_premise</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:100.0%" title="project_false_premise: 1/1 通过"></div></div><span class="barlabel">1/1</span></div></td><td>-</td></tr><tr><td>project_gap</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:100.0%" title="project_gap: 1/1 通过"></div></div><span class="barlabel">1/1</span></div></td><td>-</td></tr><tr><td>project_rag</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:100.0%" title="project_rag: 1/1 通过"></div></div><span class="barlabel">1/1</span></div></td><td>-</td></tr><tr><td>project_scope_boundary</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:100.0%" title="project_scope_boundary: 1/1 通过"></div></div><span class="barlabel">1/1</span></div></td><td>-</td></tr><tr><td>routing_discrimination</td><td class="num">2</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:50.0%" title="routing_discrimination: 1/2 通过; 未过: routing_discrimination_web_001"></div></div><span class="barlabel">1/2</span></div></td><td>routing_discrimination_web_001</td></tr><tr><td>web_overturn</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="web_overturn: 0/1 通过; 未过: web_overturn_001"></div></div><span class="barlabel">0/1</span></div></td><td>web_overturn_001</td></tr><tr><td>web_research</td><td class="num">2</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:0.0%" title="web_research: 0/2 通过; 未过: web_latest_001, web_recency_001"></div></div><span class="barlabel">0/2</span></div></td><td>web_latest_001, web_recency_001</td></tr><tr><td>web_tradeoff</td><td class="num">1</td><td><div class="barcell"><div class="bartrack"><div class="bar" style="width:100.0%" title="web_tradeoff: 1/1 通过"></div></div><span class="barlabel">1/1</span></div></td><td>-</td></tr></tbody>
+</table>
+
+<h2>改进方向归因</h2>
+<div class="meta">architecture × 2 · prompt × 11 · retrieval/tooling × 1</div>
+
+<h2>逐用例明细</h2>
+<table>
+<thead><tr><th>用例</th><th>分类</th><th>结果层</th><th>过程层</th><th class="num">证据</th><th class="num">工具调用</th><th class="num">时延</th><th>裁判与契约</th></tr></thead>
+<tbody><tr><td>project_rag_fact_001</td><td>project_rag</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">11/1</td><td class="num">2</td><td class="num">12.5s</td><td><details><summary>裁判理由</summary><pre class="reason">The rubric requires three things: (1) stay within current project documents, (2) accurately summarize the RAG paper&#x27;s core conclusion, and (3) ground the answer in cited project evidence without inventing web updates.
+
+1. **Stay within current project documents**: The assistant explicitly searched the project documents using the search_document tool and built its answer entirely from retrieved chunks (chunk_0, chunk_1, chunk_2, chunk_4, chunk_6, chunk_9, chunk_12, chunk_15, chunk_17, chunk_27, chunk_28). No external web information was introduced. Satisfied.
+
+2. **Accurately summarize RAG paper&#x27;s core conclusion**: The answer covers the core paradigm (retriever + generator), the two variants (RAG-Sequence and RAG-Token), key experimental results across open-domain QA, MS-MARCO, Jeopardy generation, FEVER, and the key conclusion about non-parametric memory being hot-swappable to update world knowledge. Each claim is accompanied by evidence citations like &lt;evidence&gt;chunk_X|pY|oZ-W&lt;/evidence&gt;. The summary is accurate and comprehensive. Satisfied.
+
+3. **Ground the answer in cited project evidence without inventing web updates**: The answer includes explicit evidence tags pointing to specific chunks and offset ranges throughout the summary. There is no mention of any updates or developments outside the project documents. All factual claims (SOTA results, specific numbers like 11.8%, 42.7%, 70%, etc.) are tied back to retrieved chunks. Satisfied.
+
+All rubric items are satisfied.</pre></details></td></tr><tr><td>project_compare_001</td><td>project_compare</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">40/2</td><td class="num">13</td><td class="num">54.7s</td><td><div class="failed-checks">未过契约: parallel_delegation_passed, ratio_passed</div><details><summary>裁判理由</summary><pre class="reason">Rubric item 1: &quot;Answer should compare RAG and Self-RAG using current project documents&quot; — The final answer explicitly compares both papers across multiple dimensions (motivation, architecture, retrieval triggering, reflection, training, performance, limitations) and cites evidence from the project&#x27;s RAG (arxiv:2005.11401) and Self-RAG (arxiv:2310.11511) documents, e.g., &quot;RAG (2020)&quot; vs &quot;Self-RAG (2023)&quot; table and numerous &lt;evidence&gt;arxiv:2005.11401:... and &lt;evidence&gt;arxiv:2310.11511:... tags. Satisfied.
+
+Rubric item 2: &quot;explain at least one meaningful tradeoff&quot; — The answer explicitly discusses several meaningful tradeoffs: e.g., &quot;RAG...每查询必检索...不能识别&#x27;无需外部知识&#x27;的输入；不能对生成做自评&quot; vs &quot;Self-RAG...reflection tokens...让模型对每段输出自评&quot;; and the on-demand retrieval mechanism versus unconditional retrieval. The &quot;落地时的折中&quot; section explicitly frames a tradeoff between simplicity (RAG) and self-reflection/cost (Self-RAG). Satisfied.
+
+Rubric item 3: &quot;give a concrete recommendation for this project rather than a generic summary&quot; — The answer provides a concrete recommendation table with specific scenarios mapped to RAG or Self-RAG (e.g., &quot;需要&#x27;事实可追溯 + 高引文准确度&#x27;的长文本生成&quot; → Self-RAG; &quot;训练资源受限、要求 pipeline 简洁&quot; → RAG; &quot;强依赖&#x27;知识冷热切换&#x27;&quot; → RAG). It also gives a concrete migration path (&quot;先做 RAG 做底座...再额外训练一个轻量 critic + reflection token 适配&quot;). However, this is debatable because the &quot;project&quot; context is just a project_uid with two papers — there&#x27;s no business-specific info to tailor to. The recommendations are framed as scenario-based (&quot;如果...建议...&quot;) rather than specific to a described project. Still, this goes beyond a generic summary by providing actionable conditional recommendations and a migration path. I&#x27;ll consider this satisfied as the rubric requires &quot;concrete recommendation&quot; rather than project-specific (since the project is itself just a paper collection). The recommendations are concrete and actionable.
+
+All three rubric items are satisfied.</pre></details></td></tr><tr><td>project_scope_boundary_001</td><td>project_scope_boundary</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">10/1</td><td class="num">4</td><td class="num">18.6s</td><td><details><summary>裁判理由</summary><pre class="reason">Let me evaluate the rubric items:
+
+1. **Stay strictly within current project documents**: The assistant cites evidence from project documents (chunks from arXiv:2310.11511 paper stored in the project). All quoted text comes from document searches within the project. The answer stays within project materials.
+
+2. **Explicitly avoid relying on external latest information**: The assistant does not reference any external latest sources or information beyond the project documents. The conclusion is based solely on retrieved project documents.
+
+3. **State whether the current internal materials are sufficient to support adopting Self-RAG now**: The assistant explicitly states: &quot;项目内现有材料**支持**引入 Self-RAG&quot; and &quot;项目现有材料**已支持**做出引入 Self-RAG 的可行性结论&quot;. This is a clear statement about sufficiency.
+
+All three rubric items are satisfied.</pre></details></td></tr><tr><td>project_gap_001</td><td>project_gap</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">9/1</td><td class="num">7</td><td class="num">21.1s</td><td><details><summary>裁判理由</summary><pre class="reason">Rubric checklist:
+
+1. Identify at least one meaningful information gap in the current project documents.
+- The assistant identifies multiple meaningful gaps: &quot;量化指标缺失&quot; (quantitative metrics missing), &quot;推理成本与延迟完全缺失&quot; (inference cost/latency missing), &quot;检索器 / 检索语料未明确&quot; (retriever details unspecified), &quot;Critic 模型规模与训练细节&quot; missing, &quot;阈值 / 超参的推荐取值&quot; missing, &quot;失败案例与边界条件&quot; missing. These are clearly stated. Quote: &quot;关键缺口(落地评估必需但当前文档不足)&quot; followed by enumerated gaps. SATISFIED.
+
+2. State that the current evidence is incomplete for a full landing decision.
+- The conclusion explicitly states: &quot;当前文档对 Self-RAG ... 落地决策所需的量化证据(效果数字、推理成本、检索基础设施)显著不足。建议优先(P0)补齐实验数据表与检索器规格,再做上线可行性结论。&quot; This clearly says current evidence is insufficient for a landing decision. Quote: &quot;落地决策所需的量化证据(效果数字、推理成本、检索基础设施)显著不足&quot;. SATISFIED.
+
+3. Give a concrete next step to close the gap.
+- The assistant provides a priority-ordered action table with concrete next steps, e.g., &quot;🔴 P0 | 补充论文主实验表格的具体数值(各任务 acc / F1 / citation prec-rec)&quot; and &quot;🔴 P0 | 明确检索器类型、索引规模、语料来源与许可证&quot;. These are concrete next steps to close gaps. SATISFIED.
+
+All three rubric items are satisfied.</pre></details></td></tr><tr><td>project_compare_constraints_001</td><td>project_compare</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">14/2</td><td class="num">2</td><td class="num">16.5s</td><td><div class="failed-checks">未过契约: plan_passed</div><details><summary>裁判理由</summary><pre class="reason">Rubric item 1: Answer should use the current project documents to compare RAG and Self-RAG under the stated constraints of stable delivery and lower engineering complexity. The assistant cites multiple evidence tags from the project documents (arxiv:2005.11401 for RAG and arxiv:2310.11511 for Self-RAG), comparing engineering complexity components such as training overhead, inference steps, and integration effort, and ties the comparison to the stated constraints of stable delivery and lower engineering complexity. This is satisfied. Rubric item 2: Answer should make a clear recommendation rather than only listing differences. The answer explicitly states &#x27;结论：优先选 RAG&#x27; and reiterates &#x27;本季度优先 RAG，将 Self-RAG 列入下一季度路线图&#x27;, giving a clear recommendation. This is satisfied. Both items are satisfied.</pre></details></td></tr><tr><td>web_latest_001</td><td>web_research</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">0/0</td><td class="num">5</td><td class="num">49.9s</td><td><details><summary>裁判理由</summary><pre class="reason">The rubric requires: (1) post-2025 web research on Self-RAG, (2) at least two concrete takeaways from recent developments, and (3) avoid pretending project-local documents are the source of recency.
+
+1. Post-2025 web research: The assistant attempted web searches but all three calls returned HTTP 429 rate-limit errors. No actual 2025 research content was retrieved. There is no quotable span containing real post-2025 Self-RAG research findings.
+
+2. At least two concrete takeaways from recent developments: The &#x27;conclusions&#x27; provided (&#x27;检索状态&#x27; and &#x27;后续动作建议&#x27;) are meta-commentary about the failed search and suggested next steps—not concrete takeaways about Self-RAG developments. There are no quotable spans containing actual developments.
+
+3. Avoid pretending project-local documents are the source of recency: The assistant explicitly states &#x27;当前会话不提供项目文档&#x27; and refuses to fabricate findings, which satisfies this item.
+
+Since items 1 and 2 are not satisfied, the overall score is false.</pre></details></td></tr><tr><td>web_recency_001</td><td>web_research</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">0/0</td><td class="num">4</td><td class="num">47.1s</td><td><details><summary>裁判理由</summary><pre class="reason">Rubric item 1: Answer should rely on current web findings. The assistant explicitly states that both search_web and search_papers returned HTTP 429 rate-limit errors and that &#x27;未能成功完成联网检索&#x27; (failed to complete web search). The answer is based on training knowledge, not current web findings. This rubric item is NOT satisfied.
+
+Rubric item 2: Make a yes or qualified-yes-or-no judgment about whether attention has shifted toward system deployment concerns. The assistant provides a judgment: &#x27;否&#x27; (No), with qualifications &#x27;还处在&quot;两头都在做，但论文指标仍是主线&quot;的阶段&#x27; and notes that there are signs of a shift but it has not completed. This is a qualified-no judgment. This rubric item IS satisfied. Quote: &#x27;是否&quot;已经从论文指标转向系统落地&quot;？否。还处在&quot;两头都在做，但论文指标仍是主线&quot;的阶段。&#x27;
+
+Rubric item 3: Cite the basis for that judgment instead of giving a timeless summary. The assistant provides multiple evidence points (依据1, 依据2, 依据3) citing specific items like original Self-RAG paper, LangChain/LlamaIndex adoption, industry blogs, competing paradigms like AAR/FLARE/GraphRAG. However, the basis is from training knowledge rather than current web findings. The rubric asks to cite the basis - the assistant does provide cited basis, but since the overall answer fails item 1 (no current web findings), and the basis is explicitly acknowledged as &#x27;基于训练知识而非本轮实时检索&#x27;, the rubric item about citing basis for the judgment is partially satisfied (it cites basis), but the overall rubric requires current web findings which were not obtained.
+
+Since rubric item 1 is not satisfied (no current web findings were actually obtained), the overall score is false.</pre></details></td></tr><tr><td>web_tradeoff_001</td><td>web_tradeoff</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">0/0</td><td class="num">20</td><td class="num">146.8s</td><td><details><summary>裁判理由</summary><pre class="reason">The rubric requires: (1) use web research to identify at least one concrete benefit and one concrete cost/downs of Self-RAG in recent practice, and (2) present them as an explicit tradeoff rather than unrelated bullet points.
+
+Item 1 (web research used to identify concrete benefit and cost): The agent&#x27;s web searches mostly failed with 429 rate limits, but one search_papers call did return 5 papers (including Hu &amp; Washburn 2024 on eliminating hallucination in LLM generation via Self-RAG). The agent cites this retrieved paper and the Asai et al. 2023 original paper. Concrete benefits identified: improved factuality/reduced hallucination with inline citations via reflection tokens ([Retrieve], [IsRel], [IsSup], [IsUse]), and adaptive on-demand retrieval. Concrete costs identified: additional token overhead and inference latency from reflection tokens, plus training data complexity. Quote: &quot;Self-RAG 会在生成中插入 special reflection tokens... 让模型自己判断... 提升事实可信度&quot; for benefit, and &quot;每个生成段落都需附带多个 [Retrieve] / [IsRel] / [IsSup] / [IsUse] 等 reflection tokens，输出长度增加... 推理时延上升&quot; for cost. This satisfies the concrete benefit and cost requirement.
+
+Item 2 (presented as explicit tradeoff rather than unrelated bullet points): The final summary explicitly frames them as a tradeoff in the &#x27;小结（一行版）&#x27; section: &#x27;收益：... 代价：...&#x27; — clearly pairing the benefit against the cost as a tradeoff. Quote: &#x27;**收益**：通过 reflection tokens 实现&quot;按需检索 + 内嵌引用与自评&quot;... **代价**：输出变长带来额外 token 与推理时延，且需要专门构造带 reflection token 的训练数据...&#x27;. This satisfies the tradeoff framing requirement.
+
+Both rubric items are satisfied.</pre></details></td></tr><tr><td>hybrid_research_001</td><td>hybrid_research</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">41/2</td><td class="num">8</td><td class="num">38.5s</td><td><div class="failed-checks">未过契约: plan_passed, tool_names_passed, subagent_types_passed, delegation_count_passed, parallel_delegation_passed</div><details><summary>裁判理由</summary><pre class="reason">The rubric requires the answer to: (1) combine current project evidence with recent web findings, (2) weigh adoption benefits versus engineering cost or risk, and (3) finish with a concrete roadmap recommendation such as adopt, defer, or pilot.
+
+1. **Combine current project evidence with recent web findings**: The answer does cite project documents (RAG and Self-RAG papers) with embedded evidence tags. However, the web search explicitly failed (&#x27;Web search failed: firecrawl_search: firecrawl status=429...&#x27;). The answer acknowledges this: &quot;联网证据空白&quot; and &quot;联网工具暂时不可用（限流）&quot;. Since web search genuinely failed and no recent web findings were successfully incorporated, this item is not satisfied.
+
+2. **Weigh adoption benefits versus engineering cost or risk**: The answer clearly does this in sections 3 (适合纳入的场景/收益侧) and 4 (引入前必须评估的代价与风险), discussing benefits like factuality/citation accuracy and costs like fine-tuning requirements, retriever dependency, parallel passage processing overhead, and reflection token reliability. Satisfied.
+
+3. **Concrete roadmap recommendation**: The answer provides &#x27;P1 实验项&#x27; with a two-phase approach (PoC then engineering), and conditional recommendations. This constitutes a concrete &#x27;pilot&#x27; recommendation. Satisfied.
+
+Since item 1 (combining project evidence with recent web findings) is not satisfied due to the failed web search and no successful web findings integrated, the overall score is false.</pre></details></td></tr><tr><td>hybrid_rollout_001</td><td>hybrid_rollout</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">29/2</td><td class="num">17</td><td class="num">67.0s</td><td><div class="failed-checks">未过契约: ratio_passed</div><details><summary>裁判理由</summary><pre class="reason">The rubric requires the answer to: (1) combine project documents and recent web findings, (2) decide whether Self-RAG deserves a pilot, and (3) provide a staged rollout recommendation rather than a single yes-or-no sentence.
+
+Item 1 - Combine project documents and recent web findings: The answer explicitly cites project documents (arxiv:2310.11511 Self-RAG paper and arxiv:2005.11401 RAG paper) with multiple chunk references. However, regarding &#x27;recent web findings,&#x27; the answer explicitly states that all web searches failed due to 429 rate limiting (Semantic Scholar, Firecrawl, Wikipedia, DuckDuckGo) and that no web evidence was retrieved. The answer acknowledges this limitation transparently but does not actually incorporate any web findings. The rubric asks for combination of both project documents AND recent web findings, and the answer does not satisfy this - it only combines project documents with an explicit note that web evidence is unavailable. This item is NOT satisfied because there are no recent web findings combined, only project documents.
+
+Item 2 - Decide whether Self-RAG deserves a pilot: The answer clearly states &#x27;建议：在受控、低风险、有可量化评估的单一场景中做有限试点（pilot），不建议立刻全量上线&#x27; - this is a clear pilot decision. SATISFIED.
+
+Item 3 - Provide staged rollout recommendation: The answer provides detailed P0-P4 stages with specific goals, actions, and Go/No-Go criteria for each phase. This clearly exceeds a single yes-or-no sentence. SATISFIED.
+
+Since Item 1 is not satisfied (no web findings were actually incorporated, only project documents were used), the overall score is false.</pre></details></td></tr><tr><td>hybrid_guardrail_001</td><td>hybrid_guardrail</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">25/2</td><td class="num">7</td><td class="num">38.2s</td><td><div class="failed-checks">未过契约: plan_passed</div><details><summary>裁判理由</summary><pre class="reason">The rubric asks whether the answer: (1) combines project evidence and recent web findings, (2) identifies concrete guardrails or observability requirements needed before a Self-RAG pilot, and (3) connects them to implementation risk instead of giving generic safety slogans.
+
+Let me check each item:
+
+1. **Combines project evidence and recent web findings**: The answer heavily cites the project document (arxiv:2310.11511 - Self-RAG paper) with specific evidence tags like `&lt;evidence&gt;arxiv:2310.11511:chunk_118|p4|o20379-20867&lt;/evidence&gt;`. However, regarding &#x27;recent web findings&#x27;, the web search tool call explicitly failed (status 429 rate limit): &quot;Web search failed: firecrawl_search: firecrawl status=429 | wikipedia_api: wikipedia status=403 | native_duckduckgo_search: ... Ratelimit&quot;. The assistant acknowledges this: &#x27;联网检索被限流&#x27; (web search was rate-limited). Despite the failure, the assistant proceeds with only project evidence and explicitly notes the situation. The rubric says &#x27;combine project evidence and recent web findings&#x27; - the answer attempts web search but fails. However, the answer does try and the final answer is substantive based on project evidence plus general engineering knowledge. This is a borderline case. The rubric doesn&#x27;t say web search must succeed, but it does say the answer should combine both. Since web findings are absent from the actual content, this item is only partially satisfied. But the response does identify it tried and notes the constraint.
+
+2. **Identify concrete guardrails or observability requirements**: The answer provides very concrete items: reflection token categories (Retrieve, ISREL, ISSUP, ISUSE), specific guardrails like prompt injection defense, retrieval budget circuit breaker, citation recall/precision checks, reflection token position validation, and 8 specific observability metrics. These are highly concrete and specific to Self-RAG.
+
+3. **Connect them to implementation risk rather than generic safety slogans**: The answer explicitly ties each item to risks: e.g., &#x27;tree-decoding ... K×B个候选 ... P99飙升&#x27; (cost explosion risk), &#x27;critic 在多数 reflection token 类别上与 GPT-4 标注的一致率 &gt;90% ... 这意味着在 ~10% 的情况下它会自信地错&#x27; (reflection lying risk), &#x27;reflection 是离线插入到训练语料的 ... critic 错就会被原样学进生成器&#x27; (training data contamination risk), &#x27;检索触发率或 ISUSE 分布越界&#x27; (operational risk). These are concrete implementation risk connections, not generic slogans.
+
+Item 1 is the main concern. The answer does combine project evidence (extensively) with attempted web findings. The web search failed but the assistant noted this. The question is whether &#x27;combine project evidence and recent web findings&#x27; requires web findings to actually succeed. Given that the answer explicitly acknowledges the web failure and proceeds with project evidence + general engineering knowledge (which the assistant presents as professional experience), one could argue this is partially met. However, strict interpretation would say: since there are no actual web-sourced recent findings in the final answer, this item is not fully satisfied.
+
+Overall, items 2 and 3 are clearly satisfied with quotable spans. Item 1 is questionable because the web search failed and no recent web findings are actually incorporated into the final answer. The rubric requires combining both, so I&#x27;ll consider this not fully satisfied.
+
+Given that the overall score requires every item to be satisfied, and the combination criterion is debatable: the answer does try, documents the failure, and delivers substantive content - but technically doesn&#x27;t include recent web findings. I&#x27;ll judge this as false because web findings are not actually present in the final answer content, despite the attempt.</pre></details></td></tr><tr><td>hybrid_reject_001</td><td>hybrid_reject</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">23/2</td><td class="num">18</td><td class="num">78.3s</td><td><details><summary>裁判理由</summary><pre class="reason">The rubric requires: (1) combine project documents and recent web findings, (2) assess Self-RAG under strict complexity and latency constraints, (3) be willing to recommend deferring adoption if the tradeoff is not favorable.
+
+Item 1 - Combine project documents and recent web findings: The answer cites project document chunks from arxiv:2310.11511 extensively (e.g., &quot;arxiv:2310.11511:chunk_79&quot;, &quot;chunk_107&quot;, &quot;chunk_127&quot;, etc.). However, the web/paper searches all failed with 429 rate limits: &quot;Web search failed: firecrawl_search: firecrawl status=429&quot; and &quot;Academic search failed: Semantic Scholar request failed with status 429&quot;. The answer itself acknowledges: &quot;我尝试调用 `search_web` 与 `search_papers` 验证第三方对 Self-RAG 时延的批评，但所有外部检索通道...均返回 HTTP 429 限流...未能取得外部佐证&quot;. The rubric requires combining BOTH project documents AND recent web findings. While the agent attempted web searches, no actual web findings were obtained. The rubric says &quot;Answer should combine project documents and recent web findings&quot; - the answer only has project documents, no web findings. This item is not satisfied.
+
+Item 2 - Assess Self-RAG under strict complexity and latency constraints: The answer does assess Self-RAG under these constraints, discussing the 3-step inference process, per-segment retrieval, K×B beam search, expanded vocabulary, and reflection tokens. This item is satisfied with content like &quot;Self-RAG 的推理被显式建模为一个3 步流程：先决定是否检索，再对多个检索段落并行生成，最后用 critique token 选最优&quot;.
+
+Item 3 - Willing to recommend deferring if tradeoff is not favorable: The answer explicitly recommends deferring: &quot;**暂缓 Self-RAG 上线**，转而采用一次性 retrieve-then-generate 的普通 RAG&quot; and the title states &quot;##结论：应暂缓 Self-RAG&quot;. This item is satisfied.
+
+Since item 1 is not satisfied (no web findings were actually obtained, only document evidence), the overall score is false.</pre></details></td></tr><tr><td>project_contradiction_001</td><td>project_contradiction</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">34/4</td><td class="num">12</td><td class="num">37.6s</td><td><details><summary>裁判理由</summary><pre class="reason">Item-by-item rubric check:
+
+(1) Compares the two papers&#x27; self-improvement mechanisms using cited project evidence, with at least two evidence citations from each paper:
+- ReAct citations present: chunk_18, chunk_27, chunk_43, chunk_51, chunk_59 — well over two.
+- Reflexion citations present: chunk_79, chunk_80, chunk_85, chunk_100, chunk_101, chunk_106, chunk_109, chunk_114, chunk_116, chunk_117, chunk_118, chunk_132 — well over two.
+→ Satisfied.
+
+(2) Quotes or precisely refers to key sentences of each paper via evidence tags:
+- ReAct: direct quoted spans with evidence tags, e.g. &quot;error propagation over the reasoning process&quot; (chunk_18), &quot;limited support of reasoning and acting behaviors&quot; (chunk_27), &quot;3,000 trajectories with correct answers generated by ReAct … to finetune smaller language models&quot; (chunk_51), &quot;derails the model reasoning and gives it a hard time to recover and reformulate thoughts&quot; (chunk_59).
+- Reflexion: direct quoted spans with evidence tags, e.g. &quot;trial, error, and self-reflection&quot; (chunk_79), &quot;Given a sparse reward signal … the self-reflection model generates nuanced and specific feedback&quot; (chunk_106), &quot;self-reflection improves learning by an 8% absolute boost … refinement-only approaches are not as effective&quot; (chunk_132), &quot;ReAct + Reflexion significantly outperforms ReAct by completing 130 out of 134 tasks&quot; (chunk_117).
+→ Satisfied.
+
+(3) Ends with an explicit verdict of consistent, contradictory, or not comparable, with reasons:
+- The answer explicitly states: &quot;两篇论文对&#x27;自我改进&#x27;的方向判断**一致**&quot; and provides reasons — both agree that single-trajectory ReAct is insufficient and that cross-trial reflective memory is needed; the difference is only in who implements it (ReAct defers, Reflexion implements). This is an explicit consistent verdict with reasons.
+→ Satisfied.
+
+(4) Does not invent mechanisms absent from the papers:
+- All described mechanisms (verbal reinforcement, Self-Reflection model, short/long-term memory, truncation to last 3 reflections, ReAct as Actor, 8% ablation, finetuning with 3000 trajectories, error propagation, hallucination, etc.) are supported by the cited chunks.
+- The answer even flags a potential evidence gap (ReAct has no explicit &#x27;no self-improvement&#x27; statement) and marks its inference as derived rather than directly quoted — showing epistemic care.
+- No fabricated mechanisms are introduced.
+→ Satisfied.
+
+All four rubric items are satisfied, so the overall score is true.</pre></details></td></tr><tr><td>project_false_premise_001</td><td>project_false_premise</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">24/1</td><td class="num">5</td><td class="num">19.6s</td><td><details><summary>裁判理由</summary><pre class="reason">Rubric item 1: The answer must explicitly correct the premise — self-consistency sampling belongs to the Self-Consistency paper, not Tree-of-Thoughts, or states the premise is wrong. The answer states: &quot;你问题中的表述&#x27;Tree-of-Thoughts 论文提出的 self-consistency 解码策略&#x27;其实是一个错误的前提&quot; and clarifies that self-consistency is from Wang et al. (2022) while Tree-of-Thoughts is from Yao et al. (2023). This satisfies item 1.
+
+Rubric item 2: The correction is grounded in cited project evidence from the correct paper. The answer cites evidence from arxiv:2203.11171 (Self Consistency paper), e.g., &quot;arxiv:2203.11171:chunk_109&quot; containing the original sampling scheme text: &quot;for UL2-20B and LaMDA-137B we applied temperature sampling with T = 0.5&quot;. It also references arxiv:2305.10601 for the ToT paper. The correction is grounded in cited project evidence from the Self-Consistency paper. This satisfies item 2.
+
+Rubric item 3: It does not fabricate a temperature value as if it came from Tree-of-Thoughts. The answer correctly attributes T = 0.5 to the Self-Consistency paper and T = 0.7 to the ToT paper&#x27;s experimental setup, clearly distinguishing the two. It does not present a temperature value as belonging to a &quot;self-consistency decoding strategy proposed by Tree-of-Thoughts.&quot; This satisfies item 3.
+
+All three items are satisfied.</pre></details></td></tr><tr><td>project_abstain_001</td><td>project_abstain</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">15/0</td><td class="num">6</td><td class="num">22.8s</td><td><details><summary>裁判理由</summary><pre class="reason">Rubric item 1: The answer must clearly state that the current project documents do not cover multi-agent collaboration framework design. The assistant explicitly states: &quot;当前项目的 8 篇文档中，没有任何一篇系统讨论多智能体协作框架（multi-agent collaboration framework）的设计。&quot; This satisfies item 1.
+
+Rubric item 2: The answer must not fabricate citations or stretch an unrelated paper to claim coverage. The assistant correctly identifies that Reflexion is only about single-agent internal module collaboration, not multi-agent collaboration framework design, saying: &quot;Reflexion 中确实出现了&#x27;collaborative functioning&#x27;的表述，但其含义是单个智能体内部模块之间的协同...而非多个独立智能体之间的协作框架。&quot; It does not falsely claim Reflexion covers multi-agent collaboration framework design. Satisfied.
+
+Rubric item 3: The answer must suggest a concrete way to close the gap, such as web research or adding relevant documents. The assistant says: &quot;如果你希望我针对&#x27;多智能体协作框架&#x27;做更深入的调研，建议扩展检索范围（例如加入 MetaGPT、AutoGen、Camel、ChatDev、AgentVerse 等方向的论文），可调用 `search_papers` 或 `search_web` 获取补充证据。&quot; This is a concrete suggestion for closing the gap via web research/adding papers. Satisfied.
+
+All three items are satisfied.</pre></details></td></tr><tr><td>web_overturn_001</td><td>web_overturn</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">0/0</td><td class="num">16</td><td class="num">180.9s</td><td><details><summary>裁判理由</summary><pre class="reason">Rubric item (1): cites web evidence dated after Self-RAG&#x27;s publication (2023-10) that either supports or overturns the leadership claim. The answer acknowledges that external search interfaces all returned 429/403 rate-limit errors and explicitly states: &#x27;本次会话的外部检索接口（firecrawl / Wikipedia / DuckDuckGo / Semantic Scholar）在多次尝试中均返回 429 限流或 403 拒绝，我无法即时拉取 2024-2025 年的二次文献做交叉核对。&#x27; It then provides citations from training-data memory only, and explicitly marks the 2025 section as &#x27;弱证据&#x27; and lists unverified items in section 6 (&#x27;不确定 / 未核实的部分&#x27;). No actual web evidence with dates after 2023-10 is cited — everything is from training data and self-acknowledged as not freshly retrieved. The rubric requires citing web evidence dated after the publication. Since no actual web evidence was retrieved and the answer explicitly admits this failure, this item is not satisfied.
+
+Rubric item (2): states an explicit as-of-date qualifier. The answer does include dates such as &#x27;截至 2023-10 论文发布&#x27;, &#x27;截至 2024 年下半年&#x27;, &#x27;截至 2025 年（基于知识截止 2026-01 的已知信息）&#x27;, and &#x27;arXiv 预印 2023-10-17&#x27;, &#x27;ICLR 2024&#x27;, etc. Item (2) is satisfied.
+
+Rubric item (3): does not merely restate the paper&#x27;s original claim without dated external evidence. The answer does go beyond the original claim by discussing CRAG, Adaptive-RAG, RA-DIT, GraphRAG, larger LLMs like GPT-4o/Llama-3, etc., with dates attached. However, because these are not based on actually-retrieved web evidence but on training-data recall (explicitly admitted), and the rubric item (1) already fails, item (3) is partially satisfied in form but the substance rests on uncited recall rather than dated external evidence. The answer does provide more than just restating the original claim, but per rubric item (1), the dated external evidence requirement is not met.
+
+Since item (1) is not satisfied (no web evidence was actually retrieved or cited; the answer explicitly admits all retrieval failed), the overall score must be false.</pre></details></td></tr><tr><td>routing_discrimination_local_001</td><td>routing_discrimination</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">13/1</td><td class="num">16</td><td class="num">32.3s</td><td><details><summary>裁判理由</summary><pre class="reason">Rubric item analysis:
+
+(1) The answer must answer using cited project-document evidence only.
+The final answer does cite project document chunks (e.g., chunk_8, chunk_12, chunk_28, chunk_0, etc.) and does not appear to introduce external web sources in the final answer itself. The intermediate tool calls used `search_document` (project document search), not external web sources, for the final answer composition. Satisfied.
+
+(2) The answer must not consult or mention external web sources.
+The final answer mentions no external web sources. The tool calls used `search_document` only (project documents), and the final text refers only to project document evidence. Satisfied.
+
+(3) The answer must name the ablated components accurately.
+The answer names: (a) Toolformer vs Toolformer-disabled (API calls disabled during decoding by setting &lt;API&gt; token probability to 0), (b) GPT-J + CC vs Toolformer (training data without API calls vs with API calls), and (c) filtering threshold τf values (0.5, 1.0, 2.0). These are accurately drawn from the cited chunks (e.g., chunk_12 describes Toolformer (disabled) and GPT-J + CC; chunk_28 describes τf thresholds in Table 2). The answer is honest that the project document does not contain a dedicated &quot;Ablation Study&quot; section, but the components it does name from document evidence are accurate. Satisfied.
+
+All three rubric items appear satisfied.</pre></details></td></tr><tr><td>routing_discrimination_web_001</td><td>routing_discrimination</td><td><span class="badge critical">✗ 失败</span></td><td><span class="badge good">✓ 通过</span></td><td class="num">0/0</td><td class="num">8</td><td class="num">67.0s</td><td><details><summary>裁判理由</summary><pre class="reason">The rubric requires three items:
+
+(1) It relies on web findings dated after 2023: The assistant explicitly states that all web searches failed with 429/403 errors and that the content is based on training knowledge, not real-time web findings. The assistant even says: &#x27;本次会话的外部检索（search_papers / search_web）全部返回 429/403 限流，未能拿到实时证据。&#x27; This item is NOT satisfied.
+
+(2) It distinguishes web findings from corpus content instead of restating Toolformer: The assistant does NOT distinguish web findings from corpus content because there were no successful web findings. The assistant acknowledges that all content comes from training corpus (&#x27;训练知识&#x27;), which is the opposite of distinguishing web from corpus. This item is NOT satisfied.
+
+(3) It cites the sources it used: The assistant does not cite any URLs or specific sources. It provides only paper names and dates without any actual citations/URLs. At the end it suggests keywords for the user to search themselves, but does not cite any sources used. This item is NOT satisfied.
+
+None of the three rubric items are satisfied.</pre></details></td></tr><tr><td>project_delegation_scaling_001</td><td>project_delegation_scaling</td><td><span class="badge good">✓ 通过</span></td><td><span class="badge critical">✗ 失败</span></td><td class="num">77/8</td><td class="num">17</td><td class="num">109.4s</td><td><div class="failed-checks">未过契约: parallel_delegation_passed</div><details><summary>裁判理由</summary><pre class="reason">Rubric item 1: The answer must cover all eight project papers with one grounded summary each. The assistant identifies 8 papers: RAG, Self-RAG, Toolformer, ReAct, Reflexion, Chain-of-Thought, Self-Consistency, Tree of Thoughts. Each has a one-sentence summary. This appears satisfied.
+
+Rubric item 2: Each summary must be backed by an evidence citation from that paper. Each summary includes a chunk_id reference (e.g., arxiv:2005.11401:chunk_11, arxiv:2310.11511:chunk_503, etc.). These are grounded citations from the shown evidence. Satisfied.
+
+Rubric item 3: The relevance ranking must be justified by cited content rather than paper titles alone. The ranking justification section explicitly references the cited content and explains relevance based on the actual content (e.g., RAG/Self-RAG use &#x27;retrieval-augmented generation&#x27; directly; Toolformer uses external tools as memory; ReAct/Reflexion interact with external environments and retrieval; CoT/Self-Consistency/ToT are pure reasoning methods). The justification cites content features rather than just titles. Satisfied.
+
+All three items appear satisfied.</pre></details></td></tr></tbody>
+</table>
+</div>
+</body>
+</html>

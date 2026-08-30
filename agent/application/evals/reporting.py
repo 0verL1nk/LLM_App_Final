@@ -8,6 +8,7 @@ def build_eval_report(
     *,
     fixture_path: str,
     case_results: list[dict[str, Any]],
+    run_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     total_cases = len(case_results)
     completed_cases = sum(1 for item in case_results if bool(item.get("completed", False)))
@@ -49,6 +50,7 @@ def build_eval_report(
     return {
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "fixture_path": fixture_path,
+        "run_config": run_config or {},
         "total_cases": total_cases,
         "completed_cases": completed_cases,
         "completion_rate": (completed_cases / total_cases) if total_cases else 0.0,

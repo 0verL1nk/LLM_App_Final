@@ -2,7 +2,25 @@
 
 PaperSage 项目开发规范与工程化约束（团队约定版）
 
-最后更新：2026-08-12
+最后更新：2026-08-23
+
+---
+
+## 0. 文档地图（先看这里，再深入）
+
+本文件是目录，不是百科。深层信息在 `docs/`（记录系统，全部进版本控制）：
+
+| 主题 | 位置 |
+|---|---|
+| 架构总览与分层 | `ARCHITECTURE.md` → `docs/architecture/` |
+| 设计决策目录与核心理念 | `docs/design-docs/index.md`、`core-beliefs.md` |
+| 进行中/已完成计划、技术债 | `docs/PLANS.md` → `docs/exec-plans/` |
+| 产品规格 | `docs/product-specs/` |
+| 给 agent 的参考资料（框架坑等） | `docs/references/` |
+| 质量门禁与当前评分 | `docs/QUALITY_SCORE.md` |
+| 可靠性/安全边界 | `docs/RELIABILITY.md`、`docs/SECURITY.md` |
+| 数据库 schema（生成物） | `docs/generated/db-schema.md`（`make db-schema` 重生成） |
+| 变更流程（openspec） | `openspec/changes/`，规范见 `openspec/specs/` |
 
 ---
 
@@ -21,28 +39,27 @@ PaperSage 项目开发规范与工程化约束（团队约定版）
 
 当前主目录职责：
 
-1. `pages/`：Streamlit 页面入口（薄层，仅处理页面交互与编排调用）
-2. `ui/`：可复用 UI 组件与页面渲染函数
-3. `agent/`：
-   - `domain/` 领域模型与契约
-   - `application/` 用例编排
-   - `adapters/` 外部依赖适配
-   - `orchestration/` 调度策略
-   - `a2a/` 协作协议/状态机
+1. `api/`：FastAPI 应用装配与路由（薄层，只做契约转换与依赖注入）
+2. `agent/`：
+   - `domain/` 领域模型与契约（AgentTask 状态机、证据合并、trace）
+   - `application/` 用例编排（turn_engine、research_workspace、任务分发、evals、memory）
+   - `adapters/` 外部依赖适配（orm、lancedb、llm、rag、ocr）
+   - `tools/` 工具定义；`middlewares/` 中间件栈；`capabilities/` 能力包
+   - `profiles/` 执行模式画像；`prompts/` 提示词；`skills/`、`subagent/`、`memory/`、`rag/`
+3. `web/`：Vite/React/Electron 客户端；`src/pages` 只负责路由级组合，`src/components`
+   只负责展示和交互，`src/lib` 承载 API schema、query 与纯客户端状态。
 4. `utils/`：遗留兼容与通用能力（逐步收敛）
 5. `tests/`：单元 / 集成 / eval
-6. `docs/plan/`：重构与治理计划
-7. `web/`：Vite/React/Electron 客户端；`src/pages` 只负责路由级组合，`src/components`
-   只负责展示和交互，`src/lib` 承载 API schema、query 与纯客户端状态。
-8. `scripts/`：可重复的开发、发布和仓库 guard；不得承载线上业务逻辑。
+6. `scripts/`：可重复的开发、发布和仓库 guard；不得承载线上业务逻辑
+7. `openspec/`：变更提案与规格（spec-driven 工作流）
+8. `docs/`：记录系统（见 §0 文档地图）
 
 依赖方向（必须遵守）：
 
-1. `pages/ui -> agent.application -> agent.domain`
+1. `web -> (HTTP contract) -> api -> agent.application -> agent.domain`
 2. `agent.application -> agent.adapters`
-3. `agent.adapters -> infra/repository`
-4. 禁止 `domain` 依赖 `ui/pages`
-5. `web` 只能经 HTTP contract 访问后端，禁止导入 Python 业务模块或复制后端状态机。
+3. 禁止 `domain` 依赖 `application/adapters/api/web`
+4. `web` 只能经 HTTP contract 访问后端，禁止导入 Python 业务模块或复制后端状态机。
 
 ---
 
@@ -75,7 +92,7 @@ PaperSage 项目开发规范与工程化约束（团队约定版）
 1. 不允许新增“巨型文件”：
    - 任意代码文件不得超过 500 行。
    - 已登记的历史超限文件只能减少，不能增长；新增文件没有豁免。
-2. 不允许在 `pages/` 重复初始化逻辑（DB、用户、session_state）。
+2. 不允许在路由/用例层重复初始化逻辑（DB、模型客户端、session）。
 3. 不允许在 adapter 中仅做无意义透传（直接 `return utils.xxx`）而不定义清晰接口边界。
 4. 不允许新增全局可变状态，除非明确封装在 session/context 对象内。
 5. 不允许提交与当前任务无关的大规模格式化噪音。
@@ -192,16 +209,10 @@ PR 描述至少包含：
 ## 8. 架构演进要求（针对当前项目）
 
 1. `utils/utils.py` 只减不增：新能力必须进新模块。
-2. 页面初始化统一收敛到 bootstrap helper。
-3. `ui/agent_center_page.py` 继续拆分为 controller / view / state。
-4. worker 任务导入路径标准化，禁止 `sys.path.insert` 路径 hack。
-5. 质量门禁逐步扩围到 `ui/pages/utils`。
-6. Runtime repository 统一迁到 `agent/adapters/orm`；schema 只由 Alembic 管理，禁止
+2. 质量门禁逐步扩围（ruff/ty 当前 core 范围见 `scripts/quality_gate.sh`）。
+3. Runtime repository 统一在 `agent/adapters/orm`；schema 只由 Alembic 管理，禁止
    `create_all` 和运行时 DDL 作为生产迁移路径。
-
-详见：
-
-1. `docs/plan/2026-03-08-项目架构治理与重构计划.md`
+4. 存量技术债统一登记在 `docs/exec-plans/tech-debt-tracker.md`，新增债务必须先登记。
 
 ---
 
