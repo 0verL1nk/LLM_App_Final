@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.13.1](https://github.com/0verL1nk/PaperSage/compare/v1.13.0...v1.13.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* **desktop:** serve updates from GitHub Releases; drop personal R2 CDN ([ba47735](https://github.com/0verL1nk/PaperSage/commit/ba477350e8c09031d8e4c1a0296d24ec63bc5e9c))
+
 ## [1.13.0](https://github.com/0verL1nk/PaperSage/compare/v1.12.1...v1.13.0) (2026-08-30)
 
 
