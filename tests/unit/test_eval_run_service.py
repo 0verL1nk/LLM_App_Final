@@ -171,7 +171,7 @@ def test_eval_service_rejects_fixture_paths_outside_the_allowed_root() -> None:
         try:
             service.start(fixture_path=escape)
         except ValueError as exc:
-            assert "fixture_path must stay under" in str(exc)
+            assert "must be a fixture file inside" in str(exc)
         else:
             raise AssertionError(f"Expected path rejection: {escape}")
 

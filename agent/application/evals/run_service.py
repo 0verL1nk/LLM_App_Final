@@ -8,7 +8,6 @@ Report artifacts are also persisted under ``data/evals/`` for inspection.
 from __future__ import annotations
 
 import json
-import os
 import threading
 import time
 import uuid
@@ -136,13 +135,16 @@ class TaskCompletionEvalService:
         limit: int | None = None,
         trials: int = 1,
     ) -> dict[str, Any]:
-        resolved_fixture = Path(fixture_path).resolve()
-        if not str(resolved_fixture).startswith(str(ALLOWED_FIXTURE_ROOT) + os.sep) and resolved_fixture != ALLOWED_FIXTURE_ROOT:
+        # basename strips any directory components (traversal, absolute
+        # prefixes), so the candidate is structurally confined to the
+        # fixtures root; anything missing there is rejected outright.
+        candidate = (ALLOWED_FIXTURE_ROOT / Path(fixture_path).name).resolve()
+        if candidate.parent != ALLOWED_FIXTURE_ROOT or not candidate.is_file():
             raise ValueError(
-                f"fixture_path must stay under {ALLOWED_FIXTURE_ROOT}: {fixture_path}"
+                f"fixture_path must be a fixture file inside {ALLOWED_FIXTURE_ROOT}"
             )
         cases = select_eval_cases(
-            load_eval_cases(str(resolved_fixture)),
+            load_eval_cases(str(candidate)),
             case_ids=case_ids,
             limit=limit,
         )
