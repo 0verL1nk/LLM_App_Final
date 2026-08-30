@@ -239,32 +239,3 @@ jobs:
           generate_release_notes: true
           files: release-assets/*
 
-      - name: Publish updater assets to Cloudflare R2
-        shell: pwsh
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          R2_ENDPOINT: https://5bf0e92040869b5b56123207a122dc6d.r2.cloudflarestorage.com
-          UPDATE_BUCKET: overlink-papersage-desktop-updates-prod
-        run: |
-          $metadataFiles = @("latest.yml", "latest-mac.yml", "latest-linux.yml")
-          $updateFiles = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-          foreach ($metadataFile in $metadataFiles) {
-            $metadataPath = Join-Path "release-assets" $metadataFile
-            $path = (Select-String -LiteralPath $metadataPath -Pattern '^path:\s*["'']?([^"''\r\n]+)' | Select-Object -First 1).Matches.Groups[1].Value.Trim()
-            if (-not $path) { throw "Updater metadata does not declare a path: $metadataFile" }
-            $updateFiles.Add($metadataFile) | Out-Null
-            $updateFiles.Add($path) | Out-Null
-            $blockmapPath = Join-Path "release-assets" "$path.blockmap"
-            if (Test-Path $blockmapPath) { $updateFiles.Add("$path.blockmap") | Out-Null }
-          }
-          foreach ($file in $updateFiles) {
-            $localPath = Join-Path "release-assets" $file
-            if (-not (Test-Path $localPath)) { throw "Missing updater asset: $file" }
-            $cacheControl = if ($file -like "latest*.yml") { "no-store" } else { "public, max-age=31536000, immutable" }
-            aws s3 cp $localPath "s3://$env:UPDATE_BUCKET/$file" `
-              --endpoint-url $env:R2_ENDPOINT `
-              --cache-control $cacheControl `
-              --only-show-errors
-          }

@@ -113,16 +113,10 @@
     ],
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://papersage-updates.overlink.top",
-        "useMultipleRangeRequest": true
-      },
-      {
         "provider": "github",
         "owner": "0verL1nk",
         "repo": "PaperSage",
-        "releaseType": "release",
-        "publishAutoUpdate": false
+        "releaseType": "release"
       }
     ],
     "win": {
