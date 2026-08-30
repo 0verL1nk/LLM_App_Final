@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.13.0](https://github.com/0verL1nk/PaperSage/compare/v1.12.1...v1.13.0) (2026-08-30)
+
+
+### Features
+
+* **evals:** live task-completion eval system, agent fixes, and docs knowledge base ([b3c0a06](https://github.com/0verL1nk/PaperSage/commit/b3c0a0617d501b454032f85208c6988e81222637))
+
 ## [1.12.1](https://github.com/0verL1nk/PaperSage/compare/v1.12.0...v1.12.1) (2026-08-23)
 
 
