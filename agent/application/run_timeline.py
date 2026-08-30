@@ -5,7 +5,23 @@ from __future__ import annotations
 from typing import Any
 
 _MAX_TEXT_LENGTH = 600
+_MAX_LABEL_ARG_LENGTH = 72
 _SENSITIVE_KEYS = {"api_key", "authorization", "password", "secret", "token"}
+# Ordered by how descriptive each key typically is for a tool-row label.
+_LABEL_ARG_KEYS = (
+    "query",
+    "question",
+    "skill_name",
+    "prompt",
+    "task",
+    "description",
+    "url",
+    "title",
+    "search",
+    "doc_name",
+    "name",
+    "text",
+)
 
 
 def project_runtime_item_event(event: dict[str, Any]) -> dict[str, Any] | None:
@@ -18,6 +34,20 @@ def project_runtime_item_event(event: dict[str, Any]) -> dict[str, Any] | None:
     metadata = dict(event["metadata"]) if isinstance(event.get("metadata"), dict) else {}
     if performative == "answer_part_delta":
         part_id = str(metadata.get("part_id") or "text-0")
+        if metadata.get("part_type") == "component":
+            return _item_event(
+                item_uid=f"item_component_{part_id}",
+                item_type="component",
+                status="in_progress",
+                event_type="item.delta",
+                payload={
+                    "partId": part_id,
+                    "component": str(metadata.get("component") or "research-map"),
+                    "state": str(metadata.get("part_state") or "streaming"),
+                    "delta": _safe_text(event.get("content") or ""),
+                    **({"error": _safe_text(metadata.get("error") or "")} if metadata.get("error") else {}),
+                },
+            )
         item_type = "reasoning_summary" if part_id.startswith("reasoning-") else "assistant_message"
         return _item_event(
             item_uid=f"item_{item_type}_{part_id}",
@@ -29,8 +59,20 @@ def project_runtime_item_event(event: dict[str, Any]) -> dict[str, Any] | None:
     if performative == "answer_part_insert":
         part_id = str(metadata.get("part_id") or "").strip()
         part_type = str(metadata.get("part_type") or "")
-        if not part_id or part_type not in {"reasoning", "a2ui"}:
+        if not part_id or part_type not in {"reasoning", "a2ui", "component"}:
             return None
+        if part_type == "component":
+            return _item_event(
+                item_uid=f"item_component_{part_id}",
+                item_type="component",
+                status="in_progress",
+                event_type="item.created",
+                payload={
+                    "partId": part_id,
+                    "component": str(metadata.get("component") or "research-map"),
+                    "state": "streaming",
+                },
+            )
         item_type = "reasoning_summary" if part_type == "reasoning" else "presentation"
         return _item_event(
             item_uid=f"item_{item_type}_{part_id}",
@@ -72,8 +114,17 @@ def project_runtime_item_event(event: dict[str, Any]) -> dict[str, Any] | None:
         payload["plan"] = _safe_value(
             {"goal": arguments.get("goal"), "steps": arguments.get("steps") or []}
         )
+    else:
+        # Row label and expandable detail: the label must stay a short
+        # "tool + key argument" line; the raw result text is for the
+        # expanded body, never the collapsed row title.
+        payload["label"] = _tool_label(tool_name, arguments)
+        if arguments:
+            payload["arguments"] = _safe_value(arguments)
     terminal = performative == "tool_result"
     failed = str(metadata.get("status") or "").lower() in {"error", "failed"}
+    if terminal:
+        payload["result"] = payload["summary"]
     return _item_event(
         item_uid=f"item_{item_type}_{task_uid or action_id}",
         item_type=item_type,
@@ -115,6 +166,20 @@ def _item_event(
 def _safe_text(value: Any) -> str:
     text = " ".join(str(value or "").split())
     return text[:_MAX_TEXT_LENGTH]
+
+
+def _tool_label(tool_name: str, arguments: dict[str, Any]) -> str:
+    """One short row label: tool name plus its most descriptive argument."""
+    candidate_keys = [key for key in _LABEL_ARG_KEYS if key in arguments]
+    candidate_keys.extend(
+        key for key in arguments if key not in candidate_keys and str(key).lower() not in _SENSITIVE_KEYS
+    )
+    for key in candidate_keys:
+        value = arguments.get(key)
+        if isinstance(value, str) and value.strip():
+            snippet = _safe_text(value)[:_MAX_LABEL_ARG_LENGTH]
+            return f'{tool_name} "{snippet}"'
+    return tool_name
 
 
 def _safe_value(value: Any) -> Any:

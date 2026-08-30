@@ -16,14 +16,27 @@ def test_stream_parser_keeps_markdown_and_hides_complete_ui_fragment() -> None:
     assert fragments[0].payload["root"]["citation_ids"] == ["chunk-1"]
 
 
-def test_stream_parser_discards_incomplete_ui_fragment() -> None:
+def test_stream_parser_salvages_incomplete_ui_fragment_as_text() -> None:
     text: list[str] = []
     errors: list[str] = []
     parser = A2UIFragmentStreamParser(on_text=text.append, on_fragment=lambda _item: None, on_error=errors.append)
     parser.feed("正文\n<ui type=\"research-map\"><map title=\"x\">")
     parser.finish()
 
-    assert "".join(text) == "正文\n"
+    # A model may reference the tag in prose; discarding the buffer would
+    # truncate the answer mid-sentence, so the swallowed text is returned.
+    assert "".join(text) == '正文\n<ui type="research-map"><map title="x">'
+    assert errors == ["UI fragment ended before its closing tag"]
+
+
+def test_stream_parser_salvages_prose_after_inline_tag_mention() -> None:
+    text: list[str] = []
+    errors: list[str] = []
+    parser = A2UIFragmentStreamParser(on_text=text.append, on_fragment=lambda _item: None, on_error=errors.append)
+    parser.feed("思维导图是用 `\n<ui type=\"research-map\"> 这样的私有 XML 画的。\n后续说明。")
+    parser.finish()
+
+    assert "".join(text) == "思维导图是用 `\n<ui type=\"research-map\"> 这样的私有 XML 画的。\n后续说明。"
     assert errors == ["UI fragment ended before its closing tag"]
 
 

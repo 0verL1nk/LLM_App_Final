@@ -12,7 +12,9 @@ import {
   runCreatedSchema,
   runSchema,
   researchArtifactSchema,
+  sessionCommandResultSchema,
   sessionSuggestionsSchema,
+  skillSchema,
   steeringInputSchema,
   sessionSchema,
   settingsSchema,
@@ -31,6 +33,7 @@ export const keys = {
   settings: ["settings"] as const,
   evalRuns: ["eval-runs"] as const,
   evalRun: (uid: string) => ["eval-runs", uid] as const,
+  skills: ["skills"] as const,
   sessionSuggestions: (projectId: string, sessionId: string, messageCount: number) =>
     ["session-suggestions", projectId, sessionId, messageCount] as const,
 }
@@ -281,6 +284,51 @@ export function useStartEvalRun() {
     onSuccess: (snapshot) => {
       queryClient.setQueryData(keys.evalRun(snapshot.uid), snapshot)
       void queryClient.invalidateQueries({ queryKey: keys.evalRuns })
+export function useRenameSession(projectId: string, sessionId: string) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (sessionName: string) => api(
+      `/projects/${projectId}/sessions/${sessionId}`,
+      z.unknown(),
+      { method: "PATCH", body: JSON.stringify({ session_name: sessionName }) },
+    ),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.sessions(projectId) })
+    },
+  })
+}
+
+export function useSkills() {
+  return useQuery({
+    queryKey: keys.skills,
+    queryFn: () => api("/skills", z.array(skillSchema)),
+    staleTime: 300_000,
+  })
+}
+
+export function useSessionCommand(projectId: string, sessionId: string) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { command: string; args?: string }) => api(
+      `/projects/${projectId}/sessions/${sessionId}/commands`,
+      sessionCommandResultSchema,
+      { method: "POST", body: JSON.stringify({ command: input.command, args: input.args ?? "" }) },
+    ),
+    onMutate: (input) => {
+      client.setQueryData<Message[]>(keys.messages(projectId, sessionId), (current = []) => [
+        ...current,
+        { role: "user", content: `/${input.command}` },
+      ])
+    },
+    onSuccess: (result) => {
+      client.setQueryData<Message[]>(keys.messages(projectId, sessionId), (current = []) => [
+        ...current,
+        result.message,
+      ])
+      void client.invalidateQueries({ queryKey: keys.messages(projectId, sessionId) })
+    },
+    onError: () => {
+      void client.invalidateQueries({ queryKey: keys.messages(projectId, sessionId) })
     },
   })
 }

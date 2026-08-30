@@ -8,9 +8,23 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-import lancedb
-import pyarrow as pa
-from lancedb.index import FTS
+# LanceDB drags a full OpenAPI client suite and pyarrow into the process;
+# both are deferred so API startup does not pay for them (cold starts on the
+# desktop bundle measured seconds for this import alone).
+lancedb: Any = None
+pa: Any = None
+FTS: Any = None
+
+
+def _ensure_lance_imports() -> None:
+    global lancedb, pa, FTS
+    if lancedb is None:
+        import lancedb as _lancedb
+        import pyarrow as _pa
+        from lancedb.index import FTS as _FTS
+
+        lancedb, pa, FTS = _lancedb, _pa, _FTS
+
 
 _LOCK = threading.RLock()
 _TABLE_PREFIX = "rag_chunks"
@@ -27,7 +41,8 @@ def _table_name(settings_signature: str, vector_size: int) -> str:
     return f"{_TABLE_PREFIX}_{safe_signature}_{vector_size}"
 
 
-def _schema(vector_size: int) -> pa.Schema:
+def _schema(vector_size: int) -> Any:
+    _ensure_lance_imports()
     return pa.schema(
         [
             pa.field("chunk_id", pa.string(), nullable=False),
@@ -50,6 +65,7 @@ def _schema(vector_size: int) -> pa.Schema:
 
 
 def _connect() -> Any:
+    _ensure_lance_imports()
     path = _database_path()
     path.mkdir(parents=True, exist_ok=True)
     return lancedb.connect(path)
@@ -88,6 +104,7 @@ def document_index_exists(
     index_version: str,
     vector_size: int | None = None,
 ) -> bool:
+    _ensure_lance_imports()
     settings_signature = index_version.split(":", 1)[0]
     with _LOCK:
         database = _connect()
@@ -121,6 +138,7 @@ def publish_document_index(
     embeddings: list[list[float]],
 ) -> int:
     """Publish versioned rows; SQLite ready state controls external visibility."""
+    _ensure_lance_imports()
     if not chunks or len(chunks) != len(metadatas) or len(chunks) != len(embeddings):
         raise ValueError("LanceDB publish requires aligned non-empty chunks and vectors")
     vector_size = len(embeddings[0])
@@ -219,6 +237,7 @@ def search_published_chunks(
     score, not a provider-specific hybrid score, so retrieval traces remain
     explainable across LanceDB releases.
     """
+    _ensure_lance_imports()
     if not ready_versions or not query_vector:
         return []
     grouped: dict[str, list[tuple[str, str]]] = defaultdict(list)

@@ -5,6 +5,7 @@ export type RenderedMessagePart =
   | { id: string; type: "markdown"; text: string }
   | { id: string; type: "reasoning"; text: string }
   | { id: string; type: "a2ui"; surfaceId?: string }
+  | { id: string; type: "component"; component: string; state: string; xml?: string; error?: string }
 
 export type LiveRunItem = NonNullable<AgentEvent["item"]>
 
@@ -81,6 +82,35 @@ function applyItemEvent(run: LiveRun, event: AgentEvent): LiveRun {
   if (!item) return run
   const items = { ...run.items, [item.id]: item }
   const payload = item.payload
+  if (item.type === "component") {
+    const partId = String(payload.partId ?? item.id)
+    const component = String(payload.component ?? "research-map")
+    const incomingState = String(payload.state ?? "streaming")
+    const delta = typeof payload.delta === "string" ? payload.delta : ""
+    const fullXml = typeof payload.xml === "string" ? payload.xml : undefined
+    const error = typeof payload.error === "string" ? payload.error : undefined
+    const existing = run.parts.find((part) => part.id === partId)
+    // Content-only contract: the part keeps the fragment exactly as authored;
+    // "streaming" never overwrites a terminal state on replay.
+    const parts = existing?.type === "component"
+      ? run.parts.map((part) => part.id === partId && part.type === "component"
+        ? {
+            ...part,
+            state: incomingState === "streaming" ? part.state : incomingState,
+            xml: fullXml ?? (part.xml ?? "") + delta,
+            error: error ?? part.error,
+          }
+        : part)
+      : [...run.parts, {
+          id: partId,
+          type: "component" as const,
+          component,
+          state: incomingState,
+          xml: fullXml ?? delta,
+          ...(error ? { error } : {}),
+        }]
+    return { ...run, items, parts, events: existing ? run.events : [...run.events, event] }
+  }
   if (item.type === "assistant_message" || item.type === "reasoning_summary") {
     const partId = String(payload.partId ?? item.id)
     const type = item.type === "reasoning_summary" ? "reasoning" as const : "markdown" as const
@@ -154,6 +184,17 @@ export function assistantParts(message: Message): RenderedMessagePart[] {
     }
     if (type === "a2ui") {
       stored.push({ id: typeof part.id === "string" ? part.id : `surface-${index}`, type, surfaceId: typeof part.surfaceId === "string" ? part.surfaceId : undefined })
+      return
+    }
+    if (type === "component") {
+      stored.push({
+        id: typeof part.id === "string" ? part.id : `component-${index}`,
+        type,
+        component: typeof part.component === "string" ? part.component : "research-map",
+        state: typeof part.state === "string" ? part.state : "ready",
+        xml: typeof part.xml === "string" ? part.xml : undefined,
+        error: typeof part.error === "string" ? part.error : undefined,
+      })
     }
   })
   if (stored.length) return stored

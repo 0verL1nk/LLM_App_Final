@@ -13,6 +13,10 @@ ENV/
 .venv/
 # uv.lock should be committed to ensure consistent dependencies
 
+# pytest（本机 Temp ACL 受限时以 --basetemp=.pytest-tmp 运行）
+.pytest-tmp/
+.pytest_cache/
+
 # IDE
 .vscode/
 .idea/
@@ -80,6 +84,8 @@ docs/plans/*
 !docs/SECURITY.md
 !docs/agent-evals.md
 !docs/github-actions.md
+!docs/operations/
+!docs/operations/release-and-ci-playbook.md
 
 .serena
 

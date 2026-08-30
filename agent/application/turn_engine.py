@@ -2,13 +2,12 @@ import json
 import logging
 import re
 import time
-from typing import Any, cast
+from typing import Any
 
 from ..domain.human_request import extract_human_requests
 from ..domain.trace import TraceEvent, phase_label_from_performative
 from ..method_compare_parser import parse_method_compare_payload
 from .a2ui_fragments import A2UIFragmentStreamParser, PresentationDecision
-from .a2ui_mindmap import build_mindmap_surface_from_request
 from .contracts import EventCallback, SearchDocumentFn, TurnCoreResult
 from .ports import AgentInvoker, EvidenceRetriever
 from .response_stream import ResponseStreamPartRouter
@@ -323,12 +322,23 @@ def execute_turn_core(
 
     def insert_surface_part(_fragment_type: str) -> None:
         nonlocal pending_surface_part_id, text_part_id
-        pending_surface_part_id = f"surface-{len(fragments)}"
-        response_parts.append({"id": pending_surface_part_id, "type": "a2ui"})
+        pending_surface_part_id = f"component-{len(fragments)}"
+        response_parts.append(
+            {
+                "id": pending_surface_part_id,
+                "type": "component",
+                "component": "research-map",
+                "state": "streaming",
+            }
+        )
         _collect_event(
             {
                 "performative": "answer_part_insert",
-                "metadata": {"part_id": pending_surface_part_id, "part_type": "a2ui"},
+                "metadata": {
+                    "part_id": pending_surface_part_id,
+                    "part_type": "component",
+                    "component": "research-map",
+                },
             }
         )
         text_part_id = f"text-{len(fragments) + 1}"
@@ -362,18 +372,23 @@ def execute_turn_core(
         if not pending_surface_part_id:
             logger.warning("Discarded inline UI fragment without an insertion anchor")
             return
-        surface = build_mindmap_surface_from_request(
-            fragment.payload,
-            allowed_citation_ids=set(),
-        )
-        if surface is None:
-            report_surface_failure("可视化内容未通过安全校验，已保留正文。")
-            return
+        # Content-only contract: persist the fragment exactly as authored and
+        # let the frontend renderer own parsing, validation, and drawing.
         fragments.append((pending_surface_part_id, fragment))
+        for part in response_parts:
+            if part.get("id") == pending_surface_part_id:
+                part["state"] = "ready"
+                part["xml"] = fragment.raw_xml
+                break
         _collect_event(
             {
-                "performative": "a2ui_surface_ready",
-                "metadata": {"part_id": pending_surface_part_id, "surface": surface},
+                "performative": "answer_part_delta",
+                "content": fragment.raw_xml,
+                "metadata": {
+                    "part_id": pending_surface_part_id,
+                    "part_type": "component",
+                    "part_state": "ready",
+                },
             }
         )
 
@@ -381,10 +396,23 @@ def execute_turn_core(
         if not pending_surface_part_id:
             logger.warning("Discarded inline UI fragment: %s", message)
             return
+        # The part stays in storage with an error state instead of being
+        # dropped: the renderer shows a note and the raw text survives.
+        for part in response_parts:
+            if part.get("id") == pending_surface_part_id and part.get("state") == "streaming":
+                part["state"] = "error"
+                part["error"] = message
+                break
         _collect_event(
             {
-                "performative": "presentation_failed",
-                "metadata": {"part_id": pending_surface_part_id, "message": message},
+                "performative": "answer_part_delta",
+                "content": "",
+                "metadata": {
+                    "part_id": pending_surface_part_id,
+                    "part_type": "component",
+                    "part_state": "error",
+                    "error": message,
+                },
             }
         )
 
@@ -498,46 +526,6 @@ def execute_turn_core(
             logger.warning("Evidence fallback retrieval failed: %s", exc)
             evidence_items = []
     method_compare_data = parse_method_compare_payload(answer)
-    allowed_citation_ids = {
-            str(item.get("chunk_id") or "").strip()
-            for item in retrieved_evidence_items
-            if str(item.get("chunk_id") or "").strip()
-    }
-    a2ui_surfaces = [
-        {
-            **surface,
-            "partId": part_id,
-        }
-        for part_id, fragment in fragments
-        if fragment.type == "research-map"
-        for surface in [
-            build_mindmap_surface_from_request(
-                fragment.payload,
-                allowed_citation_ids=allowed_citation_ids,
-            )
-        ]
-        if surface is not None
-    ]
-    a2ui_surface = a2ui_surfaces[-1] if a2ui_surfaces else None
-    surface_ids_by_part = {
-        str(surface["partId"]): str(surface["surfaceId"])
-        for surface in a2ui_surfaces
-    }
-    for part in response_parts:
-        if part.get("type") == "a2ui" and part.get("id") in surface_ids_by_part:
-            part["surfaceId"] = surface_ids_by_part[part["id"]]
-    # A fragment that failed validation leaves its placeholder part behind;
-    # persisting it renders an eternal empty skeleton after reload.
-    response_parts = [
-        part
-        for part in response_parts
-        if part.get("type") != "a2ui" or part.get("id") in surface_ids_by_part
-    ]
-    mindmap_data = (
-        cast(dict[str, Any], a2ui_surface["mindmap"])
-        if isinstance(a2ui_surface, dict) and isinstance(a2ui_surface.get("mindmap"), dict)
-        else None
-    )
     run_latency_ms = (time.perf_counter() - run_started) * 1000.0
     phase_path = build_phase_path(phase_labels=phase_labels, answer=answer, messages=messages)
 
@@ -553,9 +541,6 @@ def execute_turn_core(
         "runtime_state": _maybe_to_dict(runtime_state_payload),
         "evidence_items": evidence_items,
         "retrieved_evidence_items": retrieved_evidence_items,
-        "mindmap_data": mindmap_data,
-        "a2ui_surface": a2ui_surface,
-        "a2ui_surfaces": a2ui_surfaces,
         "response_parts": response_parts,
         "method_compare_data": method_compare_data,
         "run_latency_ms": run_latency_ms,

@@ -41,6 +41,8 @@ class AgentRuntimeOptions:
     system_prompt: str | None = None
     enable_tool_selector: bool | None = None
     thread_id: str | None = None
+    max_turn_tokens: int | None = None
+    """Hard per-thread model-token budget; finalize instead of failing when hit."""
 
 
 @dataclass(frozen=True)
@@ -91,6 +93,7 @@ def create_agent_session(
         profile=profile,
         deps=deps,
         enable_tool_selector=enable_tool_selector,
+        max_turn_tokens=options.max_turn_tokens,
     )
     tool_specs = _build_tool_specs([*tools, *_collect_middleware_tools(middleware)])
     checkpointer, checkpoint_connection = _build_checkpointer()
@@ -196,7 +199,9 @@ def _tool_schema_level() -> str:
 def _serialize_tool_args_schema(tool_item: Any, *, schema_level: str) -> str:
     if schema_level == "manifest":
         return ""
-    args_schema = getattr(tool_item, "args_schema", None)
+    # tool_call_schema is the model-facing contract; args_schema may carry
+    # runtime-injected fields that must not be advertised to the model.
+    args_schema = getattr(tool_item, "tool_call_schema", None) or getattr(tool_item, "args_schema", None)
     if args_schema is None or not hasattr(args_schema, "model_json_schema"):
         return ""
     try:

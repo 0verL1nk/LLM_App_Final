@@ -36,6 +36,15 @@ class DelegateTaskInput(BaseModel):
     description: str = Field(min_length=1, description="Concrete research objective for this task.")
     mode: str = Field(default="join", description="Coordination mode; only join is currently supported.")
     plan_step_id: str | None = Field(default=None, description="Optional existing plan step to execute.")
+    context_note: str | None = Field(
+        default=None,
+        max_length=4000,
+        description=(
+            "Context snapshot for the child: the user's original question plus any "
+            "established conclusions the child must respect. Include whenever the "
+            "objective alone does not fully restate what the user asked."
+        ),
+    )
 
 
 class DurableDelegationMiddleware(AgentMiddleware):
@@ -48,6 +57,7 @@ class DurableDelegationMiddleware(AgentMiddleware):
             f"- {definition.name}: {definition.description}" for definition in definitions
         )
         self.system_prompt = (
+<<<<<<< HEAD
             "Delegate research work to role subagents when a task needs independent "
             "evidence gathering (per-document analysis, multi-source synthesis) or an "
             "independent review pass. When subtasks are independent, emit multiple "
@@ -57,6 +67,15 @@ class DurableDelegationMiddleware(AgentMiddleware):
             "verify the collected evidence - researcher-only fan-outs are incomplete. "
             "Do not delegate recursively and do not "
             "delegate trivial single-lookup work.\n\nAvailable roles:\n" + available
+=======
+            "Use `delegate_task` only when a distinct evidence task is useful. "
+            "It creates durable work and returns its stable task UID; it does not run "
+            "a child synchronously. Do not delegate recursively.\n"
+            "The child only sees what you send: give each task a self-contained "
+            "objective, and pass `context_note` with the user's original question and "
+            "any established conclusions whenever the objective alone does not fully "
+            "restate them.\n\nAvailable roles:\n" + available
+>>>>>>> origin/main
         )
         self.tools = [self._build_tool()]
 
@@ -97,6 +116,7 @@ class DurableDelegationMiddleware(AgentMiddleware):
             runtime: ToolRuntime,
             mode: str = "join",
             plan_step_id: str | None = None,
+            context_note: str | None = None,
         ) -> str:
             normalized_role = role.strip()
             if normalized_role not in roles:
@@ -118,6 +138,7 @@ class DurableDelegationMiddleware(AgentMiddleware):
                 description=description,
                 mode=mode,
                 plan_step_id=plan_step_id,
+                context_note=context_note,
                 db_name=db_name,
             )
             if created:

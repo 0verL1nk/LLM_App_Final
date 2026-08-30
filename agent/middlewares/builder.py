@@ -11,6 +11,7 @@ from openai import RateLimitError
 
 from ..context_governance import compact_trigger_ratio, model_context_window_tokens
 from ..subagent.loader import load_subagent_definitions
+from .budget import TokenBudgetMiddleware
 from .durable_delegation import DurableDelegationMiddleware
 from .llm_logger import llm_logger_middleware
 from .model_output_validation import (
@@ -18,6 +19,7 @@ from .model_output_validation import (
     model_output_validation_middleware,
 )
 from .plan import plan_middleware
+from .provider_history_hygiene import provider_history_hygiene_middleware
 from .steering_input import steering_input_middleware
 from .tool_selector import build_tool_selector_middleware
 from .trace import TraceMiddleware
@@ -42,9 +44,13 @@ def build_middleware_list(
     deps: Any | None = None,
     enable_auto_summarization: bool = True,
     enable_tool_selector: bool = True,
+    max_turn_tokens: int | None = None,
 ) -> list[AgentMiddleware[Any, Any, Any]]:
     """Build complete middleware list for agent runtime."""
     middleware_list: list[AgentMiddleware[Any, Any, Any]] = []
+
+    if max_turn_tokens is not None:
+        middleware_list.append(TokenBudgetMiddleware(max_turn_tokens))
 
     if _is_enabled(profile, "trace"):
         middleware_list.append(TraceMiddleware())
@@ -57,12 +63,18 @@ def build_middleware_list(
             initial_delay=1.0,
             max_delay=60.0,
             jitter=True,
-            on_failure="raise",
+            # Valid values are "error" (re-raise) or a callable; anything else
+            # silently converts the exception into an AIMessage, which the
+            # stream then renders as answer text (seen live on 2026-08-17).
+            on_failure="error",
         )
     )
 
     middleware_list.append(turn_context_middleware)
     middleware_list.append(steering_input_middleware)
+    # Legacy threads replay provider-error artifacts and consecutive human
+    # turns; strict providers (e.g. MiniMax) answer those with 400 forever.
+    middleware_list.append(provider_history_hygiene_middleware)
 
     if _is_enabled(profile, "subagent"):
         if deps is None:

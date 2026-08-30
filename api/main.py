@@ -18,6 +18,7 @@ from agent.logging_utils import configure_application_logging
 from .context_memory_routes import context_memory_router
 from .eval_routes import eval_router
 from .routes import router
+from .session_command_routes import session_command_router
 from .suggestion_routes import suggestion_router
 
 
@@ -40,6 +41,7 @@ app.include_router(router)
 app.include_router(context_memory_router, prefix="/api/v1")
 app.include_router(suggestion_router, prefix="/api/v1")
 app.include_router(eval_router, prefix="/api/v1")
+app.include_router(session_command_router, prefix="/api/v1")
 
 RESOURCE_ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 WEB_DIST = RESOURCE_ROOT / "web" / "dist"

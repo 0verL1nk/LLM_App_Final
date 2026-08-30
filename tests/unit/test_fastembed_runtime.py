@@ -22,7 +22,7 @@ def test_partial_download_cache_is_cleared_and_retried(monkeypatch, tmp_path):
             )
         return object()
 
-    monkeypatch.setattr("agent.rag.fastembed_runtime.FastEmbedEmbeddings", fake_ctor)
+    monkeypatch.setattr("langchain_community.embeddings.fastembed.FastEmbedEmbeddings", fake_ctor)
 
     result = build_fastembed_embeddings(model_name=_MODEL, cache_dir=str(cache_dir))
 
@@ -39,7 +39,7 @@ def test_unrelated_errors_are_raised_without_cache_wipe(monkeypatch, tmp_path):
     def fake_ctor(**_kwargs):
         raise Exception("CUDA execution provider failure")
 
-    monkeypatch.setattr("agent.rag.fastembed_runtime.FastEmbedEmbeddings", fake_ctor)
+    monkeypatch.setattr("langchain_community.embeddings.fastembed.FastEmbedEmbeddings", fake_ctor)
 
     with pytest.raises(Exception, match="CUDA"):
         build_fastembed_embeddings(model_name=_MODEL, cache_dir=str(cache_dir))
