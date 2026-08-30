@@ -10,7 +10,8 @@ def _runtime(state: dict) -> SimpleNamespace:
 
 def test_update_plan_creates_revisioned_snapshot() -> None:
     command = update_plan.func(
-        runtime=_runtime({}),
+        tool_call_id="call-1",
+        state={},
         revision=0,
         goal="核验论文",
         steps=[PlanStep(id="evidence", title="收集证据")],
@@ -25,7 +26,8 @@ def test_update_plan_creates_revisioned_snapshot() -> None:
 
 def test_update_plan_rejects_stale_revision() -> None:
     command = update_plan.func(
-        runtime=_runtime({"plan": {"revision": 0, "goal": "旧计划", "steps": []}}),
+        tool_call_id="call-1",
+        state={"plan": {"revision": 0, "goal": "旧计划", "steps": []}},
         revision=0,
         goal="核验论文",
         steps=[],
@@ -35,12 +37,12 @@ def test_update_plan_rejects_stale_revision() -> None:
 
 
 def test_read_plan_reports_no_active_plan() -> None:
-    assert "No active plan" in read_plan.func(runtime=_runtime({}))
+    assert "No active plan" in read_plan.func(state={})
 
 
 def test_read_plan_returns_current_snapshot() -> None:
     assert "核验论文" in read_plan.func(
-        runtime=_runtime({"plan": {"revision": 0, "goal": "核验论文", "steps": []}})
+        state={"plan": {"revision": 0, "goal": "核验论文", "steps": []}}
     )
 
 
@@ -59,7 +61,6 @@ def test_update_plan_validates_dependency_ids() -> None:
         raise AssertionError("Expected dependency validation failure")
 
 
-<<<<<<< HEAD
 def test_plan_nudge_injects_via_system_message_when_retrieval_runs_planless(monkeypatch) -> None:
     from types import SimpleNamespace
 
@@ -117,7 +118,6 @@ def test_plan_nudge_skips_when_plan_exists_or_no_retrieval() -> None:
 
         PlanMiddleware().wrap_model_call(_Request(), _handler)
         assert seen and seen[0].system_message == "base"
-=======
 def test_update_plan_tool_call_schema_hides_injected_args() -> None:
     fields = sorted(update_plan.tool_call_schema.model_json_schema().get("properties", {}).keys())
     assert fields == ["goal", "revision", "steps"]
@@ -193,4 +193,3 @@ def test_update_plan_runs_through_agent_tool_node() -> None:
     assert "missing" not in str(tool_messages[0].content)
     assert "revision 0 saved" in str(tool_messages[0].content)
     assert result.get("plan", {}).get("revision") == 0
->>>>>>> origin/main

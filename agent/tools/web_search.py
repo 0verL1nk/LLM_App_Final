@@ -340,7 +340,6 @@ def _ensure_web_search_clients() -> list[tuple[str, Any]]:
     if not clients:
         logger.warning("tool.search_web no primary provider initialized")
 
-<<<<<<< HEAD
     allow_ddg_fallback = _env_flag("AGENT_WEB_ENABLE_DDG_FALLBACK", default=False)
     if allow_ddg_fallback:
         fallback_client = _build_native_web_search_client()
@@ -349,30 +348,13 @@ def _ensure_web_search_clients() -> list[tuple[str, Any]]:
             logger.info("tool.search_web provider fallback initialized: native_duckduckgo_search")
         else:
             try:
+                from langchain_community.tools import DuckDuckGoSearchRun
+
                 native_client = DuckDuckGoSearchRun()
                 clients.append(("langchain_duckduckgo_search", native_client))
                 logger.info("tool.search_web provider fallback initialized: langchain_duckduckgo_search")
             except Exception:
                 logger.warning("tool.search_web no fallback provider available")
-=======
-    if not clients:
-        allow_ddg_fallback = _env_flag("AGENT_WEB_ENABLE_DDG_FALLBACK", default=False)
-        if allow_ddg_fallback:
-            fallback_client = _build_native_web_search_client()
-            if fallback_client is not None:
-                clients.append(("native_duckduckgo_search", fallback_client))
-                logger.info("tool.search_web provider fallback initialized: native_duckduckgo_search")
-            else:
-                try:
-                    # langchain_community import costs seconds; pay it on use only.
-                    from langchain_community.tools import DuckDuckGoSearchRun
-
-                    native_client = DuckDuckGoSearchRun()
-                    clients.append(("langchain_duckduckgo_search", native_client))
-                    logger.info("tool.search_web provider fallback initialized: langchain_duckduckgo_search")
-                except Exception:
-                    logger.warning("tool.search_web no fallback provider available")
->>>>>>> origin/main
 
     _web_search_clients = [
         (name, _CircuitBreakerProvider(name, client)) for name, client in clients

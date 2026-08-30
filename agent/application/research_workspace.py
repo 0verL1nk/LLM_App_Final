@@ -89,8 +89,7 @@ class ResearchWorkspaceService:
     ) -> _RuntimeEntry:
         key = (user_uuid, project_uid, session_uid, resolved_mode)
         project = _require_session(
-            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid
-        )
+            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid)
         documents = list_project_files(project_uid=project_uid, uuid=user_uuid, active_only=True)
         scope = tuple(sorted(str(item.get("uid") or "") for item in documents))
         with self._guard:
@@ -158,8 +157,7 @@ class ResearchWorkspaceService:
         if not normalized_prompt:
             raise ValueError("Prompt is required")
         _require_session(
-            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid
-        )
+            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid)
         ready_count = len(list_ready_project_documents(project_uid=project_uid, uuid=user_uuid))
         route = resolve_execution_route(
             prompt=normalized_prompt, requested_mode=execution_mode, document_count=ready_count
@@ -374,8 +372,7 @@ class ResearchWorkspaceService:
     ) -> dict[str, Any]:
         """Persist a running-turn follow-up after validating workspace ownership."""
         _require_session(
-            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid
-        )
+            project_uid=project_uid, session_uid=session_uid, user_uuid=user_uuid)
         input_item, _created = queue_steering_input(
             project_uid=project_uid,
             session_uid=session_uid,

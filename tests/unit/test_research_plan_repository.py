@@ -91,7 +91,8 @@ def test_plan_middleware_persists_leader_update_plan_snapshot(tmp_path: Path) ->
         db_name=database,
     )
     command = update_plan.func(
-        runtime=SimpleNamespace(tool_call_id="call-1", state={}),
+        tool_call_id="call-1",
+        state={},
         revision=0,
         goal="Collect evidence",
         steps=[PlanStep(id="evidence", title="Collect evidence")],

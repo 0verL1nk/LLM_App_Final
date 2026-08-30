@@ -284,6 +284,10 @@ export function useStartEvalRun() {
     onSuccess: (snapshot) => {
       queryClient.setQueryData(keys.evalRun(snapshot.uid), snapshot)
       void queryClient.invalidateQueries({ queryKey: keys.evalRuns })
+    },
+  })
+}
+
 export function useRenameSession(projectId: string, sessionId: string) {
   const client = useQueryClient()
   return useMutation({

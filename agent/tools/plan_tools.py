@@ -1,15 +1,12 @@
-"""Revisioned plan tool owned by the Leader Agent.
+"""Revisioned plan tool owned by the Leader Agent."""
 
-NOTE: Do NOT add ``from __future__ import annotations`` here. Stringified
-annotations break langchain_core's injected-arg detection for the ``runtime:
-ToolRuntime`` parameter, so the runtime value would never reach the function.
-"""
+from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from langchain_core.messages import ToolMessage
-from langchain_core.tools import StructuredTool
-from langgraph.prebuilt import ToolRuntime
+from langchain_core.tools import InjectedToolCallId, tool
+from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
 from pydantic import BaseModel, Field, model_validator
 
@@ -49,19 +46,15 @@ class UpdatePlanInput(BaseModel):
         return self
 
 
-class ReadPlanInput(BaseModel):
-    """read_plan takes no model-facing arguments."""
-
-
-def _update_plan(
-    runtime: ToolRuntime,
+@tool("update_plan", args_schema=UpdatePlanInput)
+def update_plan(
     revision: int,
     goal: str,
     steps: list[PlanStep],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+    state: Annotated[dict[str, Any], InjectedState],
 ) -> Command[Any]:
     """Replace the plan only when the supplied revision follows the current one."""
-    tool_call_id = str(runtime.tool_call_id or "")
-    state = runtime.state if isinstance(runtime.state, dict) else {}
     current = state.get("plan") if isinstance(state.get("plan"), dict) else None
     expected = 0 if current is None else int(current.get("revision", -1)) + 1
     if revision != expected:
@@ -88,44 +81,15 @@ def _update_plan(
     )
 
 
-def _read_plan(runtime: ToolRuntime) -> str:
+@tool("read_plan")
+def read_plan(state: Annotated[dict[str, Any], InjectedState]) -> str:
     """Read the current revisioned plan snapshot."""
-    state = runtime.state if isinstance(runtime.state, dict) else {}
     plan = state.get("plan")
     if not isinstance(plan, dict):
         return "No active plan. Use update_plan only when a plan is useful."
     return str(plan)
 
 
-update_plan = StructuredTool.from_function(
-    name="update_plan",
-    description=(
-        "Create or rewrite the execution plan. Use it whenever the task has multiple steps "
-        "or involves multiple documents: the first call creates a plan with concrete, "
-        "verifiable steps (never a single-step plan); after finishing each step, call again "
-        "with its status updated - keep exactly one step in_progress and mark steps completed "
-        "immediately. Skip planning for trivial single-lookup questions."
-    ),
-    func=_update_plan,
-    args_schema=UpdatePlanInput,
-    infer_schema=False,
-)
-
-read_plan = StructuredTool.from_function(
-    name="read_plan",
-    description="Read the current revisioned plan snapshot.",
-    func=_read_plan,
-    args_schema=ReadPlanInput,
-    infer_schema=False,
-)
-
 PLAN_TOOLS = [update_plan, read_plan]
 
-__all__ = [
-    "PLAN_TOOLS",
-    "PlanStep",
-    "ReadPlanInput",
-    "UpdatePlanInput",
-    "read_plan",
-    "update_plan",
-]
+__all__ = ["PLAN_TOOLS", "PlanStep", "UpdatePlanInput", "read_plan", "update_plan"]

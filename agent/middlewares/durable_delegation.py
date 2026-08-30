@@ -57,17 +57,6 @@ class DurableDelegationMiddleware(AgentMiddleware):
             f"- {definition.name}: {definition.description}" for definition in definitions
         )
         self.system_prompt = (
-<<<<<<< HEAD
-            "Delegate research work to role subagents when a task needs independent "
-            "evidence gathering (per-document analysis, multi-source synthesis) or an "
-            "independent review pass. When subtasks are independent, emit multiple "
-            "delegate_task calls in the SAME turn so they run concurrently; the runtime "
-            "joins their results asynchronously. For comparison or adoption-decision "
-            "tasks, the same-turn fan-out MUST include one reviewer delegation to "
-            "verify the collected evidence - researcher-only fan-outs are incomplete. "
-            "Do not delegate recursively and do not "
-            "delegate trivial single-lookup work.\n\nAvailable roles:\n" + available
-=======
             "Use `delegate_task` only when a distinct evidence task is useful. "
             "It creates durable work and returns its stable task UID; it does not run "
             "a child synchronously. Do not delegate recursively.\n"
@@ -75,7 +64,6 @@ class DurableDelegationMiddleware(AgentMiddleware):
             "objective, and pass `context_note` with the user's original question and "
             "any established conclusions whenever the objective alone does not fully "
             "restate them.\n\nAvailable roles:\n" + available
->>>>>>> origin/main
         )
         self.tools = [self._build_tool()]
 
@@ -87,8 +75,8 @@ class DurableDelegationMiddleware(AgentMiddleware):
         model calls carry the suggestion in the single system message - never by
         mutating tool results, which carry JSON payloads.
         """
-        enabled = os.getenv("AGENT_DELEGATION_NUDGE_ENABLED", "1").strip().lower()
-        if enabled in {"0", "false", "off"}:
+        enabled = os.getenv("AGENT_DELEGATION_NUDGE_ENABLED", "0").strip().lower()
+        if enabled not in {"1", "true", "on"}:
             return handler(request)
         state = request.state if isinstance(request.state, dict) else {}
         messages = state.get("messages") or []
