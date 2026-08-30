@@ -75,3 +75,5 @@
 - [x] 6.1 修正语料：已下载真实 Self-Consistency（arXiv 2203.11171，PyMuPDF 抽取）替换误标文件，全部引用从 `arxiv:2205.00445` 切换到 `arxiv:2203.11171`
 - [ ] 6.2 Leader 计划/委派触发的提示词迭代后重跑 live 基线对比
 - [x] 6.3 排查 `web_overturn_001` 的流式无最终状态崩溃——已定位为 ToolRuntime 注入 bug 的下游（见 §7.2），修复后该用例连续两轮稳定通过
+
+- [x] 8.5 nudge 双臂 A/B 判定（pass²=2，19 用例×2 试验，v2 快照，M3）：对照（关）6/19、逐试验完成 37%/过程 66%/证据 84%；处理（开）5/19、34%/61%/79%——净平偏负且全在噪声带内，翻转 5 例（2 升 3 降，nudge 拖垮回归层 rag_fact 2→0 与 scaling 2→0，救了 compare_constraints 0→2）。按预登记决策规则：**nudge 降级为可选开关（默认关）**，计划在场由结构路由承载（deterministic-mode-escalation）。双臂产物：task-completion-ab-{control,treatment}-20260824.json + eval_ab_compare.py

@@ -26,7 +26,7 @@ PLAN_NUDGE_INSTRUCTION = (
 
 
 def _plan_nudge_enabled() -> bool:
-    return os.getenv("AGENT_PLAN_NUDGE_ENABLED", "1").strip().lower() not in {"0", "false", "off"}
+    return os.getenv("AGENT_PLAN_NUDGE_ENABLED", "0").strip().lower() in {"1", "true", "on"}
 
 
 def _has_search_document_call(messages: list[Any]) -> bool:

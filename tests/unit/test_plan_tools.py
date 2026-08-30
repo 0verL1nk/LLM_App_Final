@@ -59,10 +59,12 @@ def test_update_plan_validates_dependency_ids() -> None:
         raise AssertionError("Expected dependency validation failure")
 
 
-def test_plan_nudge_injects_via_system_message_when_retrieval_runs_planless() -> None:
+def test_plan_nudge_injects_via_system_message_when_retrieval_runs_planless(monkeypatch) -> None:
     from types import SimpleNamespace
 
     from agent.middlewares.plan import PLAN_NUDGE_MARKER, PlanMiddleware
+
+    monkeypatch.setenv("AGENT_PLAN_NUDGE_ENABLED", "1")
 
     ai_with_search = SimpleNamespace(
         type="ai", content="", tool_calls=[{"name": "search_document", "args": {"query": "q"}}]
