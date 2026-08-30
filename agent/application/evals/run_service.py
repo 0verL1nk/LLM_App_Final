@@ -8,6 +8,7 @@ Report artifacts are also persisted under ``data/evals/`` for inspection.
 from __future__ import annotations
 
 import json
+import os
 import threading
 import time
 import uuid
@@ -27,6 +28,9 @@ from .loader import load_eval_cases
 from .selection import select_eval_cases
 
 DEFAULT_FIXTURE_PATH = "tests/evals/fixtures/agent_task_eval_set_v1.jsonl"
+# Untrusted fixture paths (HTTP request field) may only resolve inside this
+# root; anything else is a path-traversal read of arbitrary JSONL.
+ALLOWED_FIXTURE_ROOT = (Path.cwd() / "tests" / "evals" / "fixtures").resolve()
 EVAL_ARTIFACT_DIR = Path("data/evals")
 # CLI eval runs persist progress snapshots beside their reports; the service
 # surfaces them so the dev evals page shows CLI-started runs too.
@@ -132,8 +136,13 @@ class TaskCompletionEvalService:
         limit: int | None = None,
         trials: int = 1,
     ) -> dict[str, Any]:
+        resolved_fixture = Path(fixture_path).resolve()
+        if not str(resolved_fixture).startswith(str(ALLOWED_FIXTURE_ROOT) + os.sep) and resolved_fixture != ALLOWED_FIXTURE_ROOT:
+            raise ValueError(
+                f"fixture_path must stay under {ALLOWED_FIXTURE_ROOT}: {fixture_path}"
+            )
         cases = select_eval_cases(
-            load_eval_cases(fixture_path),
+            load_eval_cases(str(resolved_fixture)),
             case_ids=case_ids,
             limit=limit,
         )
