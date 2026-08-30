@@ -1,0 +1,28 @@
+name: R2 Migration Hop (one-time)
+# Mirrors a GitHub release's updater assets to the legacy R2 feed so <=1.13.0
+# installs can hop onto a GitHub-fed build. Delete this workflow (and the R2
+# secrets) after the hop completes.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to mirror"
+        required: true
+        default: "v1.14.0"
+
+permissions:
+  contents: read
+
+jobs:
+  hop:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mirror updater assets to legacy R2 feed
+        shell: pwsh
+        run: ./scripts/sync_r2_one_last_time.ps1 -Tag "${{ inputs.tag }}"

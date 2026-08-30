@@ -16,7 +16,7 @@ if (-not $env:AWS_ACCESS_KEY_ID -or -not $env:AWS_SECRET_ACCESS_KEY) {
   throw "Set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (R2 token) first."
 }
 
-$tmp = Join-Path $env:TEMP "r2-hop-$Tag"
+$tmp = Join-Path ([System.IO.Path]::GetTempPath()) "r2-hop-$Tag"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 
 # Updater artifacts are attached to the GitHub release; mirror exactly what
