@@ -40,9 +40,15 @@ foreach ($metadataFile in @("latest.yml", "latest-mac.yml", "latest-linux.yml"))
   if (-not (Test-Path $metadataPath)) { continue }
   $path = (Select-String -LiteralPath $metadataPath -Pattern '^path:\s*["'']?([^"''\r\n]+)' | Select-Object -First 1).Matches.Groups[1].Value.Trim()
   if (-not $path) { throw "Updater metadata does not declare a path: $metadataFile" }
-  foreach ($name in @($path, "$path.blockmap")) {
+  foreach ($name in @($path)) {
     if (-not (Test-Path (Join-Path $tmp $name))) { throw "Missing updater asset: $name" }
     if ($downloaded -notcontains $name) { $downloaded += $name }
+  }
+  # Blockmaps are optional (matches the legacy R2 publish step): AppImage
+  # targets ship without one and the updater falls back to full downloads.
+  $blockmap = "$path.blockmap"
+  if ((Test-Path (Join-Path $tmp $blockmap)) -and $downloaded -notcontains $blockmap) {
+    $downloaded += $blockmap
   }
 }
 
