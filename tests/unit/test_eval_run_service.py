@@ -159,3 +159,33 @@ def test_eval_service_rejects_concurrent_runs() -> None:
     finally:
         release.set()
     service._wait_until_settled(service.list_runs()[0]["uid"])
+
+
+def test_eval_service_rejects_fixture_paths_outside_the_allowed_root() -> None:
+    service = TaskCompletionEvalService(
+        runner_factory=_StaticRunner,
+        judge_factory=lambda: _passing_judge,
+    )
+
+    for escape in ("../../.env", "C:/Windows/system32/cases.jsonl", "agent/llm_provider.py"):
+        try:
+            service.start(fixture_path=escape)
+        except ValueError as exc:
+            assert "must be a fixture file inside" in str(exc)
+        else:
+            raise AssertionError(f"Expected path rejection: {escape}")
+
+
+def test_eval_service_accepts_fixture_inside_allowed_root() -> None:
+    service = TaskCompletionEvalService(
+        runner_factory=_StaticRunner,
+        judge_factory=lambda: _passing_judge,
+    )
+
+    snapshot = service.start(
+        fixture_path="tests/evals/fixtures/agent_task_eval_set_v1.jsonl",
+        case_ids=["project_rag_fact_001"],
+    )
+
+    final = service._wait_until_settled(snapshot["uid"])
+    assert final["status"] == "completed"

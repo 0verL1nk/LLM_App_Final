@@ -10,13 +10,20 @@ its own files.
 An update cannot replace a running desktop executable. Per-machine Windows
 installations may still require a UAC prompt when the user exits.
 
-The update provider is `https://papersage-updates.overlink.top`, backed by the
-dedicated R2 bucket `overlink-papersage-desktop-updates-prod`. The Desktop
-Release workflow uploads only updater metadata, platform update packages, and
-their blockmaps to that bucket. Metadata is `no-store`; versioned packages are
-immutable and use multiple HTTP range requests for differential updates.
+The update provider is this repository's GitHub Releases (`provider:
+"github"` in `web/package.json`). The Desktop Release workflow attaches all
+updater artifacts — `latest*.yml` metadata, platform update packages, and
+blockmaps — to the GitHub release alongside the installers, so no external
+bucket or CDN is involved. Updates are full downloads; GitHub-hosted feeds do
+not serve differential range requests.
 
-The release workflow uses R2's S3-compatible multipart API because desktop
-installers exceed Wrangler's 300 MiB single-upload limit. It requires the
-repository secrets `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, created with
-object read/write access limited to that update bucket.
+Clients on networks where GitHub is unreachable can set the
+`PAPERSAGE_UPDATE_FEED` environment variable to a mirror feed URL; the
+updater tries the configured mirror once after the primary check fails.
+
+History: releases up to and including 1.13.0 also published updater assets
+to a personal Cloudflare R2 bucket (`overlink-papersage-desktop-updates-prod`,
+`https://papersage-updates.overlink.top`) and used it as the primary feed.
+That path was removed on 2026-08-30; installs still configured against it
+will see no further updates from that bucket and should reinstall from
+GitHub Releases or set `PAPERSAGE_UPDATE_FEED`.

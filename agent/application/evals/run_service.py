@@ -27,6 +27,9 @@ from .loader import load_eval_cases
 from .selection import select_eval_cases
 
 DEFAULT_FIXTURE_PATH = "tests/evals/fixtures/agent_task_eval_set_v1.jsonl"
+# Untrusted fixture paths (HTTP request field) may only resolve inside this
+# root; anything else is a path-traversal read of arbitrary JSONL.
+ALLOWED_FIXTURE_ROOT = (Path.cwd() / "tests" / "evals" / "fixtures").resolve()
 EVAL_ARTIFACT_DIR = Path("data/evals")
 # CLI eval runs persist progress snapshots beside their reports; the service
 # surfaces them so the dev evals page shows CLI-started runs too.
@@ -132,8 +135,16 @@ class TaskCompletionEvalService:
         limit: int | None = None,
         trials: int = 1,
     ) -> dict[str, Any]:
+        # basename strips any directory components (traversal, absolute
+        # prefixes), so the candidate is structurally confined to the
+        # fixtures root; anything missing there is rejected outright.
+        candidate = (ALLOWED_FIXTURE_ROOT / Path(fixture_path).name).resolve()
+        if candidate.parent != ALLOWED_FIXTURE_ROOT or not candidate.is_file():
+            raise ValueError(
+                f"fixture_path must be a fixture file inside {ALLOWED_FIXTURE_ROOT}"
+            )
         cases = select_eval_cases(
-            load_eval_cases(fixture_path),
+            load_eval_cases(str(candidate)),
             case_ids=case_ids,
             limit=limit,
         )
