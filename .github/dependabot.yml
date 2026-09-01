@@ -9,6 +9,13 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    ignore:
+      # chromadb is capped <1.0 deliberately: the legacy in-process retriever
+      # uses it only via langchain-chroma, and the whole path retires in favor
+      # of the LanceDB production chain (docs/exec-plans/tech-debt-tracker.md
+      # item b). Major bumps add risk to a dying path for zero value.
+      - dependency-name: "chromadb"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "npm"
     directory: "/web"
     schedule:
