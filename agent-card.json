@@ -1,0 +1,110 @@
+{
+  "$schema": "https://raw.githubusercontent.com/lindixu6-hash/awesome-agentic-engineering/v0.15.0/schema/agent-card.schema.json",
+  "name": "PaperSage Research Workspace Agent",
+  "owner": "PaperSage maintainers",
+  "users": [
+    "researchers",
+    "students",
+    "evidence-driven knowledge workers"
+  ],
+  "workflow": "Given project-scoped documents and optional public-web research, the Leader may plan and delegate bounded first-level tasks, gather traceable evidence, and produce a draft research answer inside the PaperSage workspace.",
+  "risk_profile": "draft-only",
+  "non_goals": [
+    "Publish or send external messages on a user's behalf",
+    "Treat partially indexed or out-of-scope documents as evidence",
+    "Allow subagents to delegate recursively",
+    "Present unsupported claims as verified facts"
+  ],
+  "tools": [
+    {
+      "name": "search_document",
+      "purpose": "Retrieve citeable evidence from ready documents in the current project scope",
+      "access": "read",
+      "effect": "read_only",
+      "approval_required": false
+    },
+    {
+      "name": "list_document",
+      "purpose": "List ready documents visible to the current project-scoped session",
+      "access": "read",
+      "effect": "read_only",
+      "approval_required": false
+    },
+    {
+      "name": "read_document",
+      "purpose": "Read a bounded span from a document already available in scope",
+      "access": "read",
+      "effect": "read_only",
+      "approval_required": false
+    },
+    {
+      "name": "search_web",
+      "purpose": "Read supplemental public-web evidence when project documents are insufficient",
+      "access": "read",
+      "effect": "read_only",
+      "approval_required": false
+    },
+    {
+      "name": "search_papers",
+      "purpose": "Read scholarly search metadata from configured public providers",
+      "access": "read",
+      "effect": "read_only",
+      "approval_required": false
+    },
+    {
+      "name": "use_skill",
+      "purpose": "Load bounded, repository-defined operational guidance for the current task",
+      "access": "read",
+      "effect": "read_only",
+      "approval_required": false
+    },
+    {
+      "name": "update_plan",
+      "purpose": "Persist a draft execution plan and its task-linked progress",
+      "access": "write",
+      "effect": "draft",
+      "approval_required": false
+    },
+    {
+      "name": "delegate_task",
+      "purpose": "Create one durable first-level research, review, or writing task",
+      "access": "write",
+      "effect": "draft",
+      "approval_required": false
+    },
+    {
+      "name": "ask_human",
+      "purpose": "Persist a request for human input when ambiguity blocks safe progress",
+      "access": "write",
+      "effect": "draft",
+      "approval_required": false
+    },
+    {
+      "name": "add_paper_to_library",
+      "purpose": "Queue an open-access paper for ingestion into the current project library",
+      "access": "write",
+      "effect": "draft",
+      "approval_required": false
+    }
+  ],
+  "launch_blockers": [
+    "Add deterministic prompt-injection regressions for document, web, paper-search, and skill tool boundaries to the offline pull-request gate.",
+    "The live task-completion eval requires model/provider access and is not part of the offline pull-request gate.",
+    "A production deployment must demonstrate PAPERSAGE_TASK_TRANSPORT=outbox with a supervised worker/outbox publisher; the default local mode is not multi-instance execution authority."
+  ],
+  "eval_fixtures": [
+    "tests/evals/fixtures/agent_task_eval_set_v1.jsonl"
+  ],
+  "scorecard": {
+    "goal_clarity": 2,
+    "tool_permissions": 2,
+    "memory": 2,
+    "evals": 2,
+    "failure_handling": 2,
+    "security": 1,
+    "observability": 2,
+    "cost_control": 2,
+    "human_review": 1,
+    "documentation": 2
+  }
+}
