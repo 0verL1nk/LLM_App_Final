@@ -14,6 +14,7 @@
 | scenario 校准基线 | `make eval-baseline` | 19/19（回归层，必过——校准裁判与评分管线，非模型质量） |
 | live 度量基线 | `make eval-live-smoke EVAL_LIMIT=0`（`--repeat 3 --parallel 3` 可选） | 单轮基线：首轮 6/19（31.6%）→ 基线 2 10/19（53%）→ 收官 8/19（42%，结果层 58%）；pass^3=3 方差基线 5/19（26%）——单轮波动在 pass^k 噪声带内，web 类为已知漂移层 |
 | 前端 lint/类型/单测 | `make web-lint web-typecheck web-test` | 通过（随 `make check`/`make ci` 执行） |
+| 生产来源用例占比 | `GET /api/v1/evals/feedback-findings` + fixture 中 `origin: production-finding` 计数 | 指标位（2026-09-01 起登记）：0 条——反馈闭环刚落地，尚无生产发现经人审并入；评测报告已按 `origin_breakdown` 分层，并入后此处填"自写 N / 生产 M" |
 
 单套命令入口：`make check`（快速门）与 `make ci`（完整离线 CI 等价）。
 

@@ -59,6 +59,16 @@ Optional live-scope isolation metadata:
 - `document_access`: `scoped` keeps project-document prompt/tool access enabled, `none` disables project-document prompt injection and omits document tools entirely
 - `document_scope`: when `document_access` is `scoped`, limits the case to an explicit list of `doc_uid` values from the local fixture corpus
 
+Optional provenance metadata:
+
+- `origin`: `production-finding` marks a case exported from recurring production feedback
+  signals (research-feedback-loop). Cases without `origin` count as self-authored. The
+  report's `origin_breakdown` section layers completion rates by this marker, and the
+  companion fields `finding_id` / `signal_type` / `source_run_uid` trace the case back to
+  the finding that produced it. Drafts are exported from the dev evals page
+  (`GET/POST /api/v1/evals/feedback-findings...`); merging them into a fixture is always an
+  explicit operator action.
+
 Example:
 
 ```json
@@ -126,6 +136,8 @@ Aggregate fields include:
 - `evidence_coverage_rate`
 - `average_execution_completion_ratio`
 - `remediation_area_counts`
+- `origin_breakdown` (per-`origin` totals and completion rates; `authored` is the default
+  bucket for cases without the marker)
 
 Case-level fields include:
 

@@ -5,6 +5,15 @@ from sqlalchemy import inspect, text
 from agent.adapters.orm.database import build_database_url, create_engine, run_migrations
 
 
+def _latest_migration_revision() -> str:
+    """Head revision of the alembic script directory (no hardcoding)."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+    return ScriptDirectory.from_config(config).get_current_head()
+
+
 def test_database_url_resolves_desktop_path_and_preserves_explicit_url(tmp_path: Path) -> None:
     database = tmp_path / "runtime.sqlite"
 
@@ -25,7 +34,7 @@ def test_baseline_migration_records_alembic_revision(tmp_path: Path) -> None:
     with create_engine(database).connect() as connection:
         revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         tables = inspect(connection).get_table_names()
-    assert revision == "20260815_10"
+    assert revision == _latest_migration_revision()
     assert {
         "agent_runs",
         "research_artifacts",
@@ -69,7 +78,7 @@ def test_migrations_upgrade_an_existing_database_in_place(tmp_path: Path) -> Non
     with create_engine(database).connect() as connection:
         revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         tables = inspect(connection).get_table_names()
-    assert revision == "20260815_10"
+    assert revision == _latest_migration_revision()
     assert "agent_tasks" in tables
 
 
@@ -115,7 +124,7 @@ def test_migrations_reconcile_drifted_run_events_columns(tmp_path: Path) -> None
     with create_engine(database).connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "20260815_10"
+            == _latest_migration_revision()
         )
 
 
@@ -159,7 +168,7 @@ def test_migrations_heal_legacy_events_before_backfill(tmp_path: Path) -> None:
     with create_engine(database).connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "20260815_10"
+            == _latest_migration_revision()
         )
         assert (
             connection.execute(

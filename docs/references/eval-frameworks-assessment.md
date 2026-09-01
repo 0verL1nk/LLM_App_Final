@@ -31,6 +31,23 @@ WSL2）。全量替换成本 10–15 人日（前端/报告需重写），不做
 3. Inspect 的 Windows 支持转官方；
 4. 需要"事后重评分"工作流。
 
+## Tax AI 对照注记（2026-09-01，随 research-feedback-loop 落地）
+
+OpenAI Tax AI（2026-07《building-self-improving-tax-agents-with-codex》）的核心路径是
+"生产失败信号 → 审查行归并 → 人审 → 评测目标 → 修复 → 回归"，与我们保持手搓 harness 的
+裁决一致：它证明补齐的不是框架，而是**语料来源**。PaperSage 侧对应关系：
+
+- 生产信号捕获：`agent/feedback/`（确定性规则：correction_followup / mode_switch_reask /
+  evidence_gap，复用 durable 事件 + worker 模式，事件只存 digest 与短预览）；
+- 发现归并：`feedback_events` 按项目/文档/信号类型 GROUP BY（≥2 次才成为发现）；
+- 人审转评测：开发态评测页"反馈发现"区一键导出 JSONL 草稿（`origin: production-finding`
+  溯源），操作者审核后手工并入 fixture——与 Tax AI 一样保留人工关卡，不做全自动入库；
+- 分层统计：评测报告 `origin_breakdown` 区分自写与生产用例通过率
+  （见 [QUALITY_SCORE](../QUALITY_SCORE.md) 的"生产来源用例占比"指标位）。
+
+对照结论：Tax AI 的循环后三段（评测基础设施、追踪、回归基线）本仓库已有，本变更补第一段；
+框架替换（Inspect AI PoC）触发条件不变。
+
 ## 立即借鉴（2–4 人日，已登记 eval 变更 §8）
 
 1. **两段式评测（收益最大）**：先落原始轨迹，再离线跑 judge——judge prompt 迭代不再重跑昂贵

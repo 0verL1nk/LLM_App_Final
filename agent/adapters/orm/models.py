@@ -217,6 +217,54 @@ session_context_summaries = Table(
 )
 Index("idx_context_summary_scope", session_context_summaries.c.uuid, session_context_summaries.c.project_uid)
 
+feedback_analysis_tasks = Table(
+    "feedback_analysis_tasks",
+    metadata,
+    Column("task_uid", String, primary_key=True),
+    Column("run_uid", String, ForeignKey("agent_runs.run_uid", ondelete="CASCADE"), nullable=False, unique=True),
+    Column("user_uuid", String, nullable=False),
+    Column("project_uid", String, nullable=False),
+    Column("session_uid", String, nullable=False),
+    Column("citation_audit", String, nullable=False, server_default=""),
+    Column("retrieved_evidence_count", Integer, nullable=False, server_default="0"),
+    Column("evidence_doc_uids_json", Text, nullable=False, server_default="[]"),
+    Column("status", String, nullable=False, server_default="pending"),
+    Column("error_message", Text, nullable=False, server_default=""),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+Index("idx_feedback_analysis_status", feedback_analysis_tasks.c.status, feedback_analysis_tasks.c.updated_at)
+
+feedback_events = Table(
+    "feedback_events",
+    metadata,
+    Column("event_uid", String, primary_key=True),
+    Column("user_uuid", String, nullable=False),
+    Column("project_uid", String, nullable=False),
+    Column("session_uid", String, nullable=False),
+    Column("run_uid", String, ForeignKey("agent_runs.run_uid", ondelete="CASCADE"), nullable=False),
+    Column("signal_type", String, nullable=False),
+    Column("prompt_digest", String, nullable=False),
+    Column("doc_uid", String, nullable=False, server_default=""),
+    Column("payload_json", Text, nullable=False),
+    Column("created_at", String, nullable=False),
+)
+Index("idx_feedback_events_bucket", feedback_events.c.project_uid, feedback_events.c.signal_type, feedback_events.c.doc_uid, feedback_events.c.created_at)
+Index("idx_feedback_events_run", feedback_events.c.run_uid)
+
+evidence_clicks = Table(
+    "agent_evidence_clicks",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("run_uid", String, ForeignKey("agent_runs.run_uid", ondelete="CASCADE"), nullable=False),
+    Column("user_uuid", String, nullable=False),
+    Column("project_uid", String, nullable=False),
+    Column("evidence_ref", String, nullable=False),
+    Column("item_uid", String, nullable=False, server_default=""),
+    Column("created_at", String, nullable=False),
+)
+Index("idx_agent_evidence_clicks_run", evidence_clicks.c.run_uid, evidence_clicks.c.created_at)
+
 
 __all__ = [
     "agent_run_events",
@@ -228,6 +276,9 @@ __all__ = [
     "agent_task_attempts",
     "agent_task_outbox",
     "agent_tasks",
+    "evidence_clicks",
+    "feedback_analysis_tasks",
+    "feedback_events",
     "metadata",
     "steering_inputs",
     "context_memory_items",

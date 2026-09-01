@@ -54,6 +54,7 @@ from .steering_inputs import (
     queue_steering_input,
     unconfirmed_steering_inputs,
 )
+from .turn_feedback import enqueue_turn_feedback_analysis
 from .workspace import require_project
 
 
@@ -316,19 +317,16 @@ class ResearchWorkspaceService:
                 messages=messages,
             )
             if input_messages is None:
-                enqueue_turn_memory_consolidation(
+                turn_scope = dict(
                     user_uuid=user_uuid,
                     project_uid=project_uid,
                     session_uid=session_uid,
                     prompt=normalized_prompt,
-                    answer=result["answer"],
                 )
-                enqueue_session_title_generation(
-                    user_uuid=user_uuid,
-                    project_uid=project_uid,
-                    session_uid=session_uid,
-                    prompt=normalized_prompt,
-                    answer=result["answer"],
+                enqueue_turn_memory_consolidation(**turn_scope, answer=result["answer"])
+                enqueue_session_title_generation(**turn_scope, answer=result["answer"])
+                enqueue_turn_feedback_analysis(
+                    run_uid=run_uid, **turn_scope, turn_result=result
                 )
         return public_result
     def execute_continuation_turn(

@@ -20,8 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useEvalRun, useEvalRuns, useStartEvalRun } from "@/lib/queries"
-import type { EvalCaseProgress } from "@/lib/schemas"
+import { useEvalRun, useEvalRuns, useExportFeedbackCase, useFeedbackFindings, useStartEvalRun } from "@/lib/queries"
+import type { EvalCaseProgress, FeedbackCaseDraft } from "@/lib/schemas"
 
 const STATUS_LABELS: Record<EvalCaseProgress["status"], string> = {
   pending: "等待",
@@ -29,6 +29,12 @@ const STATUS_LABELS: Record<EvalCaseProgress["status"], string> = {
   passed: "通过",
   failed: "未过",
   errored: "异常",
+}
+
+const SIGNAL_TYPE_LABELS: Record<string, string> = {
+  correction_followup: "追问式修正",
+  mode_switch_reask: "模式切换重问",
+  evidence_gap: "证据缺口",
 }
 
 function statusBadge(status: EvalCaseProgress["status"]) {
@@ -133,6 +139,102 @@ function categoryRows(cases: unknown) {
         .bar { height: 8px; border-radius: 0 4px 4px 0; background: var(--color-primary, #2a78d6); }
         .barlabel { font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 65%, transparent); }
       `}</style>
+    </Card>
+  )
+}
+
+function FeedbackFindingsSection() {
+  const findings = useFeedbackFindings()
+  const exportCase = useExportFeedbackCase()
+  const [draft, setDraft] = useState<FeedbackCaseDraft | null>(null)
+
+  const handleExport = async (findingId: string) => {
+    try {
+      setDraft(await exportCase.mutateAsync(findingId))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "导出评测草稿失败")
+    }
+  }
+
+  const handleCopy = async () => {
+    if (!draft) return
+    try {
+      await navigator.clipboard.writeText(draft.jsonl_line)
+      toast.success("已复制 JSONL 行，请审核后并入 fixture")
+    } catch {
+      toast.error("复制失败，请手动选择文本复制")
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">反馈发现（人审转评测）</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          研究会话中重复出现的修正信号（确定性规则捕获，仅存摘要与摘要指纹）。
+          导出的是评测用例草稿，需操作者审核后手工并入 fixture，不会自动写入。
+        </p>
+        {findings.data?.length ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>信号类型</TableHead>
+                <TableHead className="text-right">次数</TableHead>
+                <TableHead>最近样例</TableHead>
+                <TableHead>涉及文档</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {findings.data.map((finding) => (
+                <TableRow key={finding.finding_id}>
+                  <TableCell className="text-xs">
+                    {SIGNAL_TYPE_LABELS[finding.signal_type] ?? finding.signal_type}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{finding.repeat_count}</TableCell>
+                  <TableCell className="max-w-72 truncate text-xs text-muted-foreground">
+                    {finding.latest_prompt_preview || "-"}
+                  </TableCell>
+                  <TableCell className="max-w-40 truncate font-mono text-xs text-muted-foreground">
+                    {finding.doc_uid || finding.related_doc_uids.join(", ") || "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={exportCase.isPending}
+                      onClick={() => void handleExport(finding.finding_id)}
+                    >
+                      导出用例草稿
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {findings.isLoading ? "加载中…" : "暂无达到重复阈值的反馈发现。"}
+          </p>
+        )}
+        {draft && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                草稿已生成（建议路径 {draft.suggested_fixture_path}），请人工审核。
+              </p>
+              <Button size="sm" variant="outline" onClick={() => void handleCopy()}>
+                复制 JSONL 行
+              </Button>
+            </div>
+            <pre className="max-h-40 overflow-auto rounded-md bg-muted p-2 text-xs whitespace-pre-wrap break-all">
+              {draft.jsonl_line}
+            </pre>
+          </div>
+        )}
+      </CardContent>
     </Card>
   )
 }
@@ -312,6 +414,8 @@ export function EvalsPage() {
           {categoryRows(report.cases)}
         </div>
       )}
+
+      <FeedbackFindingsSection />
     </div>
   )
 }

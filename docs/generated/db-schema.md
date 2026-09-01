@@ -64,6 +64,22 @@ governed 上下文记忆（L2 会话/L3 项目/L4 用户分层）：scope 复合
 
 索引/唯一约束：idx_context_summary_scope(uuid, project_uid)
 
+## agent_evidence_clicks
+
+证据引用点击埋点：记录用户实际展开的证据引用（run 关联），为引用有效性信号积累原始数据。
+
+| 列 | 类型 | 约束 |
+|---|---|---|
+| id | INTEGER | PK |
+| run_uid | VARCHAR | FK→agent_runs.run_uid, NOT NULL |
+| user_uuid | VARCHAR | NOT NULL |
+| project_uid | VARCHAR | NOT NULL |
+| evidence_ref | VARCHAR | NOT NULL |
+| item_uid | VARCHAR | NOT NULL, default '' |
+| created_at | VARCHAR | NOT NULL |
+
+索引/唯一约束：idx_agent_evidence_clicks_run(run_uid, created_at)
+
 ## agent_run_events
 
 Run 的有序事件日志（canonical 真相）：(run_uid, sequence) 唯一，页面重放与投影重建都从它恢复。
@@ -146,7 +162,47 @@ Run 的有序事件日志（canonical 真相）：(run_uid, sequence) 唯一，�
 | finished_at | VARCHAR |  |
 | updated_at | VARCHAR | NOT NULL |
 
-索引/唯一约束：(run_uid, parent_task_key, idempotency_key) 唯一、idx_agent_tasks_parent(parent_task_uid, created_at)、idx_agent_tasks_runnable(status, created_at)
+索引/唯一约束：(run_uid, parent_task_key, idempotency_key) 唯一、idx_agent_tasks_runnable(status, created_at)、idx_agent_tasks_parent(parent_task_uid, created_at)
+
+## feedback_analysis_tasks
+
+research-feedback-loop 的轮后分析队列（durable 事件+worker，同 memory_events 模式）：每 Run 一行幂等任务，携带判定所需的 citation audit 事实，状态机含租约认领与失败重试。
+
+| 列 | 类型 | 约束 |
+|---|---|---|
+| task_uid | VARCHAR | PK |
+| run_uid | VARCHAR | FK→agent_runs.run_uid, NOT NULL |
+| user_uuid | VARCHAR | NOT NULL |
+| project_uid | VARCHAR | NOT NULL |
+| session_uid | VARCHAR | NOT NULL |
+| citation_audit | VARCHAR | NOT NULL, default '' |
+| retrieved_evidence_count | INTEGER | NOT NULL, default '0' |
+| evidence_doc_uids_json | TEXT | NOT NULL, default '[]' |
+| status | VARCHAR | NOT NULL, default 'pending' |
+| error_message | TEXT | NOT NULL, default '' |
+| created_at | VARCHAR | NOT NULL |
+| updated_at | VARCHAR | NOT NULL |
+
+索引/唯一约束：(run_uid) 唯一、idx_feedback_analysis_status(status, updated_at)
+
+## feedback_events
+
+确定性规则捕获的用户修正信号事件：event_uid 为 sha256(user+run+signal+digest) 幂等键，载荷只存脱敏预览与指纹（不落 prompt 全文），按项目/信号类型/文档桶聚合成发现。
+
+| 列 | 类型 | 约束 |
+|---|---|---|
+| event_uid | VARCHAR | PK |
+| user_uuid | VARCHAR | NOT NULL |
+| project_uid | VARCHAR | NOT NULL |
+| session_uid | VARCHAR | NOT NULL |
+| run_uid | VARCHAR | FK→agent_runs.run_uid, NOT NULL |
+| signal_type | VARCHAR | NOT NULL |
+| prompt_digest | VARCHAR | NOT NULL |
+| doc_uid | VARCHAR | NOT NULL, default '' |
+| payload_json | TEXT | NOT NULL |
+| created_at | VARCHAR | NOT NULL |
+
+索引/唯一约束：idx_feedback_events_run(run_uid)、idx_feedback_events_bucket(project_uid, signal_type, doc_uid, created_at)
 
 ## research_plans
 
