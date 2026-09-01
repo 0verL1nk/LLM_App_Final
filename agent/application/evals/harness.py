@@ -36,6 +36,7 @@ def _execution_error_case_result(case: AgentEvalCase, exc: Exception) -> dict[st
         "case_id": case.case_id,
         "category": case.category,
         "prompt": case.prompt,
+        "metadata": dict(case.metadata),
         "completed": False,
         "final_success": False,
         "process_success": False,

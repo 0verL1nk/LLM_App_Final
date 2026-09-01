@@ -7,6 +7,8 @@ import {
   documentSchema,
   documentConversionSchema,
   evalRunSnapshotSchema,
+  feedbackCaseDraftSchema,
+  feedbackFindingSchema,
   messageSchema,
   projectSchema,
   runCreatedSchema,
@@ -33,6 +35,7 @@ export const keys = {
   settings: ["settings"] as const,
   evalRuns: ["eval-runs"] as const,
   evalRun: (uid: string) => ["eval-runs", uid] as const,
+  feedbackFindings: ["feedback-findings"] as const,
   skills: ["skills"] as const,
   sessionSuggestions: (projectId: string, sessionId: string, messageCount: number) =>
     ["session-suggestions", projectId, sessionId, messageCount] as const,
@@ -285,6 +288,22 @@ export function useStartEvalRun() {
       queryClient.setQueryData(keys.evalRun(snapshot.uid), snapshot)
       void queryClient.invalidateQueries({ queryKey: keys.evalRuns })
     },
+  })
+}
+
+export function useFeedbackFindings() {
+  return useQuery({
+    queryKey: keys.feedbackFindings,
+    queryFn: () => api("/evals/feedback-findings", z.array(feedbackFindingSchema)),
+  })
+}
+
+export function useExportFeedbackCase() {
+  return useMutation({
+    mutationFn: (findingId: string) =>
+      api(`/evals/feedback-findings/${findingId}/export-case`, feedbackCaseDraftSchema, {
+        method: "POST",
+      }),
   })
 }
 

@@ -63,6 +63,14 @@ TABLE_PURPOSES: dict[str, str] = {
     " 复合索引按 uuid+project+level 检索，条目带版本与过期时间。",
     "session_context_summaries": "会话压缩摘要：每会话一行、版本递增，恢复会话时注入"
     "上下文骨架。",
+    "feedback_analysis_tasks": "research-feedback-loop 的轮后分析队列（durable 事件+worker，"
+    "同 memory_events 模式）：每 Run 一行幂等任务，携带判定所需的 citation audit 事实，"
+    "状态机含租约认领与失败重试。",
+    "feedback_events": "确定性规则捕获的用户修正信号事件：event_uid 为 sha256(user+run+"
+    "signal+digest) 幂等键，载荷只存脱敏预览与指纹（不落 prompt 全文），按项目/信号类型/"
+    "文档桶聚合成发现。",
+    "agent_evidence_clicks": "证据引用点击埋点：记录用户实际展开的证据引用（run 关联），"
+    "为引用有效性信号积累原始数据。",
 }
 
 

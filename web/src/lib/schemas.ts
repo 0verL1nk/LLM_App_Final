@@ -195,6 +195,30 @@ export const evalRunSnapshotSchema = z.object({
   error: z.string().nullish(),
 })
 
+export const feedbackFindingSchema = z.object({
+  finding_id: z.string(),
+  project_uid: z.string(),
+  signal_type: z.string(),
+  doc_uid: z.string().default(""),
+  repeat_count: z.number(),
+  first_seen_at: z.string(),
+  last_seen_at: z.string(),
+  latest_prompt_preview: z.string().default(""),
+  latest_prompt_digest: z.string().default(""),
+  latest_run_uid: z.string().default(""),
+  related_doc_uids: z.array(z.string()).default([]),
+})
+
+export const feedbackCaseDraftSchema = z.object({
+  finding_id: z.string(),
+  signal_type: z.string(),
+  repeat_count: z.number(),
+  suggested_fixture_path: z.string(),
+  prompt_truncated: z.boolean(),
+  case: z.record(z.string(), z.unknown()),
+  jsonl_line: z.string(),
+})
+
 export type Project = z.infer<typeof projectSchema>
 export type Document = z.infer<typeof documentSchema>
 export type Session = z.infer<typeof sessionSchema>
@@ -209,3 +233,5 @@ export type SessionCommandResult = z.infer<typeof sessionCommandResultSchema>
 export type ResearchArtifact = z.infer<typeof researchArtifactSchema>
 export type EvalCaseProgress = z.infer<typeof evalCaseProgressSchema>
 export type EvalRunSnapshot = z.infer<typeof evalRunSnapshotSchema>
+export type FeedbackFinding = z.infer<typeof feedbackFindingSchema>
+export type FeedbackCaseDraft = z.infer<typeof feedbackCaseDraftSchema>

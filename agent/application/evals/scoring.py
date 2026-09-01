@@ -290,6 +290,7 @@ def evaluate_case_result(
         "case_id": case.case_id,
         "category": case.category,
         "prompt": case.prompt,
+        "metadata": dict(case.metadata),
         "completed": completed,
         "final_success": final_success,
         "process_success": process_success,

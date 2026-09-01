@@ -529,8 +529,23 @@ def execute_turn_core(
     run_latency_ms = (time.perf_counter() - run_started) * 1000.0
     phase_path = build_phase_path(phase_labels=phase_labels, answer=answer, messages=messages)
 
+    # P3-lite deterministic citation audit: evidence was retrieved but the
+    # answer cites none of it. Annotation only (streamed deltas already left
+    # the building); regeneration belongs to the durable-runtime reviewer
+    # pass. Feeds the feedback-loop evidence_gap signal.
+    citation_audit = "not_applicable"
+    if retrieved_evidence_items:
+        cited = bool(referenced_chunk_ids or referenced_doc_uids)
+        citation_audit = "passed" if cited else "failed"
+        if citation_audit == "failed":
+            logger.warning(
+                "TURN_CITATION_AUDIT failed: %s evidence items retrieved, answer cites none",
+                len(retrieved_evidence_items),
+            )
+
     return {
         "answer": answer,
+        "citation_audit": citation_audit,
         "policy_decision": {
             "plan_enabled": bool(plan_payload),
             "reason": "runtime-observed",

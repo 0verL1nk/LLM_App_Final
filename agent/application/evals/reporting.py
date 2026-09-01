@@ -3,6 +3,30 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+# Cases without an explicit origin marker are self-authored fixtures.
+DEFAULT_CASE_ORIGIN = "authored"
+
+
+def _origin_breakdown(case_results: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Layer completion rates by case origin (authored vs production findings)."""
+    buckets: dict[str, dict[str, Any]] = {}
+    for item in case_results:
+        metadata = item.get("metadata")
+        origin = (
+            str((metadata or {}).get("origin") or "").strip() or DEFAULT_CASE_ORIGIN
+        )
+        bucket = buckets.setdefault(origin, {"total": 0, "completed": 0, "final_success": 0})
+        bucket["total"] += 1
+        if bool(item.get("completed", False)):
+            bucket["completed"] += 1
+        if bool(item.get("final_success", False)):
+            bucket["final_success"] += 1
+    for origin, bucket in buckets.items():
+        total = bucket["total"]
+        bucket["completion_rate"] = (bucket["completed"] / total) if total else 0.0
+        bucket["final_success_rate"] = (bucket["final_success"] / total) if total else 0.0
+    return buckets
+
 
 def build_eval_report(
     *,
@@ -60,5 +84,6 @@ def build_eval_report(
         "average_execution_completion_ratio": average_execution_completion_ratio,
         "failed_case_ids": failed_case_ids,
         "remediation_area_counts": remediation_area_counts,
+        "origin_breakdown": _origin_breakdown(case_results),
         "cases": case_results,
     }
