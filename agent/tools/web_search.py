@@ -4,11 +4,11 @@ import logging
 import os
 import re
 import time
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 
 import httpx
-from langchain_core.tools import tool
+from langchain_core.tools import StructuredTool, tool
 from pydantic import BaseModel, Field
 
 from .utils import (
@@ -465,8 +465,9 @@ def search_web(query: str) -> str:
 async def _asearch_web(query: str) -> str:
     """Use native async MCP execution so runtime cancellation closes requests."""
     if _env_value("AGENT_WEB_SEARCH_PROVIDER", default="auto").lower() != "parallel":
-        assert search_web.func is not None
-        return await asyncio.to_thread(search_web.func, query)
+        sync_search = cast(StructuredTool, search_web).func
+        assert sync_search is not None
+        return await asyncio.to_thread(sync_search, query)
     safe_query = _sanitize_query(query)
     if not safe_query:
         return "Web search query is empty after sanitization."
