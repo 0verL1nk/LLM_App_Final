@@ -9,6 +9,8 @@ from .utils import DEFAULT_WEB_TIMEOUT_SECONDS
 
 PARALLEL_MCP_URL = "https://search.parallel.ai/mcp"
 PARALLEL_USER_AGENT = "PaperSage (+https://github.com/0verL1nk/PaperSage)"
+# Match the documented MCP excerpt budget to bound model context consumption.
+MAX_PARALLEL_RESULT_CHARS = 25_000
 
 
 async def search_parallel(query: str) -> str:
@@ -43,7 +45,7 @@ async def search_parallel(query: str) -> str:
     text = "\n\n".join(
         item.text for item in result.content if item.type == "text" and item.text.strip()
     )
-    return text[:25000] if text else "No web search results found."
+    return text[:MAX_PARALLEL_RESULT_CHARS] if text else "No web search results found."
 
 
 def run_parallel(query: str) -> str:
